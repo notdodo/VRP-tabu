@@ -2,68 +2,36 @@
     "vertices": [
         {
             "name": "v1",
-            "coord": "-147;178",
-            "request": 11,
-            "time": 28
+            "x": 2,
+            "y": -32,
+            "request": 48,
+            "time": 14
         },
         {
             "name": "v2",
-            "coord": "151;81",
-            "request": 14,
-            "time": 2
+            "x": 3,
+            "y": -297,
+            "request": 49,
+            "time": 37
         },
         {
             "name": "v3",
-            "coord": "-94;-161",
-            "request": 45,
-            "time": 25
+            "x": 394,
+            "y": -299,
+            "request": 22,
+            "time": 2
         },
         {
             "name": "v4",
-            "coord": "-179;17",
-            "request": 19,
-            "time": 27
-        },
-        {
-            "name": "v5",
-            "coord": "133;-77",
-            "request": 4,
-            "time": 10
-        },
-        {
-            "name": "v6",
-            "coord": "94;-150",
-            "request": 5,
-            "time": 19
-        },
-        {
-            "name": "v7",
-            "coord": "50;-115",
-            "request": 1,
-            "time": 10
-        },
-        {
-            "name": "v8",
-            "coord": "91;-50",
-            "request": 18,
-            "time": 8
-        },
-        {
-            "name": "v9",
-            "coord": "197;-70",
-            "request": 9,
-            "time": 4
-        },
-        {
-            "name": "v10",
-            "coord": "167;-134",
-            "request": 9,
-            "time": 11
+            "x": 398,
+            "y": -38,
+            "request": 22,
+            "time": 5
         }
     ],
-    "vehicles": "10",
-    "capacity": "600",
-    "worktime": "480",
+    "vehicles": 0,
+    "capacity": 0,
+    "worktime": 0,
     "costs": [
         [
             {
@@ -72,38 +40,14 @@
             },
             {
                 "name": "v01",
-                "value": 7
-            },
-            {
-                "name": "v02",
-                "value": 4
-            },
-            {
-                "name": "v03",
-                "value": 4
-            },
-            {
-                "name": "v04",
                 "value": 9
             },
             {
-                "name": "v05",
-                "value": 10
+                "name": "v02",
+                "value": 9
             },
             {
-                "name": "v06",
-                "value": 3
-            },
-            {
-                "name": "v07",
-                "value": 7
-            },
-            {
-                "name": "v08",
-                "value": 12
-            },
-            {
-                "name": "v09",
+                "name": "v03",
                 "value": 3
             }
         ],
@@ -114,35 +58,11 @@
             },
             {
                 "name": "v12",
-                "value": 9
+                "value": 2
             },
             {
                 "name": "v13",
-                "value": 2
-            },
-            {
-                "name": "v14",
-                "value": 1
-            },
-            {
-                "name": "v15",
-                "value": 2
-            },
-            {
-                "name": "v16",
-                "value": 3
-            },
-            {
-                "name": "v17",
-                "value": 5
-            },
-            {
-                "name": "v18",
-                "value": 1
-            },
-            {
-                "name": "v19",
-                "value": 11
+                "value": 4
             }
         ],
         [
@@ -152,156 +72,12 @@
             },
             {
                 "name": "v23",
-                "value": 10
-            },
-            {
-                "name": "v24",
-                "value": 3
-            },
-            {
-                "name": "v25",
-                "value": 10
-            },
-            {
-                "name": "v26",
-                "value": 1
-            },
-            {
-                "name": "v27",
-                "value": 6
-            },
-            {
-                "name": "v28",
-                "value": 3
-            },
-            {
-                "name": "v29",
-                "value": 3
+                "value": 7
             }
         ],
         [
             {
                 "name": "v33",
-                "value": 0
-            },
-            {
-                "name": "v34",
-                "value": 3
-            },
-            {
-                "name": "v35",
-                "value": 4
-            },
-            {
-                "name": "v36",
-                "value": 8
-            },
-            {
-                "name": "v37",
-                "value": 9
-            },
-            {
-                "name": "v38",
-                "value": 2
-            },
-            {
-                "name": "v39",
-                "value": 3
-            }
-        ],
-        [
-            {
-                "name": "v44",
-                "value": 0
-            },
-            {
-                "name": "v45",
-                "value": 11
-            },
-            {
-                "name": "v46",
-                "value": 8
-            },
-            {
-                "name": "v47",
-                "value": 3
-            },
-            {
-                "name": "v48",
-                "value": 7
-            },
-            {
-                "name": "v49",
-                "value": 5
-            }
-        ],
-        [
-            {
-                "name": "v55",
-                "value": 0
-            },
-            {
-                "name": "v56",
-                "value": 9
-            },
-            {
-                "name": "v57",
-                "value": 2
-            },
-            {
-                "name": "v58",
-                "value": 4
-            },
-            {
-                "name": "v59",
-                "value": 1
-            }
-        ],
-        [
-            {
-                "name": "v66",
-                "value": 0
-            },
-            {
-                "name": "v67",
-                "value": 6
-            },
-            {
-                "name": "v68",
-                "value": 10
-            },
-            {
-                "name": "v69",
-                "value": 12
-            }
-        ],
-        [
-            {
-                "name": "v77",
-                "value": 0
-            },
-            {
-                "name": "v78",
-                "value": 12
-            },
-            {
-                "name": "v79",
-                "value": 4
-            }
-        ],
-        [
-            {
-                "name": "v88",
-                "value": 0
-            },
-            {
-                "name": "v89",
-                "value": 2
-            }
-        ],
-        [
-            {
-                "name": "v99",
                 "value": 0
             }
         ]

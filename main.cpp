@@ -5,7 +5,8 @@ using namespace std;
  int main(int argc, char** argv) {
     if (argc == 2) {
         Utils s;
-        s.ParseInput(argv);
+        VRP *v = s.InitParameters(argv);
+        if (v != NULL) v->log();
     }
     return 0;
 }

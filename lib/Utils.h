@@ -2,18 +2,23 @@
 #define Utils_H
 
 #include "rapidjson/filereadstream.h"
+#include "rapidjson/filewritestream.h"
 #include "rapidjson/document.h"     // rapidjson's DOM-style API
 #include "rapidjson/prettywriter.h" // for stringify JSON
+#include "rapidjson/error/en.h"
 #include <iostream>
 #include <regex>
+#include <vector>
+#include "../actor/Customer.h"
+#include "VRP.h"
 
 class Utils {
 private:
-    /* data */
+    rapidjson::Document d;
 public:
-    Utils();
     bool ParseInt (std::string a);
-    bool ParseInput (char **argv);
+    VRP* InitParameters (char **argv);
+    FILE* SaveResult(void);
 };
 
 #endif /* Utils_H */
