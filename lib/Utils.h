@@ -4,7 +4,7 @@
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/filewritestream.h"
 #include "rapidjson/document.h"     // rapidjson's DOM-style API
-#include "rapidjson/prettywriter.h" // for stringify JSON
+#include "rapidjson/prettywriter.h" // for stringify JSON PrettyWriter
 #include "rapidjson/error/en.h"
 #include <iostream>
 #include <regex>

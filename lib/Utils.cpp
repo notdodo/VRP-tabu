@@ -61,7 +61,7 @@ VRP* Utils::InitParameters(char **argv) {
 }
 
 FILE* Utils::SaveResult() {
-    FILE* fp = fopen("o.json", "w");
+    FILE* fp = fopen("output.json", "w");
     if (fp != NULL) {
         char writeBuffer[65536];
         rapidjson::FileWriteStream os(fp, writeBuffer, sizeof(writeBuffer));
