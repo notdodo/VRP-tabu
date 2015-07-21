@@ -7,6 +7,7 @@ using namespace std;
         Utils s;
         VRP *v = s.InitParameters(argv);
         if (v != NULL) v->log();
+        s.SaveResult();
     }
     return 0;
 }
