@@ -61,11 +61,26 @@ VRP* Utils::InitParameters(char **argv) {
 }
 
 FILE* Utils::SaveResult() {
-    FILE* fp = fopen("output.json", "wb"); // non-Windows use "w"
-    char writeBuffer[65536];
-    rapidjson::FileWriteStream os(fp, writeBuffer, sizeof(writeBuffer));
-    rapidjson::Writer<rapidjson::FileWriteStream> writer(os);
-    d.Accept(writer);
-    fclose(fp);
+    FILE* fp = fopen("o.json", "w");
+    if (fp != NULL) {
+        char writeBuffer[65536];
+        rapidjson::FileWriteStream os(fp, writeBuffer, sizeof(writeBuffer));
+        rapidjson::PrettyWriter<rapidjson::FileWriteStream> writer(os);
+        rapidjson::Document::AllocatorType& allocator = this->d.GetAllocator();
+        rapidjson::Value route(rapidjson::kArrayType);
+        for (int i = 0; i < 3; i++) {
+            rapidjson::Value r(rapidjson::kArrayType);
+            for (int k = 0; k < 10; k++) {
+                int c = 1 + (rand() % (int)(8));
+                r.PushBack(c, allocator);
+            }
+            route.PushBack(r, allocator);
+        }
+        d.AddMember("routes", route, allocator);
+        d.Accept(writer);
+        fclose(fp);
+    }else {
+        fprintf(stderr, "Error writing file! (Bad permissions)\n");
+    }
     return fp;
 }
