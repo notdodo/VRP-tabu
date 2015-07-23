@@ -5,14 +5,14 @@ bool Utils::ParseInt(std::string a) {
     return (regex_match(a, integer))? true : false;
 }
 
-VRP* Utils::InitParameters(char **argv) {
-    bool flag = true;
-    VRP *v;
+VRP Utils::InitParameters(char **argv) {
+    std::string s;
+    VRP v;
     /* open the file */
     FILE* fp = fopen(argv[1], "r");
     if (fp == NULL) {
-        flag = false;
-        fprintf(stderr,"The file %s doesn't exist.", argv[1]);
+        s = "The file " + std::string(argv[1]) +  " doesn't exist.";
+        throw s;
     }else {
         /* little buf more fread, big buff less fread big access time */
         char readBuffer[65536];
@@ -21,11 +21,11 @@ VRP* Utils::InitParameters(char **argv) {
         fclose(fp);
         /* check error */
         if (this->d.HasParseError()) {
-            flag = false;
-            fprintf(stderr, "\nError(offset %u): %s\n",
-                (unsigned)this->d.GetErrorOffset(),
-                GetParseError_En(this->d.GetParseError()));
+            s = "Error(offset" + std::string((char*)this->d.GetErrorOffset()) +
+                "): " + GetParseError_En(this->d.GetParseError());
+            throw s;
         }else {
+            s = "Invalid file format!";
             int numVertices = this->d["vertices"].Size();
             Customer *customers = new Customer[numVertices];
             for (int i = 0; i < numVertices; i++) {
@@ -40,24 +40,23 @@ VRP* Utils::InitParameters(char **argv) {
                         int serviceTime = this->d["vertices"][i]["time"].GetInt();
                         customers[i] = Customer(n, x, y, request, serviceTime);
                 }else {
-                    flag = false;
-                    fprintf(stderr, "Invalid file format!\n");
+                    throw s;
                 }
             }
-            if (flag && this->d["vehicles"].IsInt() &&
+            if (this->d["vehicles"].IsInt() &&
                 this->d["capacity"].IsInt() && this->d["worktime"].IsInt()) {
-                v = new VRP(
+                VRP v(
                     *customers,
                     numVertices,
                     this->d["vehicles"].GetInt(),
                     this->d["capacity"].GetInt(),
                     this->d["worktime"].GetInt());
+            }else {
+                throw s;
             }
-            else
-                fprintf(stderr, "Invalid file format!\n");
         }
     }
-    return (flag)? v : NULL;
+    return v;
 }
 
 FILE* Utils::SaveResult() {
@@ -80,7 +79,21 @@ FILE* Utils::SaveResult() {
         d.Accept(writer);
         fclose(fp);
     }else {
-        fprintf(stderr, "Error writing file! (Bad permissions)\n");
+        throw "Error writing file! (Bad permissions)\n";
     }
     return fp;
+}
+
+void Utils::logger(std::string s, int c) {
+    switch(c) {
+        case SUCCESS:
+            std::cout << ANSI_GREEN << s << ANSI_RESET << std::endl;
+        break;
+        case WARNING:
+            std::cout << ANSI_YELLOW << s << ANSI_RESET << std::endl;
+        break;
+        case ERROR:
+            std::cout << ANSI_RED << s << ANSI_RESET << std::endl;
+        break;
+    }
 }

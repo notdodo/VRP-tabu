@@ -1,6 +1,5 @@
 #include "VRP.h"
 
-#include <array>
 /* constructor */
 VRP::VRP(Customer &cust, int n, int v, int c, int t) {
     this->customers = &cust;
@@ -10,9 +9,6 @@ VRP::VRP(Customer &cust, int n, int v, int c, int t) {
     this->workTime = t;
 }
 
-void VRP::log() {
-    std::cout << "ICO" << std::endl;
-}
-
 /* destructor */
-VRP::~VRP() {}
+VRP::~VRP() {
+}

@@ -12,8 +12,8 @@ private:
     int capacity;
     int workTime;
 public:
+    VRP() {}
     VRP(Customer &cust, int n, int v, int c, int t);
-    void log();
     ~VRP();
 };
 
