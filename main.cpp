@@ -1,14 +1,50 @@
-#include "lib/Utils.h"
+#include "actor/Controller.h"
+#include <thread>         // std::thread
+#include <chrono>
 
 using namespace std;
 
- int main(int argc, char** argv) {
-    if (argc == 2) {
-        Utils s;
-        VRP *v = s.InitParameters(argv);
-        if (v != NULL) v->log();
-        s.SaveResult();
+
+void a() {
+    cout << this_thread::get_id() << endl;
+    this_thread::sleep_for (chrono::seconds(1));
+}
+
+void b() {
+    cout << "NO"<< endl;
+    std::this_thread::sleep_for (std::chrono::seconds(1));
+}
+
+
+class prova {
+private:
+    int coso;
+public:
+    prova(){cout << "conS" << endl; coso=0;};
+    void ciao(int n) {
+        coso = n;
+        cout << n << endl;
     }
+    int get() {return this->coso;}
+};
+
+int main(int argc, char** argv) {
+    prova p;
+    int n = 40;
+    thread t(&prova::ciao, &p, 2);
+    Controller c;
+    Utils &u = Utils::Instance();
+    if (argc == 2) {
+        try {
+            c.Init(argv);
+        }catch(string i) {
+            u.logger("\r\n"+i, u.ERROR);
+        }
+    }else
+    u.logger("Usage: ./VRP data.json", u.ERROR);
+    t.join();
+        cout << p.get() << endl;
+
     return 0;
 }
 
