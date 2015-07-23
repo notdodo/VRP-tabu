@@ -4,6 +4,7 @@ BIN_NAME=VRP
 
 #-s  Remove all symbol table and relocation information from the executable.
 CPPFLAGS=-s -O2 -std=gnu++11 -Wall
+LD=-lpthread
 
 SRCS=$(wildcard *.cpp actor/*.cpp lib/*.cpp lib/dist/*.cpp)
 # notdir: get the filename from sources
@@ -25,7 +26,7 @@ $(OBJS_DIR)/%.o: lib/%.cpp
 	        $(CXX) $(CPPFLAGS) -c $< -o $@
 
 $(BIN_NAME) : $(OBJS)
-	$(CXX) -o $@ $^
+	$(CXX) -o $@ $^ $(LD)
 
 debug:
 	$(CXX) -g $(CPPFLAGS) -o $(BIN_NAME) $(OBJS)
