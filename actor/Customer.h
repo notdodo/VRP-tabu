@@ -12,7 +12,7 @@ public:
     int y;
     int request;
     int serviceTime;
-    Customer();
+    Customer() {}
     Customer(std::string name, int x, int y, int r, int t);
     ~Customer();
 };
