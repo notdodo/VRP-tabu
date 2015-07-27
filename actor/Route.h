@@ -1,9 +1,11 @@
 #ifndef Route_H
 #define Route_H
 
+#include "Customer.h"
+
 class Route {
 private:
-    /* data */
+    Customer *route;
 public:
     Route();
 };

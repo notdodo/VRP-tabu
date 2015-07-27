@@ -9,5 +9,11 @@ Customer::Customer(std::string name, int x, int y, int r, int t) {
     this->serviceTime = t;
 }
 
+Customer::Customer(std::string name, int x, int y) {
+    this->name = name;
+    this->x = x;
+    this->y = y;
+}
+
 /* destructor */
 Customer::~Customer() {}
