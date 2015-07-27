@@ -10,13 +10,7 @@
 #include <regex>
 #include <vector>
 #include <cstdlib>
-#include "../actor/Customer.h"
 #include "VRP.h"
-
-#define ANSI_RESET "\u001B[0m"
-#define ANSI_RED "\u001B[31m"
-#define ANSI_GREEN "\u001B[32m"
-#define ANSI_YELLOW "\u001B[33m"
 
 class Utils {
 private:
@@ -24,6 +18,10 @@ private:
     Utils(Utils const&) = delete;
     void operator=(Utils const&) = delete;
     rapidjson::Document d;
+    const char* ANSI_RESET = "\u001B[0m";
+    const char* ANSI_RED = "\u001B[31m";
+    const char* ANSI_GREEN = "\u001B[32m";
+    const char* ANSI_YELLOW = "\u001B[33m";
 public:
     static Utils& Instance() {
         static Utils instance;
@@ -35,7 +33,8 @@ public:
     bool ParseInt (std::string a);
     VRP InitParameters (char **argv);
     FILE* SaveResult(void);
-    void logger(std::string s, int code);
+    void logger(std::string s, int code) const;
 };
+
 
 #endif /* Utils_H */
