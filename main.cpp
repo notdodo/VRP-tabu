@@ -1,11 +1,11 @@
 #include "actor/Controller.h"
+#include "lib/Graph.h"
 #include <thread>         // std::thread
 #include <chrono>
 
 using namespace std;
 
-
-void a() {
+/*void a() {
     cout << this_thread::get_id() << endl;
     this_thread::sleep_for (chrono::seconds(1));
 }
@@ -26,12 +26,12 @@ public:
         cout << n << endl;
     }
     int get() {return this->coso;}
-};
+};*/
 
 int main(int argc, char** argv) {
-    prova p;
+    /*prova p;
     int n = 40;
-    thread t(&prova::ciao, &p, 2);
+    hread t(&prova::ciao, &p, n);*/
     Controller c;
     Utils &u = Utils::Instance();
     if (argc == 2) {
@@ -41,10 +41,9 @@ int main(int argc, char** argv) {
             u.logger("\r\n"+i, u.ERROR);
         }
     }else
-    u.logger("Usage: ./VRP data.json", u.ERROR);
-    t.join();
-        cout << p.get() << endl;
-
+        u.logger("Usage: ./VRP data.json", u.ERROR);
+    /*t.join();
+    cout << p.get() << endl;*/
     return 0;
 }
 
