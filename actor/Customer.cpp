@@ -13,6 +13,8 @@ Customer::Customer(std::string name, int x, int y) {
     this->name = name;
     this->x = x;
     this->y = y;
+    this->request = 0;
+    this->serviceTime = 0;
 }
 
 /* destructor */

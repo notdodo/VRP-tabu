@@ -16,6 +16,9 @@ public:
     bool operator==(const Customer &c) const {
         return name == c.name;
     }
+    bool operator!=(const Customer&c) const {
+        return name != c.name;
+    }
     std::string name;
     int x;
     int y;
@@ -26,21 +29,5 @@ public:
     Customer(std::string v0, int x, int y);
     ~Customer();
 };
-namespace std {
-    template <>
-    struct hash<Customer> {
-        std::size_t operator()(const Customer& c) const {
-            using std::hash;
-            using std::string;
-
-      // Compute individual hash values for first,
-      // second and third and combine them using XOR
-      // and bit shifting:
-
-            return hash<string>()(c.name);
-        }
-    };
-}
-
 
 #endif /* Vehicle_H */
