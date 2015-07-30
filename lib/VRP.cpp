@@ -28,7 +28,6 @@ void VRP::InitSolutions() {
 
     /* choosing a random customer, from 0 to numVertices-1 */
     start = rand() % (this->numVertices-1);
-    start = 9;
     it = s.begin();
     int j = 0;
     while(it != s.end() && j!=start) {
