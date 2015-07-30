@@ -29,11 +29,19 @@ std::multimap<int, Customer> Graph::sortV0() {
     std::multimap<int, Customer> v;
     /* get depot */
     Customer c = vertexes.begin()->first;
+    v.insert(std::pair<int, Customer>(0, c));
     Vertex it = vertexes.find(c)->second;
     for (auto& edge : it.GetEdges()) {
         v.insert(std::pair<int, Customer>(edge.second.weight, edge.first));
     }
     return v;
+}
+
+/* return the weight of edges &from &to */
+std::pair<Customer, int> Graph::GetCosts(const Customer &from, const Customer &to) {
+    /* get all edges from &from */
+    Vertex it = vertexes.find(from)->second;
+    return {from, it.GetEdges().find(to)->second.weight};
 }
 
 std::string Graph::ToPrint() {

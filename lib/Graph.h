@@ -2,7 +2,6 @@
 #define Graph_H
 
 #include <iostream>
-#include <algorithm>
 #include "Vertex.h"
 
 class Graph {
@@ -19,6 +18,7 @@ public:
     /* multimap allow same keys */
     std::multimap<int, Customer> sortV0();
     std::string ToPrint();
+    std::pair<Customer, int> GetCosts(const Customer&, const Customer&);
 
 protected:
     void InsertVertex(Customer, Vertex);
