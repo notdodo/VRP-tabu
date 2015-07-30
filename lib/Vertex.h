@@ -9,7 +9,7 @@
 
 class Vertex {
 public:
-    //Only Graph can create an object of type Vertex
+    // Only Graph can create an object of type Vertex
     class ConstructionToken {
     private:
         ConstructionToken() = default;
