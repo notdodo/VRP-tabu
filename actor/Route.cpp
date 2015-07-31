@@ -7,57 +7,98 @@ Route::Route(const int& c, const int& wt, const Graph &g) {
     this->graph = g;
     this->totalCost = 0;
 }
-
-/* capacity 600 and worktime 480 */
-bool Route::CheckViolations(const StepType &p, const Customer &c) {
-    Customer depot;
-    /* if empty the first is the depot */
-    if (this->route.empty())
-        depot = p.first;
-    else {
-        depot = this->route.begin()->first;
-    }
-    if (c == depot) {
-        Customer last = this->route.back().first;
-        if (last == depot)
-            return false;
-        this->route.back().second = this->graph.GetCosts(last, depot).second;
-        /* stop the route with a 0 */
-        this->route.push_back({depot, 0});
-        return true;
-    }
-    /* saving the state */
+// typedef std::pair<Customer, int> StepType;
+bool Route::check(Customer from, Customer to, Customer depot) {
+    bool ret = true;
+    int returnTime = 0;
+    // save the route state
     int tCost = this->totalCost;
     int capac = this->capacity;
     int workT = this->workTime;
-    /* doing work */
-    tCost += p.second;
-    capac -= c.request;
-    /* service time plus travel time */
-    workT -= c.serviceTime + (tCost * 0.39);
-    /* travel cost from c to depot */
-    int returnTime = (this->graph.GetCosts(c, depot).second) * 0.39;
-    /* check violation of capacity or working time */
-    if (capac < 0 || workT < returnTime) {
-        /* if the time/request exceed, revert and return to the depot (in time) */
-        Customer last = this->route.back().first;
-        /* change the last costs, point to depot */
-        if (last != depot) {
+    // check constraints
+    int travelCost = this->graph.GetCosts(from, to).second;
+    tCost += travelCost;
+    capac -= to.request;
+    // missing the travel time
+    workT -= to.serviceTime + (tCost * this->TRAVEL_COST);
+    // must consider the time to return to depot
+    returnTime = (this->graph.GetCosts(to, depot).second) * this->TRAVEL_COST;
+    // after the travel if constraints fails
+    if ((capac < 0 || workT < returnTime)) {
+        // no time or capacity to serve the customer: return to depot
+        if (to != depot) {
+            Customer last = this->route.back().first;
             this->route.back().second = this->graph.GetCosts(last, depot).second;
-            /* stop the route with a 0 */
             this->route.push_back({depot, 0});
         }
-        return false;
+        ret = false;
     } else {
-        /* update data */
+        // the travel can be added to the route
         this->totalCost = tCost;
-        this->capacity = capac;
+        this->capacity = capacity;
         this->workTime = workT;
-        this->route.push_back({p});
-        return true;
+        this->route.push_back({from, travelCost});
     }
+    return ret;
 }
 
-bool Route::InsertStep(StepType p, Customer c) {
-    return this->CheckViolations(p, c);
+bool Route::Travel(Customer from, Customer to) {
+    Customer depot;
+    if (this->route.empty())
+        depot = from;
+    else {
+        depot = this->route.begin()->first;
+    }
+    if (to == depot) {
+        Customer last = this->route.back().first;
+        if (last != depot) {
+            int costTravel = this->graph.GetCosts(to, depot).second;
+            int returnTime = costTravel * this->TRAVEL_COST;
+            if ((this->workTime - returnTime) > 0) {
+                this->workTime -= returnTime;
+                this->totalCost += costTravel;
+                this->route.push_back({to, costTravel});
+                this->route.push_back({depot, 0});
+            } else {
+                return false;
+            }
+            return true;
+        }
+    }
+    return this->check(from, to, depot);
+}
+
+int Route::ReplaceLastWithDepot(Customer c, Customer depot) {
+    int ret = 0;
+    Customer last = this->route.back().first;
+    if (last != depot) {
+        this->route.pop_back();
+        int costTravel = this->graph.GetCosts(last, depot).second;
+        int returnTime = costTravel * this->TRAVEL_COST;
+        // dal nuovo ultimo (ex penultimo) posso tornare a casa ci vado
+        if ((this->workTime - returnTime) > 0) {
+            this->workTime -= returnTime;
+            this->totalCost += costTravel;
+            this->route.push_back({depot, 0});
+            ret++;
+            return ret;
+        } else {
+            ret = this->ReplaceLastWithDepot(c, depot);
+        }
+    }
+    return ret;
+}
+
+void Route::PrintRoute() {
+    std::flush(std::cout);
+    if (this->route.size() > 0) {
+        for (StepType i : this->route) {
+            if (i.second > 0)
+                std::cout << i.first << " -(" << i.second << ")-> ";
+            else
+                std::cout << i.first;
+        }
+        std::cout << std::endl;
+    }
+    std::flush(std::cout);
 }

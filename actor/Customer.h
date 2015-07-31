@@ -10,7 +10,10 @@ private:
         return c1.name < c2.name;
     }
     friend std::ostream &operator<<(std::ostream &out, Customer c) {
-        return out << c.name;
+        out.flush();
+        out << c.name;
+        out.flush();
+        return out;
     }
 public:
     bool operator==(const Customer &c) const {

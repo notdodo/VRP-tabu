@@ -1,5 +1,5 @@
-#include "actor/Controller.h"
-#include "lib/Graph.h"
+#include "Controller.h"
+#include "Graph.h"
 #include <thread>         // std::thread
 #include <chrono>
 
@@ -32,6 +32,7 @@ int main(int argc, char** argv) {
     /*prova p;
     int n = 40;
     hread t(&prova::ciao, &p, n);*/
+    std::cout << std::endl;
     Controller c;
     Utils &u = Utils::Instance();
     if (argc == 2) {

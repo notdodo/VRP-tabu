@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include "Graph.h"
-#include "../actor/Route.h"
+#include "Route.h"
 
 typedef std::multimap<int, Customer> Map;
 
@@ -15,10 +15,10 @@ private:
     int vehicles;
     int capacity;
     int workTime;
-    bool InsertStep(Customer, Map::iterator &, Route &, Map &);
+    Map::iterator InsertStep(Customer, Map::iterator, Map::iterator, Route &, Map &);
 public:
     VRP() {}
-    VRP(const Graph &g, const int n, const int v, const int c, const int t);
+    VRP(Graph g, const int n, const int v, const int c, const int t);
     void InitSolutions();
     ~VRP();
 };
