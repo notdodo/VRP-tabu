@@ -29,21 +29,19 @@ void VRP::InitSolutions() {
     start = rand() % (this->numVertices-1);
     it = s.begin();
     int j = 0;
-    start = 0;
+    start = 9;
     std::cout << start << std::endl;
     while(j!=start) {
         *it++;
         j++;
     }
-    j = 0;
+    j = 1;
     Customer last;
     Route r(this->capacity, this->workTime, this->graph);
     Map::const_iterator m = this->InsertStep(depot, it, it, r, s);
     this->routes.push_back(r);
-    if (m == s.cbegin())
-        std::cout << "QUi" << m->second << it->second << std::endl;
     while (j < this->vehicles && !s.empty()) {
-        std::cout << "FINE ROUTE: " << m->second << " " << it->second << std::endl;
+        //std::cout << "FINE ROUTE: " << m->second << " " << it->second << std::endl;
         Route v(this->capacity, this->workTime, this->graph);
         if (s.size() == 1) {
             last = m->second;
@@ -51,7 +49,6 @@ void VRP::InitSolutions() {
             v.CloseTravel(last);
             s.clear();
         }else {
-
             m = this->InsertStep(depot, it, m, v, s);
         }
         this->routes.push_back(v);
@@ -76,26 +73,31 @@ Map::const_iterator VRP::InsertStep(Customer depot, Map::iterator stop, Map::con
     // depot, to
     if (index != last)
         index++;
+    else
+        index = distances.begin();
     /*if (index == end && to == stop->second) {
         std::cout << to << from << stop->second <<std::endl;
         index = distances.begin();
     }*/
+    if (index == distances.cbegin() && index == stop) {
+        r.CloseTravel(to);
+        distances.clear();
+    }
+    std::cout << "UNOP " <<stop->second << to << index->second << std::endl;
     while (index != stop && !distances.empty()) {
         from = to;
         fallback = index;
         to = index->second;
         index++;
         // il problema è qui: quando ho end() devo andare con to in v2,
-        // ma v2 è lo stop quindi devo chiudere la route
-
-        // ho from == to == v10 (end)
+        //ma v2 è lo stop quindi devo chiudere la route
         if (index == distances.cend()) {
             --index;
             to = index->second;
             if (!r.Travel(from, to)) {
                 r.CloseTravel(from);
-                std::cout << "UNO " << from << to << fallback->second << std::endl;
-                break;
+                std::cout << "UNO " <<stop->second << from << to << fallback->second << std::endl;
+                return fallback;
             } else {
                 index = distances.begin();
             }
@@ -115,7 +117,6 @@ Map::const_iterator VRP::InsertStep(Customer depot, Map::iterator stop, Map::con
                 break;
             }else {
                 // se inserito e
-                std::cout << to << from << stop->second <<std::endl;
                 if (stop != distances.cbegin())
                     stop--;
                 if (stop == fallback) {
@@ -125,8 +126,9 @@ Map::const_iterator VRP::InsertStep(Customer depot, Map::iterator stop, Map::con
                     }else {
                         distances.clear();
                     }
+                } else {
+                    stop++;
                 }
-                stop++;
                 //std::cout << "INSERITO " << from << to;
             }
             //std::cout << " " << index->second << fallback->second << std::endl;
