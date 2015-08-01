@@ -5,7 +5,7 @@ BIN_NAME=VRP
 #-s  Remove all symbol table and relocation information from the executable.
 INCLUDE=-I actor/ -I lib/
 CPPFLAGS=-s -std=gnu++11 -Wall $(INCLUDE)
-LD=
+LD=-lpthread
 
 SRCS=$(wildcard *.cpp actor/*.cpp lib/*.cpp lib/dist/*.cpp)
 # notdir: get the filename from sources
