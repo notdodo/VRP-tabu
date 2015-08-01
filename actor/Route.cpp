@@ -16,19 +16,13 @@ void Route::CloseTravel(Customer c) {
 }
 
 bool Route::CloseTravel(Customer from, Customer depot) {
-    // ho una route incompleta
-    // devo inserire però l'ultimo cliente
-    // ho già inserito v9->v7
-    // devo controllare se posso inserire v7->v0
     bool ret = true;
-    int returnTime = 0;
     // save the route state
     int tCost = this->totalCost;
     int workT = this->workTime;
     // check constraints
     int travelCost = this->graph.GetCosts(from, depot).second;
     tCost += travelCost;
-    // missing the travel time
     workT -= (travelCost * this->TRAVEL_COST);
     // must consider the time to return to depot
     // after the travel if constraints fails
@@ -55,16 +49,14 @@ bool Route::Travel(Customer from, Customer to) {
     int workT = this->workTime;
     // check constraints
     int travelCost = this->graph.GetCosts(from, to).second;
-
     if (this->route.empty()) {
         depot = from;
     }else {
         depot = this->route.cbegin()->first;
     }
-
     tCost += travelCost;
     capac -= to.request;
-    // missing the travel time
+    // service + travel time
     workT -= to.serviceTime + (travelCost * this->TRAVEL_COST);
     // must consider the time to return to depot
     returnTime = (this->graph.GetCosts(to, depot).second) * this->TRAVEL_COST;
@@ -82,8 +74,9 @@ bool Route::Travel(Customer from, Customer to) {
     return ret;
 }
 
-int Route::ReplaceLastWithDepot(Customer c, Customer depot) {
-
+void Route::EmptyRoute(Customer depot) {
+    this->route.clear();
+    this->route.push_back({depot, 0});
 }
 
 void Route::PrintRoute() {

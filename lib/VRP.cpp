@@ -12,128 +12,131 @@ VRP::VRP(Graph g, int n, int v, int c, int t) {
 
 /* get random, add customers j,j+1,..., n,1,...,j-1 */
 /* check violations of time, capacity */
-/* minimize the increase total time travel */
 void VRP::InitSolutions() {
-    //Route r(this->capacity, this->workTime, this->graph);
     srand(time(NULL));
     int start;
-    /* distances of customers from depot */
-    Map s = this->graph.sortV0();
-    /* get the depot and remove it from the map */
-    Customer depot = s.begin()->second;
-    s.erase(s.begin());
-    /* keyring of distances multimap s */
+    Customer depot, last;
+    /* keyring of distances */
     std::vector<int> keys;
+    // the iterator for the sorted customer
     Map::iterator it;
+    /* distances of customers sorted from depot */
+    Map dist = this->graph.sortV0();
+    /* get the depot and remove it from the map */
+    depot = dist.begin()->second;
+    dist.erase(dist.begin());
     /* choosing a random customer, from 0 to numVertices-1 */
     start = rand() % (this->numVertices-1);
-    it = s.begin();
+    it = dist.begin();
     int j = 0;
-    start = 9;
-    std::cout << start << std::endl;
-    while(j!=start) {
+    // getting the index (customer) to start with
+    while(j != start) {
         *it++;
         j++;
     }
+    // reset j
     j = 1;
-    Customer last;
+    // preparing the route
     Route r(this->capacity, this->workTime, this->graph);
-    Map::const_iterator m = this->InsertStep(depot, it, it, r, s);
+    // doing the first step, from to first customer
+    Map::const_iterator m = this->InsertStep(depot, it, it, r, dist);
+    // saving the route
     this->routes.push_back(r);
-    while (j < this->vehicles && !s.empty()) {
-        //std::cout << "FINE ROUTE: " << m->second << " " << it->second << std::endl;
+    // for all vehicles, or one the Map dist is empty
+    while (j < this->vehicles && !dist.empty()) {
         Route v(this->capacity, this->workTime, this->graph);
-        if (s.size() == 1) {
+        // if is remaing only one customer add it to route
+        if (dist.size() == 1) {
             last = m->second;
             v.Travel(depot, last);
             v.CloseTravel(last);
-            s.clear();
+            dist.clear();
         }else {
-            m = this->InsertStep(depot, it, m, v, s);
+            m = this->InsertStep(depot, it, m, v, dist);
         }
         this->routes.push_back(v);
+        // counting the vehicles
         j++;
     }
-    for(auto &e : this->routes) e.PrintRoute();
+    for (int i = j; i < this->vehicles; i++) {
+        Route empty(this->capacity, this->workTime, this->graph);
+        empty.EmptyRoute(depot);
+        this->routes.push_back(empty);
+    }
 }
 
 Map::const_iterator VRP::InsertStep(Customer depot, Map::iterator stop, Map::const_iterator i, Route &r, Map &distances) {
     Customer from, to;
     Map::const_iterator index = i;
-    Map::const_iterator end = distances.cend();
-    end--;
+    Map::const_iterator end = distances.cend(); end--;
     Map::const_iterator last = end;
-    end = distances.cend();
     Map::const_iterator fallback = index;
+    // init the route with the travel from depot to first customer
     to = index->second;
     if (!r.Travel(depot, to)) {
+        // if the customer is unreachable stop the program
         std::string s;
         throw s = "One customer is unreachable!!!";
     }
-    // depot, to
+    // increment the index, computing the next customer
     if (index != last)
         index++;
     else
         index = distances.begin();
-    /*if (index == end && to == stop->second) {
-        std::cout << to << from << stop->second <<std::endl;
-        index = distances.begin();
-    }*/
+    // the route need only the last customer (last before the stop)
     if (index == distances.cbegin() && index == stop) {
         r.CloseTravel(to);
+        // clear the map to stop the loop
         distances.clear();
     }
-    std::cout << "UNOP " <<stop->second << to << index->second << std::endl;
     while (index != stop && !distances.empty()) {
+        // set up from and to customers
         from = to;
+        // a fallback index to recover the state
         fallback = index;
         to = index->second;
+        // incrementing (if possible) the index for the next step of the route
         index++;
-        // il problema è qui: quando ho end() devo andare con to in v2,
-        //ma v2 è lo stop quindi devo chiudere la route
         if (index == distances.cend()) {
             --index;
             to = index->second;
+            // if cannot add the customer, close the route and return
             if (!r.Travel(from, to)) {
                 r.CloseTravel(from);
-                std::cout << "UNO " <<stop->second << from << to << fallback->second << std::endl;
-                return fallback;
             } else {
+                // otherwise index move to the next customer (the first one)
                 index = distances.begin();
             }
         } else {
             if (!r.Travel(from, to)) {
                 r.CloseTravel(from);
+                // the route is close but, if the last customer to serve is the last one return it
                 if (stop != distances.cbegin())
                     stop--;
                 if (stop->second == to) {
-                    // cannot insert the last customer, need to a new route
+                    // cannot insert the last customer, need to create a new route, only for it
                     distances.clear();
+                    // a map with only this customer
                     Map::iterator last = distances.insert({0, to});
-                    stop = last;
-                    std::cout << "NON INSERITO2 " << from << to << std::endl;
-                    return stop;
+                    fallback = last;
                 }
                 break;
             }else {
-                // se inserito e
+                // the customer is inserted
                 if (stop != distances.cbegin())
                     stop--;
+                // but if remain only one customer to serve, serve it
                 if (stop == fallback) {
-                    std::cout << "FERMO2 " << to << from << stop->second <<std::endl;
-                    if (!r.CloseTravel(to, depot)) {
-                        std::cout << "ONONONONON" << std::endl;
-                    }else {
+                    if (r.CloseTravel(to, depot)) {
                         distances.clear();
                     }
                 } else {
                     stop++;
                 }
-                //std::cout << "INSERITO " << from << to;
             }
-            //std::cout << " " << index->second << fallback->second << std::endl;
         }
     }
+    // return the fallback index to start a new route
     return fallback;
 }
 

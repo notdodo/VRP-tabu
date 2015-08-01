@@ -10,7 +10,7 @@ typedef std::pair<Customer, int> StepType;
 class Route {
 private:
     /* overloading << */
-    /*friend std::ostream& operator<<(std::ostream& out, const Route &r) {
+    friend std::ostream& operator<<(std::ostream& out, const Route &r) {
         std::flush(std::cout);
         for (auto i : r.route)
             if (i.second > 0)
@@ -18,7 +18,7 @@ private:
             else
                 out << i.first;
         return out;
-    }*/
+    }
     int capacity;
     int workTime;
     int totalCapacity;
@@ -34,7 +34,7 @@ public:
     bool CheckConstraints(Customer, Customer);
     void PrintRoute();
     bool Travel(Customer, Customer);
-    int ReplaceLastWithDepot(Customer, Customer);
+    void EmptyRoute(Customer);
     /* per ora list, alternativa: deque */
     std::list<StepType> route;
     Route(int, int, const Graph);
