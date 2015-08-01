@@ -51,8 +51,8 @@
             "name": "v7",
             "x": -224,
             "y": 16,
-            "request": 2,
-            "time": 25
+            "request": 50,
+            "time": 40
         },
         {
             "name": "v8",

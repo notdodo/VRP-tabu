@@ -27,15 +27,17 @@ private:
     const float TRAVEL_COST = 0.3;
     Graph graph;
 protected:
-    bool CheckViolations(StepType, Customer);
-    bool check(Customer, Customer, Customer);
+
 public:
+    void CloseTravel(Customer);
+    bool CloseTravel(Customer, Customer);
+    bool CheckConstraints(Customer, Customer);
     void PrintRoute();
     bool Travel(Customer, Customer);
     int ReplaceLastWithDepot(Customer, Customer);
     /* per ora list, alternativa: deque */
     std::list<StepType> route;
-    Route(const int &, const int &, const Graph&);
+    Route(int, int, const Graph);
 };
 
 #endif /* Route_H */

@@ -15,7 +15,7 @@ private:
     int vehicles;
     int capacity;
     int workTime;
-    Map::iterator InsertStep(Customer, Map::iterator, Map::iterator, Route &, Map &);
+    Map::const_iterator InsertStep(Customer, Map::iterator, Map::const_iterator, Route &, Map &);
 public:
     VRP() {}
     VRP(Graph g, const int n, const int v, const int c, const int t);

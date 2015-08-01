@@ -29,57 +29,107 @@ void VRP::InitSolutions() {
     start = rand() % (this->numVertices-1);
     it = s.begin();
     int j = 0;
-    start = 3;
+    start = 0;
     std::cout << start << std::endl;
     while(j!=start) {
         *it++;
         j++;
     }
-    /* for each vehicles create routes */
     j = 0;
-    /* from it create the routes */
+    Customer last;
     Route r(this->capacity, this->workTime, this->graph);
-    Map::iterator i = this->InsertStep(depot, it, it, r, s);
+    Map::const_iterator m = this->InsertStep(depot, it, it, r, s);
     this->routes.push_back(r);
-    while(j < this->vehicles && i != it) {
-        Route r(this->capacity, this->workTime, this->graph);
-        i = this->InsertStep(depot, it, i, r, s);
-        this->routes.push_back(r);
+    if (m == s.cbegin())
+        std::cout << "QUi" << m->second << it->second << std::endl;
+    while (j < this->vehicles && !s.empty()) {
+        std::cout << "FINE ROUTE: " << m->second << " " << it->second << std::endl;
+        Route v(this->capacity, this->workTime, this->graph);
+        if (s.size() == 1) {
+            last = m->second;
+            v.Travel(depot, last);
+            v.CloseTravel(last);
+            s.clear();
+        }else {
+
+            m = this->InsertStep(depot, it, m, v, s);
+        }
+        this->routes.push_back(v);
         j++;
     }
-    for (auto &e : this->routes) e.PrintRoute();
+    for(auto &e : this->routes) e.PrintRoute();
 }
 
-Map::iterator VRP::InsertStep(Customer depot, Map::iterator stop, Map::iterator i, Route &r, Map &distances) {
+Map::const_iterator VRP::InsertStep(Customer depot, Map::iterator stop, Map::const_iterator i, Route &r, Map &distances) {
     Customer from, to;
-    bool flag = true;
-    Map::iterator fallback = i;
-    /* from depot to random customer j */
-    to = i->second;
-    flag = r.Travel(depot, to);
-    i++;
-    if (i == stop) {
-        flag = r.Travel(to, depot);
-        if (flag)
-            return stop;
+    Map::const_iterator index = i;
+    Map::const_iterator end = distances.cend();
+    end--;
+    Map::const_iterator last = end;
+    end = distances.cend();
+    Map::const_iterator fallback = index;
+    to = index->second;
+    if (!r.Travel(depot, to)) {
+        std::string s;
+        throw s = "One customer is unreachable!!!";
     }
-    while (flag) {
+    // depot, to
+    if (index != last)
+        index++;
+    /*if (index == end && to == stop->second) {
+        std::cout << to << from << stop->second <<std::endl;
+        index = distances.begin();
+    }*/
+    while (index != stop && !distances.empty()) {
         from = to;
-        if (i == distances.cend())
-            i = distances.begin();
-        to = i->second;
-        fallback = i;
-        i++;
-        flag = r.Travel(from, to);
-        if (flag && to == stop->second) {
-            flag = r.Travel(from, depot);
-            if (!flag) {
-                int diff = r.ReplaceLastWithDepot(from, depot);
-                while(diff > 0) {
-                    diff--;
-                    fallback--;
-                }
+        fallback = index;
+        to = index->second;
+        index++;
+        // il problema è qui: quando ho end() devo andare con to in v2,
+        // ma v2 è lo stop quindi devo chiudere la route
+
+        // ho from == to == v10 (end)
+        if (index == distances.cend()) {
+            --index;
+            to = index->second;
+            if (!r.Travel(from, to)) {
+                r.CloseTravel(from);
+                std::cout << "UNO " << from << to << fallback->second << std::endl;
+                break;
+            } else {
+                index = distances.begin();
             }
+        } else {
+            if (!r.Travel(from, to)) {
+                r.CloseTravel(from);
+                if (stop != distances.cbegin())
+                    stop--;
+                if (stop->second == to) {
+                    // cannot insert the last customer, need to a new route
+                    distances.clear();
+                    Map::iterator last = distances.insert({0, to});
+                    stop = last;
+                    std::cout << "NON INSERITO2 " << from << to << std::endl;
+                    return stop;
+                }
+                break;
+            }else {
+                // se inserito e
+                std::cout << to << from << stop->second <<std::endl;
+                if (stop != distances.cbegin())
+                    stop--;
+                if (stop == fallback) {
+                    std::cout << "FERMO2 " << to << from << stop->second <<std::endl;
+                    if (!r.CloseTravel(to, depot)) {
+                        std::cout << "ONONONONON" << std::endl;
+                    }else {
+                        distances.clear();
+                    }
+                }
+                stop++;
+                //std::cout << "INSERITO " << from << to;
+            }
+            //std::cout << " " << index->second << fallback->second << std::endl;
         }
     }
     return fallback;
