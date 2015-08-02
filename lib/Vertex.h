@@ -1,11 +1,9 @@
 #ifndef Vertex_H
 #define Vertex_H
 
-#include <iterator>
 #include <map>
 #include <vector>
 #include "Edge.h"
-#include "../actor/Customer.h"
 
 class Vertex {
 public:

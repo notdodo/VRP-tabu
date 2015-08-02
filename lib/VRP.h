@@ -1,7 +1,6 @@
 #ifndef VRP_H
 #define VRP_H
 
-#include <iostream>
 #include "Graph.h"
 #include "Route.h"
 
@@ -18,7 +17,7 @@ private:
     Map::const_iterator InsertStep(Customer, Map::iterator, Map::const_iterator, Route &, Map &);
 public:
     VRP() {}
-    VRP(Graph g, const int n, const int v, const int c, const int t);
+    VRP(const Graph g, const int n, const int v, const int c, const int t);
     void InitSolutions();
     ~VRP();
 };

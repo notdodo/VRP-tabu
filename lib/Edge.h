@@ -1,6 +1,8 @@
 #ifndef Edge_H
 #define Edge_H
 
+#include "Customer.h"
+
 class Edge {
 public:
     // Only class Vertex can create an object Edge

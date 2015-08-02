@@ -1,15 +1,15 @@
 #ifndef Utils_H
 #define Utils_H
 
+#include <iostream>
+#include <regex>
+#include <vector>
+#include <cstdlib>
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/filewritestream.h"
 #include "rapidjson/document.h"     // rapidjson's DOM-style API
 #include "rapidjson/prettywriter.h" // for stringify JSON PrettyWriter
 #include "rapidjson/error/en.h"
-#include <iostream>
-#include <regex>
-#include <vector>
-#include <cstdlib>
 #include "VRP.h"
 
 class Utils {
@@ -35,6 +35,5 @@ public:
     FILE* SaveResult(void);
     void logger(std::string s, int code) const;
 };
-
 
 #endif /* Utils_H */

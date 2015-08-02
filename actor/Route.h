@@ -1,9 +1,8 @@
 #ifndef Route_H
 #define Route_H
 
-#include "Customer.h"
-#include "Graph.h"
 #include <list>
+#include "Graph.h"
 
 typedef std::pair<Customer, int> StepType;
 

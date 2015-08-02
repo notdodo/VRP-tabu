@@ -1,7 +1,7 @@
 #include "VRP.h"
 
 /* constructor */
-VRP::VRP(Graph g, int n, int v, int c, int t) {
+VRP::VRP(const Graph g, int n, int v, int c, int t) {
     this->graph = g;
     this->numVertices = n;
     this->vehicles = v;

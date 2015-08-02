@@ -1,8 +1,8 @@
 #ifndef Controller_H
 #define Controller_H
 
-#include "../lib/Utils.h"
-#include <iostream>
+#include "Utils.h"
+#include "VRP.h"
 
 class Controller {
 private:
