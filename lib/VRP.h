@@ -18,7 +18,14 @@ private:
 public:
     VRP() {}
     VRP(const Graph g, const int n, const int v, const int c, const int t);
-    void InitSolutions();
+    // create the initial routes
+    int InitSolutions();
+    // return the routes
+    std::list<Route>* GetRoutes();
+    // order route by fitness
+    std::list<Route> OrderFitness();
+    // opt10
+    void Opt10();
     ~VRP();
 };
 
