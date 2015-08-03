@@ -6,10 +6,19 @@
 
 class Controller {
 private:
-    VRP v;
+    VRP *v;
+    Controller() {}
+    Controller(Controller const&) = delete;
+    void operator=(Controller const&) = delete;
+protected:
+    void PrintRoutes();
 public:
-    Controller();
+    static Controller& Instance() {
+        static Controller instance;
+        return instance;
+    }
     void Init(char **argv);
+    Utils& GetUtils() const;
 };
 
 #endif /* Controller_H */
