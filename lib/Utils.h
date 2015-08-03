@@ -30,10 +30,22 @@ public:
     static const int ERROR = 1;
     static const int WARNING = 2;
     static const int SUCCESS = 0;
-    bool ParseInt (std::string a);
-    VRP InitParameters (char **argv);
+    VRP* InitParameters (char **);
     FILE* SaveResult(void);
-    void logger(std::string s, int code) const;
+    template <typename T>
+    void logger(T s, int c) const {
+        switch(c) {
+            case SUCCESS:
+                std::cout << ANSI_GREEN << s << ANSI_RESET << std::endl;
+            break;
+            case WARNING:
+                std::cout << ANSI_YELLOW << s << ANSI_RESET << std::endl;
+            break;
+            case ERROR:
+                std::cout << ANSI_RED << s << ANSI_RESET << std::endl;
+            break;
+        }
+    }
 };
 
 #endif /* Utils_H */

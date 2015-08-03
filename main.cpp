@@ -31,8 +31,8 @@ int main(int argc, char** argv) {
     /*prova p;
     int n = 40;
     hread t(&prova::ciao, &p, n);*/
-    std::cout << std::endl;
-    Controller c;
+    chrono::high_resolution_clock::time_point t1 = chrono::high_resolution_clock::now();
+    Controller &c = Controller::Instance();
     Utils &u = Utils::Instance();
     if (argc == 2) {
         try {
@@ -44,6 +44,10 @@ int main(int argc, char** argv) {
         u.logger("Usage: ./VRP data.json", u.ERROR);
     /*t.join();
     cout << p.get() << endl;*/
+    chrono::high_resolution_clock::time_point t2 = chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
+
+    cout << duration << " microseconds" << std::endl;
     return 0;
 }
 

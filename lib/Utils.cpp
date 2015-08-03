@@ -1,10 +1,10 @@
 #include "Utils.h"
 
-/* parse the json file */
-VRP Utils::InitParameters(char **argv) {
+/* parse the json file and create all the parameters */
+VRP* Utils::InitParameters(char **argv) {
     /* error string */
     std::string s;
-    VRP v;
+    VRP *v;
     Graph g;
     /* open the file */
     FILE* fp = fopen(argv[1], "r");
@@ -12,7 +12,7 @@ VRP Utils::InitParameters(char **argv) {
         s = "The file " + std::string(argv[1]) +  " doesn't exist.";
         throw s;
     }else {
-        /* little buf more fread, big buff less fread big access time */
+        /* little buffer more fread, big buffer less fread() big access time */
         char readBuffer[65536];
         rapidjson::FileReadStream is(fp, readBuffer, sizeof(readBuffer));
         this->d.ParseStream(is);
@@ -44,8 +44,8 @@ VRP Utils::InitParameters(char **argv) {
                         y = this->d["vertices"][i]["y"].GetInt();
                         request = this->d["vertices"][i]["request"].GetInt();
                         serviceTime = this->d["vertices"][i]["time"].GetInt();
+
                         customers[i] = Customer(n, x, y, request, serviceTime);
-                        /* add vertex */
                         g.InsertVertex(customers[i]);
                 }else {
                     throw s;
@@ -56,7 +56,7 @@ VRP Utils::InitParameters(char **argv) {
             int from, to, value;
             for (int i = 0; i < numCosts; i++) {
                 for (int j = 0; j < numCosts-1; j++) {
-                    /* start, end, ammount */
+                    /* start, end, cost */
                     from = this->d["costs"][i][j]["from"].GetInt();
                     to = this->d["costs"][i][j]["to"].GetInt();
                     value = this->d["costs"][i][j]["value"].GetInt();
@@ -68,7 +68,7 @@ VRP Utils::InitParameters(char **argv) {
             if (this->d["vehicles"].IsInt() &&
                 this->d["capacity"].IsInt() && this->d["worktime"].IsInt()) {
                 /* creating the VRP */
-                VRP v(g,
+                v = new VRP(g,
                       numVertices,
                       this->d["vehicles"].GetInt(),
                       this->d["capacity"].GetInt(),
@@ -105,19 +105,4 @@ FILE* Utils::SaveResult() {
         throw "Error writing file! (Bad permissions)\n";
     }
     return fp;
-}
-
-/* pretty print for logging */
-void Utils::logger(std::string s, int c) const {
-    switch(c) {
-        case SUCCESS:
-            std::cout << ANSI_GREEN << s << ANSI_RESET << std::endl;
-        break;
-        case WARNING:
-            std::cout << ANSI_YELLOW << s << ANSI_RESET << std::endl;
-        break;
-        case ERROR:
-            std::cout << ANSI_RED << s << ANSI_RESET << std::endl;
-        break;
-    }
 }
