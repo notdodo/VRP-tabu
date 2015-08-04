@@ -26,13 +26,10 @@ int VRP::InitSolutions() {
     dist.erase(dist.begin());
     /* choosing a random customer, from 0 to numVertices-1 */
     start = rand() % (this->numVertices-1);
+    std::cout << start << std::endl;
     it = dist.begin();
-    std::advance(it, start);
     // getting the index (customer) to start with
-    /*while(j != start) {
-        *it++;
-        j++;
-    }*/
+    std::advance(it, start);
     int j = 1;
     // preparing the route
     Route r(this->capacity, this->workTime, this->graph);
@@ -58,11 +55,6 @@ int VRP::InitSolutions() {
         // counting the vehicles
         j++;
     }
-    /*for (int i = j; i < this->vehicles; i++) {
-        Route empty(this->capacity, this->workTime, this->graph);
-        empty.EmptyRoute(depot);
-        this->routes.push_back(empty);
-    }*/
     if (j < this->vehicles)
         j = -1;
     else if (j == this->vehicles && dist.size() == 0)
@@ -109,8 +101,11 @@ Map::const_iterator VRP::InsertStep(Customer depot, Map::iterator stop, Map::con
             to = index->second;
             // if cannot add the customer, close the route and return
             if (!r.Travel(from, to)) {
+                std::cout << "Close travel " << from << to << fallback->second << stop->second << std::endl;
                 r.CloseTravel(from);
+                return fallback;
             } else {
+                std::cout << from << fallback->second << stop->second << std::endl;
                 // otherwise index move to the next customer (the first one)
                 index = distances.begin();
             }
@@ -119,7 +114,7 @@ Map::const_iterator VRP::InsertStep(Customer depot, Map::iterator stop, Map::con
                 r.CloseTravel(from);
                 // the route is close but, if the last customer to serve is the last one return it
                 if (stop != distances.cbegin())
-                    stop--;
+                    std::advance(stop, -1);
                 if (stop->second == to) {
                     // cannot insert the last customer, need to create a new route, only for it
                     distances.clear();
@@ -131,14 +126,14 @@ Map::const_iterator VRP::InsertStep(Customer depot, Map::iterator stop, Map::con
             }else {
                 // the customer is inserted
                 if (stop != distances.cbegin())
-                    stop--;
+                    std::advance(stop, -1);
                 // but if remain only one customer to serve, serve it
                 if (stop == fallback) {
                     if (r.CloseTravel(to, depot)) {
                         distances.clear();
                     }
                 } else {
-                    stop++;
+                    std::advance(stop, 1);
                 }
             }
         }
@@ -173,6 +168,7 @@ void VRP::Opt10() {
             RouteElem::iterator it = route->begin();
             // it is the customer to move
             std::advance(it, index);
+            // pick up a route, different from this
         }
     }
 }
