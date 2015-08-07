@@ -20,15 +20,25 @@ private:
         }
         return out;
     }
+    // overriding =
+    Route& operator=(const Route &r) {
+        this->capacity = r.capacity;
+        this->workTime = r.workTime;
+        this->totalCost = r.totalCost;
+        this->fitness = r.fitness;
+        this->route = r.route;
+        return *this;
+    }
     int initialCapacity;
     int capacity;
     int initialWorkTime;
     int workTime;
-    int totalCapacity;
     int totalTime;
     int totalCost;
     // cost of traveling
     const float TRAVEL_COST = 0.3;
+    const float cWeight = 6.0f;
+    const float tWeight = 8.0f;
     Graph graph;
 protected:
     std::list<StepType> route;
@@ -41,6 +51,7 @@ public:
     // add the travel from the first customer to the second, then to the depot
     bool CloseTravel(const Customer, const Customer);
     void PrintRoute();
+    void PrintRoute(std::list<StepType>);
     // insert the travel from customer A to B, if possibile
     bool Travel(const Customer, const Customer);
     // create an empty route
@@ -48,7 +59,9 @@ public:
     void SetFitness();
     int size() const;
     std::list<StepType>* GetRoute();
-    bool MoveCustomer(const Customer);
+    std::list<StepType> CopyRoute();
+    bool AddElem(const Customer);
+    void RemoveCustomer(std::list<StepType>::iterator &);
 };
 
 #endif /* Route_H */

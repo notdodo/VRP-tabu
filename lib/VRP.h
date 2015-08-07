@@ -5,6 +5,7 @@
 #include "Route.h"
 
 typedef std::multimap<int, Customer> Map;
+typedef std::list<std::pair<Customer, int>> RouteList;
 
 class VRP {
 private:
@@ -23,9 +24,10 @@ public:
     // return the routes
     std::list<Route>* GetRoutes();
     // order route by fitness
-    std::list<Route> OrderFitness();
+    void OrderFitness();
     // opt10
     void Opt10();
+    bool Move1FromTo(Route &, Route &);
     ~VRP();
 };
 

@@ -18,7 +18,6 @@ void Controller::Init(char **argv) {
             throw std::string("You need more vehicles");
         break;
     }
-    this->v->Opt10();
 }
 
 Utils& Controller::GetUtils() const {

@@ -61,7 +61,6 @@ int VRP::InitSolutions() {
         j = 0;
     else
         j = 1;
-    for (auto &e: this->routes) e.PrintRoute();
     return j;
 }
 
@@ -101,11 +100,9 @@ Map::const_iterator VRP::InsertStep(Customer depot, Map::iterator stop, Map::con
             to = index->second;
             // if cannot add the customer, close the route and return
             if (!r.Travel(from, to)) {
-                std::cout << "Close travel " << from << to << fallback->second << stop->second << std::endl;
                 r.CloseTravel(from);
                 return fallback;
             } else {
-                std::cout << from << fallback->second << stop->second << std::endl;
                 // otherwise index move to the next customer (the first one)
                 index = distances.begin();
             }
@@ -147,30 +144,44 @@ std::list<Route>* VRP::GetRoutes() {
 }
 
 // sort routes by fitness (descending order)
-std::list<Route> VRP::OrderFitness() {
+void VRP::OrderFitness() {
     std::list<Route> ordered = this->routes;
-    ordered.sort([](Route const &lhs, Route const &rhs) {
+    this->routes.sort([](Route const &lhs, Route const &rhs) {
         return lhs.fitness > rhs.fitness;
     });
-    return ordered;
 }
 
 // move a Customer from a route to another
 void VRP::Opt10() {
-    typedef std::list<std::pair<Customer, int>> RouteElem;
-    std::list<Route> ordered = this->OrderFitness();
-    for (Route &e : ordered) {
+    std::list<Route>::iterator i = this->routes.begin();
+    bool ret;
+    for (; i != this->routes.cend(); i++) {
         // depot -> customer -> depot, no Opt10
-        if (e.size() > 3) {
-            // choose an element of the route, no first, no last
-            int index =  rand() % (e.size() - 2) + 1;
-            RouteElem *route = e.GetRoute();
-            RouteElem::iterator it = route->begin();
-            // it is the customer to move
-            std::advance(it, index);
-            // pick up a route, different from this
+        if (i->size() > 3) {
+            auto from = i;
+            std::advance(i, 1);
+            if (i == this->routes.cend()) break;
+            // avoid to move the customer inserted
+            ret = Move1FromTo(*from, *i);
+            if (ret)
+                std::advance(i, 1);
         }
     }
+}
+
+bool VRP::Move1FromTo(Route &r1, Route &r2) {
+    // no first, no last (no depot)
+    bool ret;
+    int index = rand() % (r1.size() - 2) + 1;
+    RouteList *from = r1.GetRoute();
+    RouteList::iterator it = from->begin();
+    std::advance(it, index);
+    Customer f = it->first;
+    ret = r2.AddElem(f);
+    if (ret) {
+        r1.RemoveCustomer(it);
+    }
+    return ret;
 }
 
 /* destructor */
