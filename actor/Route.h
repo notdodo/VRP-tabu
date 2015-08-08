@@ -12,9 +12,10 @@ private:
     friend std::ostream& operator<<(std::ostream& out, const Route &r) {
         if (r.route.size() > 1) {
             std::flush(std::cout);
+            out << "Fit: " << std::to_string(r.fitness) << " ";
             for (auto i : r.route)
                 if (i.second > 0)
-                    out << i.first << " -(" << i.second << ")-> ";
+                    out << i.first << " -(" << std::to_string(i.second) << ")-> ";
                 else
                     out << i.first;
         }
@@ -27,23 +28,26 @@ private:
         this->totalCost = r.totalCost;
         this->fitness = r.fitness;
         this->route = r.route;
+        this->initialCapacity = r.initialCapacity;
+        this->initialWorkTime = r.initialWorkTime;
+        this->graph = r.graph;
         return *this;
     }
     int initialCapacity;
-    int capacity;
     int initialWorkTime;
+    // capacity adn workTime remain
+    int capacity;
     int workTime;
-    int totalTime;
     int totalCost;
     // cost of traveling
     const float TRAVEL_COST = 0.3;
-    const float cWeight = 6.0f;
-    const float tWeight = 8.0f;
+    const double cWeight = 6;
+    const double tWeight = 8;
     Graph graph;
 protected:
     std::list<StepType> route;
 public:
-    float fitness;
+    double fitness;
     /* constructor */
     Route(int, int, const Graph);
     // add the travel from the customer to the depot
@@ -62,6 +66,7 @@ public:
     std::list<StepType> CopyRoute();
     bool AddElem(const Customer);
     void RemoveCustomer(std::list<StepType>::iterator &);
+    void RemoveCustomer(const Customer);
 };
 
 #endif /* Route_H */
