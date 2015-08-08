@@ -26,6 +26,7 @@ int VRP::InitSolutions() {
     dist.erase(dist.begin());
     /* choosing a random customer, from 0 to numVertices-1 */
     start = rand() % (this->numVertices-1);
+    start = 16;
     std::cout << start << std::endl;
     it = dist.begin();
     // getting the index (customer) to start with
@@ -50,7 +51,7 @@ int VRP::InitSolutions() {
         }else {
             m = this->InsertStep(depot, it, m, v, dist);
         }
-        r.SetFitness();
+        v.SetFitness();
         this->routes.push_back(v);
         // counting the vehicles
         j++;
@@ -145,7 +146,6 @@ std::list<Route>* VRP::GetRoutes() {
 
 // sort routes by fitness (descending order)
 void VRP::OrderFitness() {
-    std::list<Route> ordered = this->routes;
     this->routes.sort([](Route const &lhs, Route const &rhs) {
         return lhs.fitness > rhs.fitness;
     });
@@ -170,8 +170,8 @@ void VRP::Opt10() {
 }
 
 bool VRP::Move1FromTo(Route &r1, Route &r2) {
-    // no first, no last (no depot)
     bool ret;
+    // no first, no last (no depot)
     int index = rand() % (r1.size() - 2) + 1;
     RouteList *from = r1.GetRoute();
     RouteList::iterator it = from->begin();
@@ -180,6 +180,49 @@ bool VRP::Move1FromTo(Route &r1, Route &r2) {
     ret = r2.AddElem(f);
     if (ret) {
         r1.RemoveCustomer(it);
+    }
+    return ret;
+}
+
+// swap two customers of two different routes
+void VRP::Opt11() {
+    std::list<Route>::iterator i = this->routes.begin();
+    bool ret;
+    for (; i != this->routes.cend(); i++) {
+        auto from = i;
+        std::advance(i, 1);
+        if (i == this->routes.cend()) break;
+        // avoid to move the customer inserted
+        ret = SwapFromTo(*from, *i);
+        if (ret)
+            std::advance(i, 1);
+    }
+}
+// pick a customer from r1 and r2 and swap them
+bool VRP::SwapFromTo(Route &r1, Route &r2) {
+    bool ret = false;
+    int index1 = rand() % (r1.size() - 2) + 1;
+    int index2 = rand() % (r2.size() - 2) + 1;
+    // customer from r1
+    RouteList *from = r1.GetRoute();
+    RouteList::iterator itFrom = from->begin();
+    std::advance(itFrom, index1);
+    Customer f = itFrom->first;
+    // customer from r2
+    RouteList *to = r2.GetRoute();
+    RouteList::iterator itTo = to->begin();
+    std::advance(itTo, index2);
+    Customer t = itTo->first;
+    if (r2.AddElem(f)) {
+        if (r1.AddElem(t)) {
+            // if both elements are added, remove them from the initial routes
+            r1.RemoveCustomer(f);
+            r2.RemoveCustomer(t);
+            ret = true;
+        }else {
+            // if 't' is not added, revert
+            r2.RemoveCustomer(f);
+        }
     }
     return ret;
 }

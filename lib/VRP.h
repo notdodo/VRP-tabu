@@ -28,6 +28,8 @@ public:
     // opt10
     void Opt10();
     bool Move1FromTo(Route &, Route &);
+    void Opt11();
+    bool SwapFromTo(Route &, Route &);
     ~VRP();
 };
 
