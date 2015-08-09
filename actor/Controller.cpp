@@ -27,7 +27,10 @@ Utils& Controller::GetUtils() const {
 void Controller::PrintRoutes() {
     Utils &u = this->GetUtils();
     std::list<Route> *e = this->v->GetRoutes();
-    for (auto &i : *e) {
-        u.logger(i, u.SUCCESS);
+    for (auto i = e->begin(); i != e->cend(); i++) {
+        u.logger(*i);
+        std::advance(i, 1);
+        if (i == e->cend()) break;
+        u.logger(*i, u.SUCCESS);
     }
 }
