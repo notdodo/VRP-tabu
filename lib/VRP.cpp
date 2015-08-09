@@ -26,7 +26,6 @@ int VRP::InitSolutions() {
     dist.erase(dist.begin());
     /* choosing a random customer, from 0 to numVertices-1 */
     start = rand() % (this->numVertices-1);
-    start = 16;
     std::cout << start << std::endl;
     it = dist.begin();
     // getting the index (customer) to start with
@@ -170,16 +169,16 @@ void VRP::Opt10() {
 }
 
 bool VRP::Move1FromTo(Route &r1, Route &r2) {
-    bool ret;
+    bool ret = false;
     // no first, no last (no depot)
     int index = rand() % (r1.size() - 2) + 1;
     RouteList *from = r1.GetRoute();
     RouteList::iterator it = from->begin();
     std::advance(it, index);
     Customer f = it->first;
-    ret = r2.AddElem(f);
-    if (ret) {
+    if (r2.AddElem(f)) {
         r1.RemoveCustomer(it);
+        ret = true;
     }
     return ret;
 }
@@ -198,6 +197,7 @@ void VRP::Opt11() {
             std::advance(i, 1);
     }
 }
+
 // pick a customer from r1 and r2 and swap them
 bool VRP::SwapFromTo(Route &r1, Route &r2) {
     bool ret = false;
@@ -213,18 +213,51 @@ bool VRP::SwapFromTo(Route &r1, Route &r2) {
     RouteList::iterator itTo = to->begin();
     std::advance(itTo, index2);
     Customer t = itTo->first;
-    if (r2.AddElem(f)) {
-        if (r1.AddElem(t)) {
-            // if both elements are added, remove them from the initial routes
-            r1.RemoveCustomer(f);
-            r2.RemoveCustomer(t);
+    if (r2.AddElem(f, t)) {
+        if (r1.AddElem(t, f))
             ret = true;
-        }else {
-            // if 't' is not added, revert
+        else
             r2.RemoveCustomer(f);
-        }
     }
     return ret;
+}
+
+void VRP::Opt21() {
+    std::list<Route>::iterator i = this->routes.begin();
+    bool ret;
+    for (; i != this->routes.cend(); i++) {
+        auto from = i;
+        std::advance(i, 1);
+        if (i == this->routes.cend()) break;
+        // if 'from' route has two or more customers
+        if ((*from).size() > 4) {
+            ret = SwapFromTo(*from, *i);
+            if (ret) ret = Move1FromTo(*from, *i);
+        }else {
+            std::advance(i, 1);
+        }
+        if (ret)
+            std::advance(i, 1);
+    }
+}
+
+void VRP::Opt22() {
+    std::list<Route>::iterator i = this->routes.begin();
+    bool ret;
+    for (; i != this->routes.cend(); i++) {
+        auto from = i;
+        std::advance(i, 1);
+        if (i == this->routes.cend()) break;
+        // if 'from' route has two or more customers
+        if ((*from).size() > 4) {
+            ret = SwapFromTo(*from, *i);
+            if (ret) ret = SwapFromTo(*from, *i);
+        }else {
+            std::advance(i, 1);
+        }
+        if (ret)
+            std::advance(i, 1);
+    }
 }
 
 /* destructor */
