@@ -136,8 +136,7 @@ bool Route::AddElem(const Customer c) {
     Customer depot = this->GetRoute()->front().first;
     // copy of the route, fallback
     Route r = *this;
-    std::list<std::pair<Customer, int>> *newRoute = r.GetRoute();
-    std::list<std::pair<Customer, int>>::iterator it = newRoute->begin();
+    std::list<std::pair<Customer, int>>::iterator it = r.route.begin();
     int iter = 0;
     capac = this->capacity - c.request;
     // if can add the customer, try all position, return the best
@@ -146,8 +145,7 @@ bool Route::AddElem(const Customer c) {
         // init variables
         workT = this->workTime - c.serviceTime;
         tCost = this->totalCost;
-        newRoute = r.GetRoute();
-        it = newRoute->begin();
+        it = r.route.begin();
         std::advance(it, iter);
         Customer before = it->first;
         travelCost = this->graph.GetCosts(before, c).second;
@@ -172,17 +170,14 @@ bool Route::AddElem(const Customer c) {
             r.totalCost = tCost;
             r.capacity = capac;
             r.workTime = workT;
-            newRoute->insert(it, {c, costNext});
+            r.route.insert(it, {c, costNext});
             // calculate fitness
             r.SetFitness();
             best.insert({r.fitness, r});
         }
-
     }
     // if the route is changed return the best match
-    if (best.size() > 0) {
-        /*auto top = best.cbegin();
-        *this = top->second;*/
+    if (best.size() > 0 && this->fitness <= (*best.cbegin()).second.fitness) {
         *this = (*best.cbegin()).second;
         ret = true;
     }else
@@ -225,4 +220,64 @@ void Route::RemoveCustomer(const Customer c) {
             break;
         }
     }
+}
+
+bool Route::AddElem(const Customer c, const Customer rem) {
+    // in this case 'this' need to be updated
+    bool ret = false;
+    int timeNext, travelCost, costNext, tCost, workT, capac, fallbackCost;
+    // the map is sorted by fitness
+    std::map<float, Route> best;
+    Customer depot = this->GetRoute()->front().first;
+    // copy of the route, fallback
+    Route r = *this;
+    r.RemoveCustomer(rem);
+    std::list<std::pair<Customer, int>>::iterator it = r.route.begin();
+    int iter = 0;
+    capac = this->capacity - c.request;
+    // if can add the customer, try all position, return the best
+    while(capac > 0 && it != this->route.cend()) {
+        Route r = *this;
+        r.RemoveCustomer(rem);
+        // init variables
+        workT = this->workTime - c.serviceTime;
+        tCost = this->totalCost;
+        it = r.route.begin();
+        std::advance(it, iter);
+        Customer before = it->first;
+        travelCost = this->graph.GetCosts(before, c).second;
+        workT -= travelCost * this->TRAVEL_COST;
+        tCost += travelCost;
+        // update the travel cost
+        it->second = travelCost;
+        std::advance(it, 1);
+        iter++;
+        // if end of route, stop
+        if (it->first == depot) break;
+        // compute new cost and time
+        costNext = this->graph.GetCosts(c, it->first).second;
+        tCost += costNext;
+        fallbackCost = this->graph.GetCosts(before, it->first).second;
+        tCost -= fallbackCost;
+        timeNext = costNext * this->TRAVEL_COST;
+        workT -= timeNext;
+        workT += fallbackCost * this->TRAVEL_COST;
+        // if the customer is visitable add to route in position 'it'
+        if (workT > 0) {
+            r.totalCost = tCost;
+            r.capacity = capac;
+            r.workTime = workT;
+            r.route.insert(it, {c, costNext});
+            // calculate fitness
+            r.SetFitness();
+            best.insert({r.fitness, r});
+        }
+    }
+    // if the route is changed return the best match
+    if (best.size() > 0 && this->fitness <= (*best.cbegin()).second.fitness) {
+        *this = (*best.cbegin()).second;
+        ret = true;
+    }else
+        ret = false;
+    return ret;
 }
