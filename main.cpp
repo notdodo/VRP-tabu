@@ -45,9 +45,9 @@ int main(int argc, char** argv) {
     /*t.join();
     cout << p.get() << endl;*/
     chrono::high_resolution_clock::time_point t2 = chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 
-    cout << duration << " microseconds" << std::endl;
+    cout << std::to_string(duration) << " milliseconds" << std::endl;
     return 0;
 }
 
