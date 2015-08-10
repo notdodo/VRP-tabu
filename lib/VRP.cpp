@@ -241,6 +241,25 @@ void VRP::Opt21() {
     }
 }
 
+void VRP::Opt12() {
+    std::list<Route>::iterator i = this->routes.begin();
+    bool ret;
+    for (; i != this->routes.cend(); i++) {
+        auto from = i;
+        std::advance(i, 1);
+        if (i == this->routes.cend()) break;
+        // if 'from' route has two or more customers
+        if ((*from).size() > 4) {
+            ret = SwapFromTo(*from, *i);
+            if (ret) ret = Move1FromTo(*i, *from);
+        }else {
+            std::advance(i, 1);
+        }
+        if (ret)
+            std::advance(i, 1);
+    }
+}
+
 void VRP::Opt22() {
     std::list<Route>::iterator i = this->routes.begin();
     bool ret;

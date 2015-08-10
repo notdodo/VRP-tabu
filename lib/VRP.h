@@ -30,6 +30,7 @@ public:
     void Opt10();
     void Opt11();
     void Opt21();
+    void Opt12();
     void Opt22();
     ~VRP();
 };
