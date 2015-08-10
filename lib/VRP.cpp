@@ -64,6 +64,7 @@ int VRP::InitSolutions() {
     return j;
 }
 
+// starting from a customer create the route
 Map::const_iterator VRP::InsertStep(Customer depot, Map::iterator stop, Map::const_iterator i, Route &r, Map &distances) {
     Customer from, to;
     Map::const_iterator index = i;
@@ -139,6 +140,7 @@ Map::const_iterator VRP::InsertStep(Customer depot, Map::iterator stop, Map::con
     return fallback;
 }
 
+// return the pointer to the routes
 std::list<Route>* VRP::GetRoutes() {
     return &this->routes;
 }
@@ -150,7 +152,7 @@ void VRP::OrderFitness() {
     });
 }
 
-// move a Customer from a route to another
+// move a customer from a route to another
 void VRP::Opt10() {
     std::list<Route>::iterator i = this->routes.begin();
     bool ret;
@@ -168,6 +170,7 @@ void VRP::Opt10() {
     }
 }
 
+// add a random customer from a route to another
 bool VRP::Move1FromTo(Route &r1, Route &r2) {
     bool ret = false;
     // no first, no last (no depot)
@@ -177,6 +180,7 @@ bool VRP::Move1FromTo(Route &r1, Route &r2) {
     std::advance(it, index);
     Customer f = it->first;
     if (r2.AddElem(f)) {
+        // if the element is added remove the one on the first route
         r1.RemoveCustomer(it);
         ret = true;
     }
@@ -191,14 +195,14 @@ void VRP::Opt11() {
         auto from = i;
         std::advance(i, 1);
         if (i == this->routes.cend()) break;
-        // avoid to move the customer inserted
         ret = SwapFromTo(*from, *i);
+        // if inserted move to another route
         if (ret)
             std::advance(i, 1);
     }
 }
 
-// pick a customer from r1 and r2 and swap them
+// swap one random customer of the two routes
 bool VRP::SwapFromTo(Route &r1, Route &r2) {
     bool ret = false;
     int index1 = rand() % (r1.size() - 2) + 1;
@@ -213,50 +217,72 @@ bool VRP::SwapFromTo(Route &r1, Route &r2) {
     RouteList::iterator itTo = to->begin();
     std::advance(itTo, index2);
     Customer t = itTo->first;
+    // add 'f' and remove 't'
     if (r2.AddElem(f, t)) {
+        // add 't' and remove 'f'
         if (r1.AddElem(t, f))
             ret = true;
-        else
+        else {
+            // fallback to init
             r2.RemoveCustomer(f);
+        }
     }
     return ret;
 }
 
-void VRP::Opt21() {
-    std::list<Route>::iterator i = this->routes.begin();
+// opt11 and opt01
+void VRP::Opt12() {
     bool ret;
+    std::list<Route>::iterator i = this->routes.begin();
     for (; i != this->routes.cend(); i++) {
         auto from = i;
+        Route fallbackFrom = *from;
         std::advance(i, 1);
+        auto to = i;
         if (i == this->routes.cend()) break;
         // if 'from' route has two or more customers
         if ((*from).size() > 4) {
-            ret = SwapFromTo(*from, *i);
-            if (ret) ret = Move1FromTo(*from, *i);
+            Route fallbackTo = *to;
+            // swap two customer
+            ret = SwapFromTo(*from, *to);
+            // add one customer the the second route
+            if (ret)
+                ret = Move1FromTo(*from, *to);
+            else {
+                *from = fallbackFrom;
+                *to = fallbackTo;
+            }
+            if (ret) std::advance(i, 1);
         }else {
             std::advance(i, 1);
         }
-        if (ret)
-            std::advance(i, 1);
     }
 }
 
-void VRP::Opt12() {
-    std::list<Route>::iterator i = this->routes.begin();
+// opt11 and opt10
+void VRP::Opt21() {
     bool ret;
+    std::list<Route>::iterator i = this->routes.begin();
     for (; i != this->routes.cend(); i++) {
         auto from = i;
+        Route fallbackFrom = *from;
         std::advance(i, 1);
+        auto to = i;
         if (i == this->routes.cend()) break;
         // if 'from' route has two or more customers
         if ((*from).size() > 4) {
-            ret = SwapFromTo(*from, *i);
-            if (ret) ret = Move1FromTo(*i, *from);
+            Route fallbackTo = *to;
+            ret = SwapFromTo(*from, *to);
+            if (ret)
+                ret = Move1FromTo(*to, *from);
+            else {
+                *from = fallbackFrom;
+                *to = fallbackTo;
+            }
+            if (ret) std::advance(i, 1);
         }else {
             std::advance(i, 1);
         }
-        if (ret)
-            std::advance(i, 1);
     }
 }
 

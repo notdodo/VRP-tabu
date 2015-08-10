@@ -21,18 +21,6 @@ private:
         }
         return out;
     }
-    // overriding =
-    Route& operator=(const Route &r) {
-        this->capacity = r.capacity;
-        this->workTime = r.workTime;
-        this->totalCost = r.totalCost;
-        this->fitness = r.fitness;
-        this->route = r.route;
-        this->initialCapacity = r.initialCapacity;
-        this->initialWorkTime = r.initialWorkTime;
-        this->graph = r.graph;
-        return *this;
-    }
     int initialCapacity;
     int initialWorkTime;
     // capacity adn workTime remain
@@ -47,6 +35,18 @@ private:
 protected:
     std::list<StepType> route;
 public:
+    // overriding =
+    Route& operator=(const Route &r) {
+        this->capacity = r.capacity;
+        this->workTime = r.workTime;
+        this->totalCost = r.totalCost;
+        this->fitness = r.fitness;
+        this->route = r.route;
+        this->initialCapacity = r.initialCapacity;
+        this->initialWorkTime = r.initialWorkTime;
+        this->graph = r.graph;
+        return *this;
+    }
     double fitness;
     /* constructor */
     Route(int, int, const Graph);
