@@ -152,22 +152,34 @@ void VRP::OrderFitness() {
     });
 }
 
+// remove all empty route
+void VRP::CleanVoid() {
+    this->routes.remove_if([](Route r){ return r.size() < 2; });
+}
+
 // move a customer from a route to another
-void VRP::Opt10() {
+void VRP::Opt10(int s) {
     std::list<Route>::iterator i = this->routes.begin();
     bool ret;
-    for (; i != this->routes.cend(); i++) {
-        // depot -> customer -> depot, no Opt10
-        if (i->size() > 3) {
-            auto from = i;
-            std::advance(i, 1);
-            if (i == this->routes.cend()) break;
-            // avoid to move the customer inserted
+    std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
+    std::chrono::high_resolution_clock::time_point t2;
+    auto duration = 0;
+    while (duration < s) {
+        auto from = i;
+        std::advance(i, 1);
+        if (i == this->routes.cend()) i = this->routes.begin();
+        if ((*from).size() >= 3 && (*i).size() >= 3) {
             ret = Move1FromTo(*from, *i);
-            if (ret)
-                std::advance(i, 1);
+            // avoid to move the customer inserted
+            if (ret) {
+                std::advance(i, 2);
+                if (i == this->routes.cend()) i = this->routes.begin();
+            }
         }
+        t2 = std::chrono::high_resolution_clock::now();
+        duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
     }
+    this->CleanVoid();
 }
 
 // add a random customer from a route to another

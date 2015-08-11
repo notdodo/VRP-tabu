@@ -1,6 +1,8 @@
 #ifndef VRP_H
 #define VRP_H
 
+#include <chrono>
+#include <algorithm>
 #include "Graph.h"
 #include "Route.h"
 
@@ -16,18 +18,16 @@ private:
     int capacity;
     int workTime;
     Map::const_iterator InsertStep(Customer, Map::iterator, Map::const_iterator, Route &, Map &);
+    bool SwapFromTo(Route &, Route &);
+    bool Move1FromTo(Route &, Route &);
+    void CleanVoid();
 public:
     VRP() {}
     VRP(const Graph g, const int n, const int v, const int c, const int t);
-    // create the initial routes
     int InitSolutions();
-    // return the routes
     std::list<Route>* GetRoutes();
-    // order route by fitness
     void OrderFitness();
-    bool SwapFromTo(Route &, Route &);
-    bool Move1FromTo(Route &, Route &);
-    void Opt10();
+    void Opt10(int);
     void Opt11();
     void Opt21();
     void Opt12();
