@@ -1,6 +1,14 @@
 #include "VRP.h"
 
-/* constructor */
+/** @brief Constructor of VRP.
+ *
+ * This is the constructor of VRP class
+ * @param g The graph generate from the input
+ * @param n The number of Customers
+ * @param v The number of vehicles
+ * @param c The capacity of each vehicle
+ * @param t The work time of each driver
+ */
 VRP::VRP(const Graph g, const int n, const int v, const int c, const int t) {
     this->graph = g;
     this->numVertices = n;
@@ -9,8 +17,15 @@ VRP::VRP(const Graph g, const int n, const int v, const int c, const int t) {
     this->workTime = t;
 }
 
-/** get random, add customers j,j+1,..., n,1,...,j-1
-    check violations of time, capacity */
+/** @brief This function creates the routes.
+ *
+ *  This function creates the initial solution of the algorithm.
+ *  Customers are sorted in increasing order of distance from the depot.
+ *  Starting with a random customer the route is created inserting one customer
+ *  at time. Whenever the insertion of the customer would lead to a violation of
+ *  the capacity or the working time a new route is created.
+ *  @return Error or Warning code.
+ */
 int VRP::InitSolutions() {
     srand(time(NULL));
     int start;
@@ -64,7 +79,16 @@ int VRP::InitSolutions() {
     return j;
 }
 
-// starting from a customer create the route
+/** @brief This function create a route.
+ *
+ * Starting from a customer this function create the route until
+ * a constraint result invalid looping the list of sorted customers.
+ * @param depot The depot
+ * @param stop The last customer, in the list in the j-1, where j is the initial random customer
+ * @param i The customer which starts the route
+ * @param r The route to create
+ * @param distances The list of sorted customers
+ */
 Map::const_iterator VRP::InsertStep(Customer depot, Map::iterator stop, Map::const_iterator i, Route &r, Map &distances) {
     Customer from, to;
     Map::const_iterator index = i;
@@ -140,24 +164,35 @@ Map::const_iterator VRP::InsertStep(Customer depot, Map::iterator stop, Map::con
     return fallback;
 }
 
-// return the pointer to the routes
+/** @brief Return the routes.
+ *
+ * @return The pointer to the routes' list
+ */
 std::list<Route>* VRP::GetRoutes() {
     return &this->routes;
 }
 
-// sort routes by fitness (descending order)
+/** @brief Sort the list of routes by fitness.
+ *
+ * This function sort the routes by fitness in descending order.
+ */
 void VRP::OrderFitness() {
     this->routes.sort([](Route const &lhs, Route const &rhs) {
         return lhs.fitness > rhs.fitness;
     });
 }
 
-// remove all empty route
+/** @brief Remove all void routes. */
 void VRP::CleanVoid() {
     this->routes.remove_if([](Route r){ return r.size() < 2; });
 }
 
-// move a customer from a route to another
+/** @brief Move a customer from a route to another.
+ *
+ * This opt function try to move, for every route, a customer
+ * from a route to another and remove empty route.
+ * @param s Time of execution
+ */
 void VRP::Opt10(int s) {
     std::list<Route>::iterator i = this->routes.begin();
     bool ret;
@@ -182,7 +217,15 @@ void VRP::Opt10(int s) {
     this->CleanVoid();
 }
 
-// add a random customer from a route to another
+/** @brief Move a customer from a route to another.
+ *
+ * This function choose a random customer from the first route and
+ * try to inserts it to the second route. Once the customer is inserted
+ * is deleted from the first route.
+ * @param r1 Route where to choose a random customer
+ * @param r2 Route destination
+ * @return True if the customer is moved.
+ */
 bool VRP::Move1FromTo(Route &r1, Route &r2) {
     bool ret = false;
     // no first, no last (no depot)
@@ -199,7 +242,11 @@ bool VRP::Move1FromTo(Route &r1, Route &r2) {
     return ret;
 }
 
-// swap two customers of two different routes
+/** @brief Swap two customers from routes.
+ *
+ * This opt function try to swap, for every route, a random customer
+ * from a route with another random customer from the next.
+ */
 void VRP::Opt11() {
     std::list<Route>::iterator i = this->routes.begin();
     bool ret;
@@ -214,7 +261,13 @@ void VRP::Opt11() {
     }
 }
 
-// swap one random customer of the two routes
+/** @brief Swap two random customer from two routes.
+ *
+ * This function choose two random customers from two routes and tries to swap them.
+ * @param r1 First route
+ * @param r2 Second route
+ * @return True is the swap is successful
+ */
 bool VRP::SwapFromTo(Route &r1, Route &r2) {
     bool ret = false;
     int index1 = rand() % (r1.size() - 2) + 1;
@@ -253,7 +306,11 @@ bool VRP::SwapFromTo(Route &r1, Route &r2) {
     return ret;
 }
 
-// opt11 and opt01
+/** @brief This function combine Opt01 and Opt11.
+ *
+ * This function swap two customers from two routes and moves one
+ * customer from the first to the second.
+ */
 void VRP::Opt12() {
     bool ret;
     std::list<Route>::iterator i = this->routes.begin();
@@ -280,7 +337,11 @@ void VRP::Opt12() {
     }
 }
 
-// opt11 and opt10
+/** @brief This function combine Opt01 and Opt11.
+ *
+ * This function swap two customers from two routes and moves one
+ * customer from the second to the first.
+ */
 void VRP::Opt21() {
     bool ret;
     std::list<Route>::iterator i = this->routes.begin();
@@ -305,6 +366,11 @@ void VRP::Opt21() {
     }
 }
 
+/** @brief This function combine Opt01 and Opt11.
+ *
+ * This function swap two customers from the first route
+ * with two customers from the second.
+ */
 void VRP::Opt22() {
     std::list<Route>::iterator i = this->routes.begin();
     bool ret;

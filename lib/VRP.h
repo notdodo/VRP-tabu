@@ -11,12 +11,12 @@ typedef std::list<std::pair<Customer, int>> RouteList;
 
 class VRP {
 private:
-    Graph graph;
-    std::list<Route> routes;
-    int numVertices;
-    int vehicles;
-    int capacity;
-    int workTime;
+    Graph graph;                /**< Graph of customers */
+    std::list<Route> routes;    /**< List of all routes */
+    int numVertices;            /**< Number of customers */
+    int vehicles;               /**< Number of vehicles */
+    int capacity;               /**< Capacity of each vehicle */
+    int workTime;               /**< Work time for each driver */
     Map::const_iterator InsertStep(Customer, Map::iterator, Map::const_iterator, Route &, Map &);
     bool SwapFromTo(Route &, Route &);
     bool Move1FromTo(Route &, Route &);

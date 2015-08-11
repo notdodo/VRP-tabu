@@ -26,7 +26,6 @@ public:
     }
     int get() {return this->coso;}
 };*/
-
 int main(int argc, char** argv) {
     /*prova p;
     int n = 40;
