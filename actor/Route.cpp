@@ -8,6 +8,7 @@ Route::Route(int c, int wt, const Graph g) {
     this->totalCost = 0;
 }
 
+// close the route, return to depot
 void Route::CloseTravel(const Customer c) {
     Customer depot = this->route.cbegin()->first;
     int costToDepot = this->graph.GetCosts(c, depot).second;
@@ -16,6 +17,7 @@ void Route::CloseTravel(const Customer c) {
     this->route.push_back({depot, 0});
 }
 
+// close the route after adding the last customer
 bool Route::CloseTravel(const Customer from, const Customer depot) {
     bool ret = true;
     // save the route state
@@ -72,12 +74,14 @@ bool Route::Travel(const Customer from, const Customer to) {
     return ret;
 }
 
+// clear a route
 void Route::EmptyRoute(const Customer depot) {
     this->route.clear();
     this->route.push_back({depot, 0});
     this->SetFitness();
 }
 
+// print this route
 void Route::PrintRoute() {
     std::flush(std::cout);
     if (this->route.size() > 1) {
@@ -94,6 +98,7 @@ void Route::PrintRoute() {
     std::flush(std::cout);
 }
 
+// print a route
 void Route::PrintRoute(std::list<StepType> r) {
     std::flush(std::cout);
     if (r.size() > 1) {
@@ -118,10 +123,12 @@ void Route::SetFitness() {
     this->fitness = (cRate * cWeight + tRate * tWeight) / (cWeight + tWeight);
 }
 
+// return the size (lenght, numeber of customer) of the route
 int Route::size() const {
     return this->route.size();
 }
 
+// return the pointer to this route
 std::list<StepType>* Route::GetRoute() {
     return &this->route;
 }
@@ -185,6 +192,7 @@ bool Route::AddElem(const Customer c) {
     return ret;
 }
 
+// remove a customer in 'it' position from the route
 void Route::RemoveCustomer(std::list<StepType>::iterator &it) {
     Customer del = it->first;
     // delete also request and servite time
@@ -209,9 +217,13 @@ void Route::RemoveCustomer(std::list<StepType>::iterator &it) {
     // delete the customer from the route
     std::advance(it , 1);
     this->route.erase(it);
+    // if a route is empty delete it
+    if (this->route.size() <= 2)
+        this->EmptyRoute(this->route.front().first);
     this->SetFitness();
 }
 
+// remove the customer 'c' from the route
 void Route::RemoveCustomer(const Customer c) {
     std::list<StepType>::iterator it;
     for (it = this->route.begin(); it != this->route.cend(); it++) {
@@ -222,6 +234,7 @@ void Route::RemoveCustomer(const Customer c) {
     }
 }
 
+// add customer 'c' to the route and remove 'rem'
 bool Route::AddElem(const Customer c, const Customer rem) {
     // in this case 'this' need to be updated
     bool ret = false;

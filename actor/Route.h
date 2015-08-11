@@ -11,7 +11,6 @@ private:
     /* overloading << */
     friend std::ostream& operator<<(std::ostream& out, const Route &r) {
         if (r.route.size() > 1) {
-            std::flush(std::cout);
             out << "Fit: " << std::to_string(r.fitness) << " ";
             for (auto i : r.route)
                 if (i.second > 0)
@@ -48,17 +47,13 @@ public:
         return *this;
     }
     double fitness;
-    /* constructor */
+    // constructor
     Route(int, int, const Graph);
-    // add the travel from the customer to the depot
     void CloseTravel(const Customer);
-    // add the travel from the first customer to the second, then to the depot
     bool CloseTravel(const Customer, const Customer);
     void PrintRoute();
     void PrintRoute(std::list<StepType>);
-    // insert the travel from customer A to B, if possibile
     bool Travel(const Customer, const Customer);
-    // create an empty route
     void EmptyRoute(const Customer);
     void SetFitness();
     int size() const;
