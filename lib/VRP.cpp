@@ -9,8 +9,8 @@ VRP::VRP(const Graph g, const int n, const int v, const int c, const int t) {
     this->workTime = t;
 }
 
-/* get random, add customers j,j+1,..., n,1,...,j-1 */
-/* check violations of time, capacity */
+/** get random, add customers j,j+1,..., n,1,...,j-1
+    check violations of time, capacity */
 int VRP::InitSolutions() {
     srand(time(NULL));
     int start;
@@ -210,7 +210,7 @@ void VRP::Opt11() {
         ret = SwapFromTo(*from, *i);
         // if inserted move to another route
         if (ret)
-            std::advance(i, 1);
+            std::advance(i, 2);
     }
 }
 
@@ -229,14 +229,25 @@ bool VRP::SwapFromTo(Route &r1, Route &r2) {
     RouteList::iterator itTo = to->begin();
     std::advance(itTo, index2);
     Customer t = itTo->first;
-    // add 'f' and remove 't'
-    if (r2.AddElem(f, t)) {
-        // add 't' and remove 'f'
-        if (r1.AddElem(t, f))
-            ret = true;
-        else {
-            // fallback to init
-            r2.RemoveCustomer(f);
+    if (r1.size() >= 4 && r2.size() >= 4) {
+        // remove the customer from route immediatly
+        if (r2.AddElem(f, t)) {
+            if (r1.AddElem(t, f))
+                ret = true;
+            else
+                r2.RemoveCustomer(f);
+        }
+    }else { // with size<=3 deleting the single customer invalidate the route
+        // add 'f'
+        if (r2.AddElem(f)) {
+            // add 't'
+            if (r1.AddElem(t)) {
+                // remove 'f' and 't'
+                ret = true;
+                r1.RemoveCustomer(f);
+                r2.RemoveCustomer(t);
+            }else
+                r2.RemoveCustomer(f); // fallback to init
         }
     }
     return ret;
@@ -264,9 +275,7 @@ void VRP::Opt12() {
                 *from = fallbackFrom;
                 *to = fallbackTo;
             }
-            if (ret) std::advance(i, 1);
-        }else {
-            std::advance(i, 1);
+            if (ret) std::advance(i, 2);
         }
     }
 }
@@ -291,9 +300,7 @@ void VRP::Opt21() {
                 *from = fallbackFrom;
                 *to = fallbackTo;
             }
-            if (ret) std::advance(i, 1);
-        }else {
-            std::advance(i, 1);
+            if (ret) std::advance(i, 2);
         }
     }
 }
@@ -303,17 +310,21 @@ void VRP::Opt22() {
     bool ret;
     for (; i != this->routes.cend(); i++) {
         auto from = i;
+        Route fallbackFrom = *from;
         std::advance(i, 1);
-        if (i == this->routes.cend()) break;
+        auto to = i;
+        if (to == this->routes.cend()) break;
         // if 'from' route has two or more customers
         if ((*from).size() > 4) {
-            ret = SwapFromTo(*from, *i);
-            if (ret) ret = SwapFromTo(*from, *i);
-        }else {
-            std::advance(i, 1);
+            Route fallbackTo = *to;
+            ret = SwapFromTo(*from, *to);
+            if (ret) ret = SwapFromTo(*from, *to);
+            else {
+                *from = fallbackFrom;
+                *to = fallbackTo;
+            }
+            if (ret) std::advance(i, 2);
         }
-        if (ret)
-            std::advance(i, 1);
     }
 }
 

@@ -220,7 +220,8 @@ void Route::RemoveCustomer(std::list<StepType>::iterator &it) {
     // if a route is empty delete it
     if (this->route.size() <= 2)
         this->EmptyRoute(this->route.front().first);
-    this->SetFitness();
+    else
+        this->SetFitness();
 }
 
 // remove the customer 'c' from the route

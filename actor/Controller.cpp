@@ -1,7 +1,5 @@
 #include "Controller.h"
 
-/* constructor */
-
 void Controller::Init(char **argv) {
     Utils &u = this->GetUtils();
     u.logger("Initializing...", u.WARNING);
@@ -18,6 +16,12 @@ void Controller::Init(char **argv) {
             throw std::string("You need more vehicles");
         break;
     }
+    int i = 0;
+    while(i < 100) {
+        this->RunOpts(10);
+        i++;
+    }
+    this->PrintRoutes();
 }
 
 Utils& Controller::GetUtils() const {
@@ -35,4 +39,12 @@ void Controller::PrintRoutes() {
         u.logger(*i, u.SUCCESS);
     }
     std::cout << std::endl;
+}
+
+void Controller::RunOpts(int time) {
+    this->v->Opt10(time);
+    this->v->Opt11();
+    this->v->Opt12();
+    this->v->Opt22();
+    this->v->Opt21();
 }

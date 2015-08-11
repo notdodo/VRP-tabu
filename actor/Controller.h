@@ -10,6 +10,7 @@ private:
     Controller() {}
     Controller(Controller const&) = delete;
     void operator=(Controller const&) = delete;
+    void RunOpts(int);
 protected:
     void PrintRoutes();
 public:
