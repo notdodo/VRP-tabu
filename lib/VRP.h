@@ -22,8 +22,8 @@ private:
     bool Move1FromTo(Route &, Route &);
     void CleanVoid();
 public:
-    VRP() {}
-    VRP(const Graph g, const int n, const int v, const int c, const int t);
+    VRP() {} //!< constructor
+    VRP(const Graph g, const int n, const int v, const int c, const int t); //!< constructor
     int InitSolutions();
     std::list<Route>* GetRoutes();
     void OrderFitness();
@@ -32,7 +32,7 @@ public:
     void Opt21();
     void Opt12();
     void Opt22();
-    ~VRP();
+    ~VRP(); //!< destructor
 };
 
 #endif /* VRP_H */

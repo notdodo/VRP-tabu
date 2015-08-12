@@ -14,7 +14,7 @@ public:
         friend class Graph;
     };
 
-    Vertex(const ConstructionToken &);
+    Vertex(const ConstructionToken &);          //!< constructor
 
     const std::vector<Customer> copy_edges() const;
     void InsertEdge(const Customer &, const int &);
@@ -22,8 +22,9 @@ public:
     const int GetWeight(const Customer &) const;
     const std::map<Customer, Edge> GetEdges() const;
 private:
-    std::map<Customer, Edge> edges;
+    std::map<Customer, Edge> edges;             /**< List of all the edges from customer */
 
+    /** @brief Overriding of '<<' operator */
     friend std::ostream& operator<<(std::ostream& out, const Vertex& v) {
         for(auto& e : v.edges)
             std::cout << e.second.weight << " ";

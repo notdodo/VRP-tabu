@@ -1,6 +1,11 @@
 #include "Route.h"
 
-/* constructor */
+/** @brief Constructor of Route.
+ *
+ * @param c Initial capacity of the vehicle
+ * @param wt Initial work time of the driver
+ * @param g Graph of the customers
+ */
 Route::Route(int c, int wt, const Graph g) {
     this->initialCapacity = this->capacity = c;
     this->initialWorkTime = this->workTime = wt;
@@ -8,7 +13,12 @@ Route::Route(int c, int wt, const Graph g) {
     this->totalCost = 0;
 }
 
-// close the route, return to depot
+/** @brief Close a route.
+ *
+ * Whenever the capacity or the work time are inadequate
+ * close the route: return to depot.
+ * @param c Last customer to visit
+ */
 void Route::CloseTravel(const Customer c) {
     Customer depot = this->route.cbegin()->first;
     int costToDepot = this->graph.GetCosts(c, depot).second;
@@ -17,7 +27,13 @@ void Route::CloseTravel(const Customer c) {
     this->route.push_back({depot, 0});
 }
 
-// close the route after adding the last customer
+/** @brief Close a route with the last customer.
+ *
+ * When remaining only one customer to visit, visit it then return to depot.
+ * @param from The last customer to visit
+ * @param depot The depot
+ * @return True if the customer is visitable
+ */
 bool Route::CloseTravel(const Customer from, const Customer depot) {
     bool ret = true;
     // save the route state
@@ -39,6 +55,15 @@ bool Route::CloseTravel(const Customer from, const Customer depot) {
     return ret;
 }
 
+/** @brief Travel from one customer to another
+ *
+ *  Check if is possibile to travel from a customer to another
+ *  observing the constraint of capacity and time, if possibile add the
+ *  travel to the route
+ *  @param from The source customer
+ *  @param to The destination customer
+ *  @return True if the travel is added to the route
+ */
 bool Route::Travel(const Customer from, const Customer to) {
     Customer depot;
     bool ret = true;
@@ -74,14 +99,14 @@ bool Route::Travel(const Customer from, const Customer to) {
     return ret;
 }
 
-// clear a route
+/** @brief Clear a route. */
 void Route::EmptyRoute(const Customer depot) {
     this->route.clear();
     this->route.push_back({depot, 0});
     this->SetFitness();
 }
 
-// print this route
+/** @brief Print this route. */
 void Route::PrintRoute() {
     std::flush(std::cout);
     if (this->route.size() > 1) {
@@ -98,7 +123,10 @@ void Route::PrintRoute() {
     std::flush(std::cout);
 }
 
-// print a route
+/** @brief Print a route.
+ *
+ * @param r The route to print
+ */
 void Route::PrintRoute(std::list<StepType> r) {
     std::flush(std::cout);
     if (r.size() > 1) {
@@ -115,7 +143,10 @@ void Route::PrintRoute(std::list<StepType> r) {
     std::flush(std::cout);
 }
 
-// how good is a route
+/** @brief Estimate the goodness of a route.
+ *
+ * Compute the percent weighted arithmeic mean of a route.
+ */
 void Route::SetFitness() {
     // route with 1, is perfect
     float cRate = 1 - (float)this->capacity / (float)this->initialCapacity;
@@ -123,17 +154,23 @@ void Route::SetFitness() {
     this->fitness = (cRate * cWeight + tRate * tWeight) / (cWeight + tWeight);
 }
 
-// return the size (lenght, numeber of customer) of the route
+/** @brief Return the size (number of customers) of a route. */
 int Route::size() const {
     return this->route.size();
 }
 
-// return the pointer to this route
+/** @brief Get the pointer to this route. */
 std::list<StepType>* Route::GetRoute() {
     return &this->route;
 }
 
-// Try to add a Customer to a route, return the best match
+/** @brief Add a customer to this route.
+ *
+ * This function add a customer in the best position of a route respecting
+ * the constraints: add the customer in each possible position, then execute
+ * the best insertion.
+ * @param c The customer to insert
+ */
 bool Route::AddElem(const Customer c) {
     // in this case 'this' need to be updated
     bool ret = false;
@@ -192,7 +229,11 @@ bool Route::AddElem(const Customer c) {
     return ret;
 }
 
-// remove a customer in 'it' position from the route
+/** @brief Remove a customer from a route.
+ *
+ * Remove a customer in a position in the route.
+ * @param it The position of the customer to remove
+ */
 void Route::RemoveCustomer(std::list<StepType>::iterator &it) {
     Customer del = it->first;
     // delete also request and servite time
@@ -224,7 +265,11 @@ void Route::RemoveCustomer(std::list<StepType>::iterator &it) {
         this->SetFitness();
 }
 
-// remove the customer 'c' from the route
+/** @brief Remove a customer.
+ *
+ * Find and remove a customer from the route.
+ * @param c The customer to remove
+ */
 void Route::RemoveCustomer(const Customer c) {
     std::list<StepType>::iterator it;
     for (it = this->route.begin(); it != this->route.cend(); it++) {
@@ -235,7 +280,13 @@ void Route::RemoveCustomer(const Customer c) {
     }
 }
 
-// add customer 'c' to the route and remove 'rem'
+/** @brief Add a customer and remove another.
+ *
+ *  Same as  Route::AddElem(const Customer c) but this function
+ *  remove a customer before trying to add the customer.
+ *  @param c Customer to add
+ *  @param rem Customer to remove
+ */
 bool Route::AddElem(const Customer c, const Customer rem) {
     // in this case 'this' need to be updated
     bool ret = false;

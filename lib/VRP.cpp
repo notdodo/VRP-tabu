@@ -2,7 +2,6 @@
 
 /** @brief Constructor of VRP.
  *
- * This is the constructor of VRP class
  * @param g The graph generate from the input
  * @param n The number of Customers
  * @param v The number of vehicles
@@ -79,15 +78,15 @@ int VRP::InitSolutions() {
     return j;
 }
 
-/** @brief This function create a route.
+/** @brief This function creates a route.
  *
- * Starting from a customer this function create the route until
+ * Starting from a customer this function creates the route until
  * a constraint result invalid looping the list of sorted customers.
  * @param depot The depot
  * @param stop The last customer, in the list in the j-1, where j is the initial random customer
  * @param i The customer which starts the route
  * @param r The route to create
- * @param distances The list of sorted customers
+ * @param distances The sorted list of customers
  */
 Map::const_iterator VRP::InsertStep(Customer depot, Map::iterator stop, Map::const_iterator i, Route &r, Map &distances) {
     Customer from, to;
@@ -368,7 +367,7 @@ void VRP::Opt21() {
 
 /** @brief This function combine Opt01 and Opt11.
  *
- * This function swap two customers from the first route
+ * This function swaps two customers from the first route
  * with two customers from the second.
  */
 void VRP::Opt22() {

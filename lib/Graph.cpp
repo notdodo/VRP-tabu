@@ -1,16 +1,34 @@
 #include "Graph.h"
 
+/** @brief Insert a vertex.
+ *
+ * Create and insert a vertex in the graph.
+ * @param cust The customer who form the vertex
+ */
 void Graph::InsertVertex(Customer cust) {
     Vertex::ConstructionToken c;
     Vertex v { c };
     InsertVertex(cust, v);
 }
 
+/** @brief Insert a vertex.
+ *
+ * Insert a vertex in the graph.
+ * @param c The customer who form the vertex
+ * @param v The vertex created
+ */
 void Graph::InsertVertex(Customer c, Vertex v) {
     std::pair<Customer, Vertex> temp (c, v);
     vertexes.insert(temp);
 }
 
+/** @brief Insert an Edge.
+ *
+ * Insert an edge with weight from a customer to another.
+ * @param node The starting customer
+ * @param new_edge The destination customer
+ * @param weight The weight of the edge
+ */
 void Graph::InsertEdge(Customer node, Customer new_edge, int weight) {
     auto it = vertexes.find(node);
     if (node.name != new_edge.name &&
@@ -18,16 +36,26 @@ void Graph::InsertEdge(Customer node, Customer new_edge, int weight) {
         it->second.InsertEdge(new_edge, weight);
 }
 
-
+/** @brief Remove an edge.
+ *
+ * @param node The customer which the edge start
+ * @param edge The customer which the edge finish
+ */
 void Graph::RemoveEdge(Customer node, Customer edge) {
     auto it = vertexes.find(node);
     if(it != vertexes.end())
         it->second.RemoveEdge(edge);
 }
 
+/** @brief Sort the customers by distance.
+ *
+ * This function sorts the customer by distance from the depot;
+ * the order is crescent.
+ * @return The map of customer sorted
+ */
 std::multimap<int, Customer> Graph::sortV0() {
     std::multimap<int, Customer> v;
-    /* get depot */
+    // get depot
     Customer c = vertexes.begin()->first;
     v.insert(std::pair<int, Customer>(0, c));
     Vertex it = vertexes.find(c)->second;
@@ -38,93 +66,32 @@ std::multimap<int, Customer> Graph::sortV0() {
 }
 
 /* return the weight of edges &from &to */
+/** @brief Return the weight of an edge.
+ *
+ * This function compute the cost of travelling from a customer to another.
+ * @param from The starting customer
+ * @param to The ending customer.
+ * @return The cost of the travel
+ */
 std::pair<Customer, int> Graph::GetCosts(const Customer &from, const Customer &to) {
     /* get all edges from &from */
     Vertex it = vertexes.find(from)->second;
     return {from, it.GetEdges().find(to)->second.weight};
 }
 
-std::string Graph::ToPrint() {
+/*std::string Graph::ToPrint() {
     std::string out = "";
     std::vector<Customer> end_points;
-    /* for each pair Customer-Vertex */
+    // for each pair Customer-Vertex
     for(auto&  pair : this->vertexes) {
         end_points = pair.second.copy_edges();
-        out += pair.first.name + " : "; /* Customer name */
+        out += pair.first.name + " : "; // Customer name
         for(auto& edge : end_points) {
-            int n = pair.second.GetWeight(edge); /* edge weight */
+            int n = pair.second.GetWeight(edge); // edge weight
             out += "\t -(" + std::to_string(n) + ")-> " + edge.name;
             out += "\r\n";
         }
         out += "\n";
     }
     return out;
-}
-
-/*Graph Graph::transpose() const {
-    Graph Graph_T;
-    //Vertex
-    for(auto& pair : vertexes) {
-        Graph_T.insert_vertex(pair.first);
-    }
-    //Edges
-    std::vector<std::string> end_points;
-    for(auto& pair : vertexes) {
-        end_points = pair.second.copy_edges();
-        for(auto &edge : end_points)
-            Graph_T.insert_edge(edge, pair.first);
-    }
-    return Graph_T;
-}
-
-Graph Graph::merge(const Graph &G2)  const {
-    Graph merge_graphs;
-
-    //Merge vertexes
-    for(auto& pair : vertexes)
-        merge_graphs.insert_vertex(pair.first);
-
-    for(auto& pair : G2.vertexes)
-      merge_graphs.insert_vertex(pair.first);
-
-    //Merge edges
-    std::vector<std::string> end_points;
-    for(auto& pair : vertexes) {
-        end_points = pair.second.copy_edges();
-        for(auto & edge : end_points) {
-            merge_graphs.insert_edge( pair.first, edge);
-        }
-    }
-
-    for(auto& pair : G2.vertexes) {
-        end_points = pair.second.copy_edges();
-        for(auto & edge : end_points) {
-            merge_graphs.insert_edge( pair.first, edge);
-        }
-    }
-    return merge_graphs;
-}
-
-Graph Graph::inverse() const {
-    //Create a Graph temp which is complete
-    Graph temp;
-
-    for(auto& pair : vertexes) {
-        temp.insert_vertex(pair.first);
-    }
-
-    for(auto& vertex1 : vertexes)
-        for(auto vertex2 : vertexes)
-         temp.insert_edge(vertex1.first, vertex2.first);
-
-    //Remove all edges in temp that also are in (*this)
-    std::vector<std::string> end_points;
-    for(auto& pair : vertexes) {
-        end_points = pair.second.copy_edges();
-        for(auto edge : end_points) {
-            temp.remove_edge(pair.first, edge);
-        }
-    }
-
-   return temp;
-} */
+}*/

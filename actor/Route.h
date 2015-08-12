@@ -8,7 +8,7 @@ typedef std::pair<Customer, int> StepType;
 
 class Route {
 private:
-    /* overloading << */
+    /** @brief overriding of the "<<" operator for printing the route */
     friend std::ostream& operator<<(std::ostream& out, const Route &r) {
         if (r.route.size() > 1) {
             out << "Fit: " << std::to_string(r.fitness) << " ";
@@ -20,21 +20,20 @@ private:
         }
         return out;
     }
-    int initialCapacity;
-    int initialWorkTime;
-    // capacity adn workTime remain
-    int capacity;
-    int workTime;
-    int totalCost;
+    int initialCapacity;            /**< Initial capacity of the route, equals to VRP.capacity */
+    int initialWorkTime;            /**< Total work time for driver, equals to VRP.workTime */
+    int capacity;                   /**< Capacity remaining */
+    int workTime;                   /**< Work time remaining */
+    int totalCost;                  /**< Total cost of the route: sum of the weight */
     // cost of traveling
-    const float TRAVEL_COST = 0.3;
-    const double cWeight = 6;
-    const double tWeight = 8;
-    Graph graph;
+    const float TRAVEL_COST = 0.3;  /**< Parameter for each travel */
+    const double cWeight = 6;       /**< Weight of the capacity remain */
+    const double tWeight = 8;       /**< Weight of the working time remain */
+    Graph graph;                    /**< Graph of the customers */
 protected:
-    std::list<StepType> route;
+    std::list<StepType> route;      /**< This list represent the route */
 public:
-    // overriding =
+    /** @brief overriding of the "=" operator for assign a route to another */
     Route& operator=(const Route &r) {
         this->capacity = r.capacity;
         this->workTime = r.workTime;
@@ -46,9 +45,9 @@ public:
         this->graph = r.graph;
         return *this;
     }
-    double fitness;
+    double fitness;                 /**< Goodness of a route */
     // constructor
-    Route(int, int, const Graph);
+    Route(int, int, const Graph);       //!< constructor
     void CloseTravel(const Customer);
     bool CloseTravel(const Customer, const Customer);
     void PrintRoute();
