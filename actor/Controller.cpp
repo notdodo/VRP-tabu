@@ -17,8 +17,9 @@ void Controller::Init(char **argv) {
         break;
     }
     int i = 0;
+    this->PrintRoutes();
     while(i < 100) {
-        this->RunOpts(10);
+        this->RunOpts(5);
         i++;
     }
     this->PrintRoutes();
@@ -32,17 +33,21 @@ void Controller::PrintRoutes() {
     Utils &u = this->GetUtils();
     std::list<Route> *e = this->v->GetRoutes();
     std::cout << std::endl;
+    int sizeTot = 0;
     for (auto i = e->begin(); i != e->cend(); i++) {
+        sizeTot += (*i).size() - 2;
         u.logger(*i);
         std::advance(i, 1);
         if (i == e->cend()) break;
+        sizeTot += (*i).size() - 2;
         u.logger(*i, u.SUCCESS);
     }
+    std::cout << sizeTot << std::endl;
     std::cout << std::endl;
 }
 
 void Controller::RunOpts(int time) {
-    this->v->Opt10(time);
+    //this->v->Opt10(time);
     this->v->Opt11();
     this->v->Opt12();
     this->v->Opt22();

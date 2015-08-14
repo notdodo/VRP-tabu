@@ -195,10 +195,9 @@ void VRP::CleanVoid() {
 void VRP::Opt10(int s) {
     std::list<Route>::iterator i = this->routes.begin();
     bool ret;
-    std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
-    std::chrono::high_resolution_clock::time_point t2;
-    auto duration = 0;
-    while (duration < s) {
+    std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now(), t2 = t1;
+    std::chrono::milliseconds duration = std::chrono::milliseconds(0);
+    while (duration < std::chrono::milliseconds(s)) {
         auto from = i;
         std::advance(i, 1);
         if (i == this->routes.cend()) i = this->routes.begin();
@@ -211,7 +210,7 @@ void VRP::Opt10(int s) {
             }
         }
         t2 = std::chrono::high_resolution_clock::now();
-        duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+        duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
     }
     this->CleanVoid();
 }
@@ -278,18 +277,21 @@ bool VRP::SwapFromTo(Route &r1, Route &r2) {
     Customer f = itFrom->first;
     // customer from r2
     RouteList *to = r2.GetRoute();
+    // copy r2 for fallback
+    Route fallbackTo = r2;
     RouteList::iterator itTo = to->begin();
     std::advance(itTo, index2);
     Customer t = itTo->first;
+    // with size<=3 deleting the single customer invalidate the route
     if (r1.size() >= 4 && r2.size() >= 4) {
         // remove the customer from route immediatly
         if (r2.AddElem(f, t)) {
-            if (r1.AddElem(t, f))
+            if (r1.AddElem(t, f)) {
                 ret = true;
-            else
-                r2.RemoveCustomer(f);
+            }else
+                r2 = fallbackTo;
         }
-    }else { // with size<=3 deleting the single customer invalidate the route
+    }else {
         // add 'f'
         if (r2.AddElem(f)) {
             // add 't'
