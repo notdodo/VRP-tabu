@@ -11,6 +11,7 @@ private:
     Controller(Controller const&) = delete;
     void operator=(Controller const&) = delete;
     void RunOpts(int);
+    void SaveResult();
 protected:
     void PrintRoutes();
 public:

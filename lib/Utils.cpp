@@ -82,19 +82,22 @@ VRP* Utils::InitParameters(char **argv) {
 }
 
 /* save the result into a file json */
-FILE* Utils::SaveResult() {
+FILE* Utils::SaveResult(std::list<Route> routes) {
     FILE* fp = fopen("output.json", "w");
     if (fp != NULL) {
         char writeBuffer[65536];
         rapidjson::FileWriteStream os(fp, writeBuffer, sizeof(writeBuffer));
         rapidjson::PrettyWriter<rapidjson::FileWriteStream> writer(os);
-        rapidjson::Document::AllocatorType& allocator = this->d.GetAllocator();
+        rapidjson::Document::AllocatorType &allocator = this->d.GetAllocator();
         rapidjson::Value route(rapidjson::kArrayType);
-        for (int i = 0; i < 3; i++) {
+        // for each route
+        for (Route routeElem : routes) {
             rapidjson::Value r(rapidjson::kArrayType);
-            for (int k = 0; k < 10; k++) {
-                int c = 1 + (rand() % (int)(8));
-                r.PushBack(c, allocator);
+            // for each customer
+            for (auto &e : *routeElem.GetRoute()) {
+                rapidjson::Value customer;
+                customer.SetString(e.first.name.c_str(), e.first.name.length(), allocator);
+                r.PushBack(customer, allocator);
             }
             route.PushBack(r, allocator);
         }

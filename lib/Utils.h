@@ -34,7 +34,7 @@ public:
     static const int SUCCESS = 0;
     static const int NORMAL = 3;
     VRP* InitParameters (char **);
-    FILE* SaveResult(void);
+    FILE* SaveResult(std::list<Route>);
     template <typename T>
     void logger(T s, int c = NORMAL) const {
         switch(c) {

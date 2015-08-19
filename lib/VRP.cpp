@@ -148,7 +148,7 @@ Map::const_iterator VRP::InsertStep(Customer depot, Map::iterator stop, Map::con
                 // the customer is inserted
                 if (stop != distances.cbegin())
                     std::advance(stop, -1);
-                // but if remain only one customer to serve, serve it
+                // but if remain only one customer to serve, try to serve it
                 if (stop == fallback) {
                     if (r.CloseTravel(to, depot)) {
                         distances.clear();

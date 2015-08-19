@@ -23,6 +23,7 @@ void Route::CloseTravel(const Customer c) {
     Customer depot = this->route.cbegin()->first;
     int costToDepot = this->graph.GetCosts(c, depot).second;
     this->totalCost += costToDepot;
+    this->workTime = costToDepot * this->TRAVEL_COST;
     this->route.push_back({c, costToDepot});
     this->route.push_back({depot, 0});
 }
@@ -174,7 +175,7 @@ std::list<StepType>* Route::GetRoute() {
 bool Route::AddElem(const Customer c) {
     // in this case 'this' need to be updated
     bool ret = false;
-    int timeNext, travelCost, costNext, tCost, workT, capac, fallbackCost;
+    int travelCost, costNext, tCost, workT, capac, fallbackCost;
     // the map is sorted by fitness
     std::map<float, Route> best;
     Customer depot = this->GetRoute()->front().first;
@@ -197,14 +198,13 @@ bool Route::AddElem(const Customer c) {
         std::advance(it, 1);
         iter++;
         // if end of route, stop
-        if (it->first == depot) break;
+        if (iter == r.size()) break;
         // compute next cost and time
         costNext = r.graph.GetCosts(c, it->first).second;
         tCost += costNext;
-        fallbackCost = r.graph.GetCosts(c, it->first).second;
+        fallbackCost = r.graph.GetCosts(before, it->first).second;
         tCost -= fallbackCost;
-        timeNext = costNext * r.TRAVEL_COST;
-        workT -= timeNext;
+        workT -= costNext * r.TRAVEL_COST;
         workT += fallbackCost * r.TRAVEL_COST;
         // if the customer is visitable add to route in position 'it'
         if (workT >= 0) {
@@ -216,7 +216,7 @@ bool Route::AddElem(const Customer c) {
             r.SetFitness();
             best.insert({r.fitness, r});
         }
-    }while (it != this->route.cend());
+    }while (it != this->route.cend() && (unsigned)iter < this->route.size());
     // if the route is changed return the best match
     if (best.size() > 0 && this->fitness <= (*best.cbegin()).second.fitness) {
         *this = (*best.cbegin()).second;
@@ -232,34 +232,35 @@ bool Route::AddElem(const Customer c) {
  * @param it The position of the customer to remove
  */
 void Route::RemoveCustomer(std::list<StepType>::iterator &it) {
-    Customer del = it->first;
-    // delete also request and servite time
-    this->capacity += del.request;
-    this->workTime += del.serviceTime;
-    // go to the next customer
-    std::advance(it, 1);
-    Customer to = it->first;
-    int after = this->graph.GetCosts(del, to).second;
-    this->workTime += after * this->TRAVEL_COST;
-    this->totalCost -= after;
-    // return to the previous customer
-    std::advance(it, -2);
-    // update cost and time
-    int cost = this->graph.GetCosts(it->first, to).second;
-    this->totalCost += cost;
-    this->workTime -= cost * this->TRAVEL_COST;
-    it->second = cost;
-    int before = this->graph.GetCosts(it->first, del).second;
-    this->totalCost -= before;
-    this->workTime += before * this->TRAVEL_COST;
-    // delete the customer from the route
-    std::advance(it , 1);
-    this->route.erase(it);
-    // if a route is empty delete it
-    if (this->route.size() <= 2)
-        this->EmptyRoute(this->route.front().first);
-    else
+    // if the route is depot -> customer -> depot delete the route
+    if (this->route.size() >= 4) {
+        Customer del = it->first;
+        // delete also request and service time
+        this->capacity += del.request;
+        this->workTime += del.serviceTime;
+        // go to the next customer
+        std::advance(it, 1);
+        Customer to = it->first;
+        int after = this->graph.GetCosts(del, to).second;
+        this->workTime += after * this->TRAVEL_COST;
+        this->totalCost -= after;
+        // return to the previous customer
+        std::advance(it, -2);
+        // restore cost and work time
+        int before = this->graph.GetCosts(it->first, del).second;
+        this->totalCost -= before;
+        this->workTime += before * this->TRAVEL_COST;
+        // update cost and time skipping the 'del' customer
+        int cost = this->graph.GetCosts(it->first, to).second;
+        this->totalCost += cost;
+        this->workTime -= cost * this->TRAVEL_COST;
+        it->second = cost;
+        // delete the customer from the route
+        std::advance(it , 1);
+        this->route.erase(it);
         this->SetFitness();
+    }else
+        this->EmptyRoute(this->route.front().first);
 }
 
 /** @brief Remove a customer.
@@ -287,7 +288,7 @@ void Route::RemoveCustomer(const Customer c) {
 bool Route::AddElem(const Customer c, const Customer rem) {
     // in this case 'this' need to be updated
     bool ret = false;
-    int timeNext, travelCost, costNext, tCost, workT, capac, fallbackCost;
+    int travelCost, costNext, tCost, workT, capac, fallbackCost;
     // the map is sorted by fitness
     std::map<float, Route> best;
     Customer depot = this->GetRoute()->front().first;
@@ -296,29 +297,32 @@ bool Route::AddElem(const Customer c, const Customer rem) {
     do {
         Route r = *this;
         it = r.route.begin();
+        // remove the customer, free resources
         r.RemoveCustomer(rem);
         capac = r.capacity - c.request;
         workT = r.workTime - c.serviceTime;
-        if (capac <= 0 || workT <= 0) break;
+        if (capac < 0 || workT <= 0) break;
         tCost = r.totalCost;
         std::advance(it, iter);
         Customer before = it->first;
+        // add the customer in 'it' position, the depot will be always the first
         travelCost = r.graph.GetCosts(before, c).second;
-        workT -= travelCost * r.TRAVEL_COST;
-        tCost += travelCost;
         // update travel cost
         it->second = travelCost;
+        // remove the time to travel from it->fist to c
+        workT -= travelCost * r.TRAVEL_COST;
+        tCost += travelCost;
+        // find the next customer
         std::advance(it, 1);
         iter++;
         // if end of route, stop
-        if (it->first == depot) break;
+        if (iter == r.size()) break;
         // compute next cost and time
         costNext = r.graph.GetCosts(c, it->first).second;
         tCost += costNext;
-        fallbackCost = r.graph.GetCosts(c, it->first).second;
+        fallbackCost = r.graph.GetCosts(before, it->first).second;
         tCost -= fallbackCost;
-        timeNext = costNext * r.TRAVEL_COST;
-        workT -= timeNext;
+        workT -= costNext * r.TRAVEL_COST;
         workT += fallbackCost * r.TRAVEL_COST;
         // if the customer is visitable add to route in position 'it'
         if (workT >= 0) {
@@ -330,7 +334,7 @@ bool Route::AddElem(const Customer c, const Customer rem) {
             r.SetFitness();
             best.insert({r.fitness, r});
         }
-    }while (it != this->route.cend());
+    }while (it != this->route.cend() && (unsigned)iter < this->route.size());
     // if the route is changed return the best match
     if (best.size() > 0 && this->fitness <= (*best.cbegin()).second.fitness) {
         *this = (*best.cbegin()).second;
