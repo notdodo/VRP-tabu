@@ -17,25 +17,30 @@ private:
     Utils() {}
     Utils(Utils const&) = delete;
     void operator=(Utils const&) = delete;
-    rapidjson::Document d;
+    rapidjson::Document d;                      /**< JSON Document */
     const char* ANSI_RESET = "\u001B[0m";
     const char* ANSI_RED = "\u001B[1;31m";
     const char* ANSI_GREEN = "\u001B[1;32m";
     const char* ANSI_YELLOW = "\u001B[33m";
     const char* ANSI_BLUE = "\u001B[34m";
     const char* ANSI_LIGHTGREEN = "\u001B[32m";
-public:
+    public:
     static Utils& Instance() {
         static Utils instance;
         return instance;
     }
-    static const int ERROR = 1;
-    static const int WARNING = 2;
-    static const int SUCCESS = 0;
+    static const int ERROR = 1;                 /**< Error code */
+    static const int WARNING = 2;               /**< Warning code */
+    static const int SUCCESS = 0;               /**< Success code */
     static const int NORMAL = 3;
     VRP* InitParameters (char **);
-    FILE* SaveResult(std::list<Route>);
+    void SaveResult(std::list<Route>);
     template <typename T>
+    /** @brief Print a log string
+     *
+     * @param s The string to print
+     * @param c The code for log level
+     */
     void logger(T s, int c = NORMAL) const {
         switch(c) {
             case SUCCESS:

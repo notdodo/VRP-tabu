@@ -18,12 +18,13 @@ void Controller::Init(char **argv) {
     }
     int i = 0;
     this->PrintRoutes();
+    std::cout << this->v->GetTotalCost() << std::endl;
     while(i < 5) {
-        this->RunOpts(1);
+        this->RunOpts();
         i++;
     }
     this->PrintRoutes();
-    this->SaveResult();
+    std::cout << this->v->GetTotalCost() << std::endl;
 }
 
 Utils& Controller::GetUtils() const {
@@ -43,8 +44,16 @@ void Controller::PrintRoutes() {
     std::cout << std::endl;
 }
 
-void Controller::RunOpts(int time) {
-    this->v->Opt10(time);
+// devo fare opt-2 e opt-3
+
+// appena migliora ricomincio dall'inizio
+// devo filtrare i customer da scambiare
+// distanza per ogni coppia di route
+// la media e scambio solo route con distanza <= media
+
+// i 2 devono essere consecutivi e provo tutte le combinazioni
+void Controller::RunOpts() {
+    this->v->Opt10();
     this->v->Opt11();
     this->v->Opt12();
     this->v->Opt22();

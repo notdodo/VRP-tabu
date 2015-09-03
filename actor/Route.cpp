@@ -248,12 +248,12 @@ void Route::RemoveCustomer(std::list<StepType>::iterator &it) {
         std::advance(it, -2);
         // restore cost and work time
         int before = this->graph.GetCosts(it->first, del).second;
-        this->totalCost -= before;
         this->workTime += before * this->TRAVEL_COST;
+        this->totalCost -= before;
         // update cost and time skipping the 'del' customer
         int cost = this->graph.GetCosts(it->first, to).second;
-        this->totalCost += cost;
         this->workTime -= cost * this->TRAVEL_COST;
+        this->totalCost += cost;
         it->second = cost;
         // delete the customer from the route
         std::advance(it , 1);
@@ -342,4 +342,8 @@ bool Route::AddElem(const Customer c, const Customer rem) {
     }else
         ret = false;
     return ret;
+}
+
+int Route::GetTotalCost() const {
+    return this->totalCost;
 }

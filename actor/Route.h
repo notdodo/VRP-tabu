@@ -2,6 +2,7 @@
 #define Route_H
 
 #include <list>
+#include <iomanip>
 #include "Graph.h"
 
 typedef std::pair<Customer, int> StepType;
@@ -11,7 +12,7 @@ private:
     /** @brief overriding of the "<<" operator for printing the route */
     friend std::ostream& operator<<(std::ostream& out, const Route &r) {
         if (r.route.size() > 1) {
-            out << "Fit: " << std::to_string(r.fitness) << " ";
+            out << "Cost:" << std::setw(5) << std::to_string(r.totalCost) << " ";
             for (auto i : r.route)
                 if (i.second > 0)
                     out << i.first << " -(" << std::to_string(i.second) << ")-> ";
@@ -62,6 +63,7 @@ public:
     bool AddElem(const Customer, const Customer);
     void RemoveCustomer(std::list<StepType>::iterator &);
     void RemoveCustomer(const Customer);
+    int GetTotalCost() const;
 };
 
 #endif /* Route_H */

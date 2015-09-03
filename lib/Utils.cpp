@@ -1,6 +1,12 @@
 #include "Utils.h"
 
-/* parse the json file and create all the parameters */
+/** @brief Instantiate all parameters.
+ *
+ * Parse the input file in JSON format and instantiates all variables
+ * for the algorithm.
+ * @param argv Input file (json)
+ * @return The pointer to VRP class
+ */
 VRP* Utils::InitParameters(char **argv) {
     /* error string */
     std::string s;
@@ -81,8 +87,12 @@ VRP* Utils::InitParameters(char **argv) {
     return v;
 }
 
-/* save the result into a file json */
-FILE* Utils::SaveResult(std::list<Route> routes) {
+/** @brief Save the result.
+ *
+ * Saves the routes into the input JSON file.
+ * @param routes The routes list to save to the file
+ */
+void Utils::SaveResult(std::list<Route> routes) {
     FILE* fp = fopen("output.json", "w");
     if (fp != NULL) {
         char writeBuffer[65536];
@@ -107,5 +117,4 @@ FILE* Utils::SaveResult(std::list<Route> routes) {
     }else {
         throw "Error writing file! (Bad permissions)\n";
     }
-    return fp;
 }

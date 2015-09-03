@@ -190,27 +190,18 @@ void VRP::CleanVoid() {
  *
  * This opt function try to move, for every route, a customer
  * from a route to another and remove empty route.
- * @param s Time of execution
  */
-void VRP::Opt10(int s) {
+void VRP::Opt10() {
     std::list<Route>::iterator i = this->routes.begin();
     bool ret;
-    std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now(), t2 = t1;
-    std::chrono::milliseconds duration = std::chrono::milliseconds(0);
-    while (duration < std::chrono::milliseconds(s)) {
+    for (; i != this->routes.cend(); i++) {
         auto from = i;
         std::advance(i, 1);
-        if (i == this->routes.cend()) i = this->routes.begin();
-        if ((*from).size() >= 3 && (*i).size() >= 3) {
-            ret = Move1FromTo(*from, *i);
-            // avoid to move the customer inserted
-            if (ret) {
-                std::advance(i, 2);
-                if (i == this->routes.cend()) i = this->routes.begin();
-            }
-        }
-        t2 = std::chrono::high_resolution_clock::now();
-        duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
+        if (i == this->routes.cend()) break;
+        ret = Move1FromTo(*from, *i);
+        // avoid to move the customer inserted
+        if (ret) std::advance(i, 2);
+        if (i == this->routes.cend()) break;
     }
     this->CleanVoid();
 }
@@ -393,6 +384,14 @@ void VRP::Opt22() {
             if (ret) std::advance(i, 2);
         }
     }
+}
+
+int VRP::GetTotalCost() const {
+    int tCost = 0;
+    for (auto e : this->routes) {
+        tCost += e.GetTotalCost();
+    }
+    return tCost;
 }
 
 /* destructor */
