@@ -160,9 +160,14 @@ int Route::size() const {
     return this->route.size();
 }
 
-/** @brief Get the pointer to this route. */
+/** @brief Get the pointer to the route list. */
 std::list<StepType>* Route::GetRoute() {
     return &this->route;
+}
+
+/** @brief Get a copy of the route class. */
+Route Route::CopyRoute() {
+    return *this;
 }
 
 /** @brief Add a customer to this route.
@@ -233,7 +238,7 @@ bool Route::AddElem(const Customer c) {
  */
 void Route::RemoveCustomer(std::list<StepType>::iterator &it) {
     // if the route is depot -> customer -> depot delete the route
-    if (this->route.size() >= 4) {
+    if (this->route.size() > 3) {
         Customer del = it->first;
         // delete also request and service time
         this->capacity += del.request;

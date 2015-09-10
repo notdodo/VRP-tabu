@@ -58,7 +58,7 @@ public:
     void SetFitness();
     int size() const;
     std::list<StepType>* GetRoute();
-    std::list<StepType> CopyRoute();
+    Route CopyRoute();
     bool AddElem(const Customer);
     bool AddElem(const Customer, const Customer);
     void RemoveCustomer(std::list<StepType>::iterator &);
