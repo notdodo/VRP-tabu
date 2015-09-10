@@ -100,9 +100,11 @@ void Utils::SaveResult(std::list<Route> routes) {
         rapidjson::PrettyWriter<rapidjson::FileWriteStream> writer(os);
         rapidjson::Document::AllocatorType &allocator = this->d.GetAllocator();
         rapidjson::Value route(rapidjson::kArrayType);
+        rapidjson::Value totalCosts(rapidjson::kArrayType);
         // for each route
         for (Route routeElem : routes) {
             rapidjson::Value r(rapidjson::kArrayType);
+            totalCosts.PushBack(routeElem.GetTotalCost(), allocator);
             // for each customer
             for (auto &e : *routeElem.GetRoute()) {
                 rapidjson::Value customer;
@@ -112,6 +114,7 @@ void Utils::SaveResult(std::list<Route> routes) {
             route.PushBack(r, allocator);
         }
         d.AddMember("routes", route, allocator);
+        d.AddMember("costs", totalCosts, allocator);
         d.Accept(writer);
         fclose(fp);
     }else {
