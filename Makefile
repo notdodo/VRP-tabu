@@ -4,7 +4,8 @@ BIN_NAME=VRP
 
 #-s  Remove all symbol table and relocation information from the executable.
 INCLUDE=-I actor/ -I lib/
-CPPFLAGS=-s -std=gnu++11 -Wall $(INCLUDE)
+SECFLAG= -Wextra -Werror -fstack-protector-all -Wstack-protector --param ssp-buffer-size=4
+CPPFLAGS=-s -std=gnu++11 -Wall -O2 $(INCLUDE)
 LD=-lpthread
 
 SRCS=$(wildcard *.cpp actor/*.cpp lib/*.cpp lib/dist/*.cpp)
