@@ -21,6 +21,7 @@ private:
     Map::const_iterator InsertStep(Customer, Map::iterator, Map::const_iterator, Route &, Map &);
     bool SwapFromTo(Route &, Route &);
     bool Move1FromTo(Route &, Route &);
+    bool AddRemoveFromTo(Route &, Route &, int, int);
     void CleanVoid();
 public:
     VRP() {} //!< constructor
@@ -28,11 +29,12 @@ public:
     int InitSolutions();
     std::list<Route>* GetRoutes();
     void OrderFitness();
-    void Opt10();
-    void Opt11();
-    void Opt21();
-    void Opt12();
-    void Opt22();
+    bool Opt10();
+    bool Opt01();
+    bool Opt11();
+    bool Opt21();
+    bool Opt12();
+    bool Opt22();
     int GetTotalCost() const;
     ~VRP(); //!< destructor
 };
