@@ -16,15 +16,10 @@ void Controller::Init(char **argv) {
             throw std::string("You need more vehicles");
         break;
     }
-    int i = 0;
     this->PrintRoutes();
-    std::cout << this->v->GetTotalCost() << std::endl;
-    while(i < 5) {
-        this->RunOpts();
-        i++;
-    }
+    this->RunOpts(5);
     this->PrintRoutes();
-    std::cout << this->v->GetTotalCost() << std::endl;
+    this->SaveResult();
 }
 
 Utils& Controller::GetUtils() const {
@@ -41,6 +36,7 @@ void Controller::PrintRoutes() {
         if (i == e->cend()) break;
         u.logger(*i, u.SUCCESS);
     }
+    u.logger("Total cost: " + std::to_string(this->v->GetTotalCost()), u.INFO);
     std::cout << std::endl;
 }
 
@@ -52,12 +48,23 @@ void Controller::PrintRoutes() {
 // la media e scambio solo route con distanza <= media
 
 // i 2 devono essere consecutivi e provo tutte le combinazioni
-void Controller::RunOpts() {
-    this->v->Opt10();
-    this->v->Opt11();
-    this->v->Opt12();
-    this->v->Opt22();
-    this->v->Opt21();
+void Controller::RunOpts(int times) {
+    int i = 0;
+    bool result;
+    while (i < times) {
+        result = this->v->Opt10();
+        if (!result)
+            result = this->v->Opt01();
+        if (!result)
+            result = this->v->Opt11();
+        if (!result)
+            result = this->v->Opt12();
+        if (!result)
+            result = this->v->Opt21();
+        if (!result)
+            result = this->v->Opt22();
+        i++;
+    }
 }
 
 void Controller::SaveResult() {
