@@ -25,20 +25,12 @@ void Vertex::RemoveEdge(const Customer &edge) {
     edges.erase(edge);
 }
 
-/*const std::vector<Customer> Vertex::copy_edges() const {
-    std::vector<Customer> keys;
-    for(auto& pair : edges) {
-        keys.push_back(pair.first);
-    }
-    return keys;
-}*/
-
 /** @brief Get the weight of and edge.
  *
  * @param c Customer at the end of the edge
  * @return The weight of the customer
  */
-const int Vertex::GetWeight(const Customer &c) const {
+int Vertex::GetWeight(const Customer &c) const {
     return edges.find(c)->second.weight;
 }
 

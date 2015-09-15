@@ -16,10 +16,9 @@ public:
 
     Vertex(const ConstructionToken &);          //!< constructor
 
-    const std::vector<Customer> copy_edges() const;
     void InsertEdge(const Customer &, const int &);
     void RemoveEdge(const Customer &);
-    const int GetWeight(const Customer &) const;
+    int GetWeight(const Customer &) const;
     const std::map<Customer, Edge> GetEdges() const;
 private:
     std::map<Customer, Edge> edges;             /**< List of all the edges from customer */
