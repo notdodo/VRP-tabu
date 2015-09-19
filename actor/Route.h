@@ -22,12 +22,12 @@ private:
         return out;
     }
     int initialCapacity;            /**< Initial capacity of the route, equals to VRP.capacity */
-    float initialWorkTime;            /**< Total work time for driver, equals to VRP.workTime */
+    float initialWorkTime;          /**< Total work time for driver, equals to VRP.workTime */
     int capacity;                   /**< Capacity remaining */
-    float workTime;                   /**< Work time remaining */
+    float workTime;                 /**< Work time remaining */
     int totalCost;                  /**< Total cost of the route: sum of the weight */
     // cost of traveling
-    const float TRAVEL_COST = 0.3f;  /**< Parameter for each travel */
+    const float TRAVEL_COST = 0.3f; /**< Parameter for each travel */
     const double cWeight = 6;       /**< Weight of the capacity remain */
     const double tWeight = 8;       /**< Weight of the working time remain */
     Graph graph;                    /**< Graph of the customers */
@@ -39,14 +39,12 @@ public:
         this->capacity = r.capacity;
         this->workTime = r.workTime;
         this->totalCost = r.totalCost;
-        this->fitness = r.fitness;
         this->route = r.route;
         this->initialCapacity = r.initialCapacity;
         this->initialWorkTime = r.initialWorkTime;
         this->graph = r.graph;
         return *this;
     }
-    double fitness;                 /**< Goodness of a route */
     // constructor
     Route(int, int, const Graph);       //!< constructor
     void CloseTravel(const Customer);
@@ -55,7 +53,6 @@ public:
     void PrintRoute(std::list<StepType>);
     bool Travel(const Customer, const Customer);
     void EmptyRoute(const Customer);
-    void SetFitness();
     int size() const;
     std::list<StepType>* GetRoute();
     Route CopyRoute();

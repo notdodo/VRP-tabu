@@ -47,7 +47,6 @@ void Controller::PrintRoutes() {
 // distanza per ogni coppia di route
 // la media e scambio solo route con distanza <= media
 
-// i 2 devono essere consecutivi e provo tutte le combinazioni
 void Controller::RunOpts(int times) {
     int i = 0;
     bool result;

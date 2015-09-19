@@ -104,7 +104,6 @@ bool Route::Travel(const Customer from, const Customer to) {
 void Route::EmptyRoute(const Customer depot) {
     this->route.clear();
     this->route.push_back({depot, 0});
-    this->SetFitness();
 }
 
 /** @brief Print this route. */
@@ -144,17 +143,6 @@ void Route::PrintRoute(std::list<StepType> r) {
     std::flush(std::cout);
 }
 
-/** @brief Estimate the goodness of a route.
- *
- * Compute the percent weighted arithmeic mean of a route.
- */
-void Route::SetFitness() {
-    // route with 1, is perfect
-    float cRate = 1 - (float)this->capacity / (float)this->initialCapacity;
-    float tRate = 1 - (float)this->workTime / (float)this->initialWorkTime;
-    this->fitness = (cRate * cWeight + tRate * tWeight) / (cWeight + tWeight);
-}
-
 /** @brief Return the size (number of customers) of a route. */
 int Route::size() const {
     return this->route.size();
@@ -182,8 +170,8 @@ bool Route::AddElem(const Customer c) {
     bool ret = false;
     int travelCost, costNext, tCost, capac, fallbackCost;
     float workT;
-    // the map is sorted by fitness
-    std::map<float, Route> best;
+    // the map is sorted by costs
+    std::map<int, Route> best;
     Customer depot = this->GetRoute()->front().first;
     std::list<std::pair<Customer, int>>::iterator it;
     int iter = 0;
@@ -218,13 +206,11 @@ bool Route::AddElem(const Customer c) {
             r.capacity = capac;
             r.workTime = workT;
             r.route.insert(it, {c, costNext});
-            // calculate fitness
-            r.SetFitness();
-            best.insert({r.fitness, r});
+            best.insert({r.GetTotalCost(), r});
         }
     }while (it != this->route.cend() && (unsigned)iter < this->route.size());
     // if the route is changed return the best match
-    if (best.size() > 0 && this->fitness <= (*best.cbegin()).second.fitness) {
+    if (best.size() > 0 && this->totalCost <= (*best.cbegin()).second.totalCost) {
         *this = (*best.cbegin()).second;
         ret = true;
     }else
@@ -245,8 +231,8 @@ bool Route::AddElem(const std::list<Customer> custs) {
     int travelCost, costNext, tCost, capac, fallbackCost;
     int custsRequest, custsServiceTime;
     float workT;
-    // the map is sorted by fitness
-    std::map<float, Route> best;
+    // the map is sorted by costs
+    std::map<int, Route> best;
     std::list<std::pair<Customer, int>>::iterator it;
     int iter = 0;
     do {
@@ -355,7 +341,6 @@ void Route::RemoveCustomer(std::list<StepType>::iterator &it) {
         // delete the customer from the route
         std::advance(it , 1);
         this->route.erase(it);
-        this->SetFitness();
     } else
         this->EmptyRoute(this->route.front().first);
 }
@@ -389,8 +374,8 @@ bool Route::AddElem(const Customer c, const Customer rem) {
     bool ret = false;
     int travelCost, costNext, tCost, capac, fallbackCost;
     float workT;
-    // the map is sorted by fitness
-    std::map<float, Route> best;
+    // the map is sorted by totalcost
+    std::map<int, Route> best;
     Customer depot = this->GetRoute()->front().first;
     std::list<std::pair<Customer, int>>::iterator it;
     int iter = 0;
@@ -430,13 +415,11 @@ bool Route::AddElem(const Customer c, const Customer rem) {
             r.capacity = capac;
             r.workTime = workT;
             r.route.insert(it, {c, costNext});
-            // calculate fitness
-            r.SetFitness();
-            best.insert({r.fitness, r});
+            best.insert({r.totalCost, r});
         }
     }while (it != this->route.cend() && (unsigned)iter < this->route.size());
     // if the route is changed return the best match
-    if (best.size() > 0 && this->fitness <= (*best.cbegin()).second.fitness) {
+    if (best.size() > 0 && this->totalCost <= (*best.cbegin()).second.totalCost) {
         *this = (*best.cbegin()).second;
         ret = true;
     }else

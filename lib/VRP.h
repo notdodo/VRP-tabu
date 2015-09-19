@@ -28,7 +28,7 @@ public:
     VRP(const Graph g, const int n, const int v, const int c, const int t); //!< constructor
     int InitSolutions();
     std::list<Route>* GetRoutes();
-    void OrderFitness();
+    void OrderByCosts();
     bool Opt10();
     bool Opt01();
     bool Opt11();

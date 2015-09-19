@@ -50,7 +50,6 @@ int VRP::InitSolutions() {
     // doing the first step, from to first customer
     Map::const_iterator m = this->InsertStep(depot, it, it, r, dist);
     // saving the route
-    r.SetFitness();
     this->routes.push_back(r);
     // for all vehicles, or one the Map dist is empty
     while (j < this->vehicles && !dist.empty()) {
@@ -64,7 +63,6 @@ int VRP::InitSolutions() {
         }else {
             m = this->InsertStep(depot, it, m, v, dist);
         }
-        v.SetFitness();
         this->routes.push_back(v);
         // counting the vehicles
         j++;
@@ -171,13 +169,13 @@ std::list<Route>* VRP::GetRoutes() {
     return &this->routes;
 }
 
-/** @brief Sort the list of routes by fitness.
+/** @brief Sort the list of routes by cost.
  *
- * This function sort the routes by fitness in descending order.
+ * This function sort the routes by costs in ascending order.
  */
-void VRP::OrderFitness() {
+void VRP::OrderByCosts() {
     this->routes.sort([](Route const &lhs, Route const &rhs) {
-        return lhs.fitness > rhs.fitness;
+        return lhs.GetTotalCost() < rhs.GetTotalCost();
     });
 }
 
