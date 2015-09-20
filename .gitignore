@@ -13,9 +13,6 @@
 *.dylib
 *.dll
 
-# Fortran module files
-*.mod
-
 # Compiled Static libraries
 *.lai
 *.la
@@ -23,10 +20,12 @@
 *.lib
 
 # Executables
-*.exe
 *.out
 *.app
 VRP
 
 # Documentation directory
 doc/
+
+# file input/output
+*.json
