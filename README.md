@@ -134,6 +134,7 @@ After the execution of the program the output file should be like this:
             "time": 11
         },
     [....]
+      [
             {
                 "from": 4,
                 "to": 2,
