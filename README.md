@@ -1,5 +1,5 @@
 # VRP
-This repo contains the project of "Metodi ed Algoritmi di Ottimizzazione per il Problem Solving": a VRP solution algorithm with tabu search heuristic.
+This repo contains the project of "Metodi ed Algoritmi di Ottimizzazione per il Problem Solving": a ![VRP](https://en.wikipedia.org/wiki/Vehicle_routing_problem) solution algorithm with ![tabu search](https://en.wikipedia.org/wiki/Tabu_search) heuristic.
 This program reads data from a JSON file which holds all informations about customers, vehicles, depot and requests.
 
 This simple example shows a configuration of 3 customers to serve with 2 vehicles with max capacity of 400 and max work time of 350. Each customer is has a name, a position, an amount of resources requested and a time to get served. In order to create the best routes it's necessary to know the cost from each travel from each customers (in this case the distance is the geometric distance).
