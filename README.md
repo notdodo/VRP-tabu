@@ -172,10 +172,10 @@ The program appended two more attribute which represent the final routes with re
 Create files as the example above is something long and tedious, expecially for complex initial configurations.
 The Web-UI, created in HTML5, CSS3 and JavaScript, allows easily creation of input files in JSON simply creating the customers in a click. User can set all other settings without writing a single line of JSON.
 
-![Example with customers](screenshot/customers.png "Example")
+![Example with customers](https://raw.githubusercontent.com/edoz90/VRP-tabu/master/screenshot/customers.png "Example")
 
 The application could be run in a web server or simply opening the `coords.html` file.
 
 After creating and executing the JSON file through the VRP program the Web-UI can read the output file to display costs and routes.
 
-![Example of routes](screenshot/routes.png "Routes and costs")
+![Example of routes](https://raw.githubusercontent.com/edoz90/VRP-tabu/master/screenshot/routes.png "Routes and costs")
