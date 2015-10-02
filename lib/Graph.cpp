@@ -74,6 +74,7 @@ std::multimap<int, Customer> Graph::sortV0() {
     std::multimap<int, Customer> v;
     // get depot
     Customer c = vertexes.begin()->first;
+    // insert the depot
     v.insert(std::pair<int, Customer>(0, c));
     Vertex it = vertexes.find(c)->second;
     for (auto& edge : it.GetEdges()) {
