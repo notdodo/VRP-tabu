@@ -20,9 +20,10 @@ private:
     int totalCost;              /**< Total cost of the routes */
     Map::const_iterator InsertStep(Customer, Map::iterator, Map::const_iterator, Route &, Map &);
     bool SwapFromTo(Route &, Route &);
-    bool Move1FromTo(Route &, Route &);
+    bool Move1FromTo(Route &, Route &, bool);
     bool AddRemoveFromTo(Route &, Route &, int, int);
     void CleanVoid();
+    Route Opt2Swap(Route, std::list<Customer>::iterator, std::list<Customer>::iterator);
 public:
     VRP() {} //!< constructor
     VRP(const Graph g, const int n, const int v, const int c, const int t); //!< constructor
@@ -35,6 +36,9 @@ public:
     bool Opt21();
     bool Opt12();
     bool Opt22();
+    void RouteBalancer();
+    bool Opt2();
+    bool Opt3();
     int GetTotalCost() const;
     ~VRP(); //!< destructor
 };

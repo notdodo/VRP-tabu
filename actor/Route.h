@@ -26,10 +26,9 @@ private:
     int capacity;                   /**< Capacity remaining */
     float workTime;                 /**< Work time remaining */
     int totalCost;                  /**< Total cost of the route: sum of the weight */
+    float averageCost;              /**< Average of all path costs */
     // cost of traveling
     const float TRAVEL_COST = 0.3f; /**< Parameter for each travel */
-    const double cWeight = 6;       /**< Weight of the capacity remain */
-    const double tWeight = 8;       /**< Weight of the working time remain */
     Graph graph;                    /**< Graph of the customers */
 protected:
     std::list<StepType> route;      /**< This list represent the route */
@@ -55,13 +54,16 @@ public:
     void EmptyRoute(const Customer);
     int size() const;
     std::list<StepType>* GetRoute();
-    Route CopyRoute();
+    Route CopyRoute() const;
     bool AddElem(const Customer);
     bool AddElem(const std::list<Customer>);
     bool AddElem(const Customer, const Customer);
     void RemoveCustomer(std::list<StepType>::iterator &);
     void RemoveCustomer(const Customer);
     int GetTotalCost() const;
+    void SetAverageCost();
+    void GetUnderAverageCustomers(std::list<Customer> &);
+    bool RebuildRoute(std::list<Customer>);
 };
 
 #endif /* Route_H */

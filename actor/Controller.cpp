@@ -12,7 +12,7 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with Nome-Programma.  If not, see <http://www.gnu.org/licenses/>.
+    along with VRP.  If not, see <http://www.gnu.org/licenses/>.
  ****************************************************************************/
 
 #include "Controller.h"
@@ -57,13 +57,6 @@ void Controller::PrintRoutes() {
     std::cout << std::endl;
 }
 
-// devo fare opt-2 e opt-3
-
-// appena migliora ricomincio dall'inizio
-// devo filtrare i customer da scambiare
-// distanza per ogni coppia di route
-// la media e scambio solo route con distanza <= media
-
 void Controller::RunOpts(int times) {
     int i = 0;
     bool result;
@@ -80,6 +73,8 @@ void Controller::RunOpts(int times) {
         if (!result)
             result = this->v->Opt22();
         i++;
+        this->v->RouteBalancer();
+        this->v->Opt2();
     }
 }
 

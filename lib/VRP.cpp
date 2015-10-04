@@ -12,7 +12,7 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with Nome-Programma.  If not, see <http://www.gnu.org/licenses/>.
+    along with VRP.  If not, see <http://www.gnu.org/licenses/>.
  ****************************************************************************/
 
 #include "VRP.h"
@@ -135,7 +135,7 @@ Map::const_iterator VRP::InsertStep(Customer depot, Map::iterator stop, Map::con
         // incrementing (if possible) the index for the next step of the route
         index++;
         if (index == distances.cend()) {
-            --index;
+            std::advance(index, -1);
             to = index->second;
             // if cannot add the customer, close the route and return
             if (!r.Travel(from, to)) {
@@ -148,7 +148,7 @@ Map::const_iterator VRP::InsertStep(Customer depot, Map::iterator stop, Map::con
         } else {
             if (!r.Travel(from, to)) {
                 r.CloseTravel(from);
-                // the route is close but, if the last customer to serve is the last one return it
+                // the route is closed but if remains the last customer to serve, return it
                 if (stop != distances.cbegin())
                     std::advance(stop, -1);
                 if (stop->second == to) {
@@ -165,12 +165,13 @@ Map::const_iterator VRP::InsertStep(Customer depot, Map::iterator stop, Map::con
                     std::advance(stop, -1);
                 // but if remain only one customer to serve, try to serve it
                 if (stop == fallback) {
+                    // no customers left
                     if (r.CloseTravel(to, depot)) {
                         distances.clear();
+                        break;
                     }
-                } else {
+                } else
                     std::advance(stop, 1);
-                }
             }
         }
     }
@@ -204,23 +205,27 @@ void VRP::CleanVoid() {
 /** @brief Move a customer from a route to another.
  *
  * This opt function try to move, for every route, a customer
- * from a route to another and remove empty route.
- * @return True if the routes are improves
+ * from a route to another and removes empty route.
+ * @return True if the routes are improved
  */
 bool VRP::Opt10() {
     bool flag = false;
     std::list<Route>::const_iterator it = this->routes.cbegin();
+    // best combination of swap/move
     std::pair<Route, Route> bests = std::make_pair(*it, *it);
     int indexFrom, indexTo;
+    // for each route choose one customer
     for (int i = 0; it != this->routes.cend(); ++it, ++i) {
         std::list<Route>::const_iterator jt = this->routes.cbegin();
+        // try to move the chosen customer in every route
         for (int j = 0; jt != this->routes.cend(); ++jt, ++j) {
             if (jt != it) {
                 Route tempFrom = *it;
                 Route tempTo = *jt;
                 int bestFrom = tempFrom.GetTotalCost();
-                int bestTo = tempFrom.GetTotalCost();
-                if (Move1FromTo(tempFrom, tempTo) && tempFrom.GetTotalCost() < bestFrom && tempTo.GetTotalCost() < bestTo) {
+                int bestTo = tempTo.GetTotalCost();
+                // try to insert the customer in each position of the route and save the best combination
+                if (Move1FromTo(tempFrom, tempTo, false) && tempFrom.GetTotalCost() < bestFrom && tempTo.GetTotalCost() < bestTo) {
                     std::get<0>(bests) = tempFrom;
                     std::get<1>(bests) = tempTo;
                     indexFrom = i;
@@ -231,6 +236,7 @@ bool VRP::Opt10() {
         }
     }
     if (flag) {
+        // update routes with the best movement
         std::list<Route>::iterator itFinal = this->routes.begin();
         std::advance(itFinal, indexFrom);
         *itFinal= std::get<0>(bests);
@@ -260,8 +266,8 @@ bool VRP::Opt01() {
                 Route tempFrom = *it;
                 Route tempTo = *jt;
                 int bestFrom = tempFrom.GetTotalCost();
-                int bestTo = tempFrom.GetTotalCost();
-                if (Move1FromTo(tempTo, tempFrom) && tempFrom.GetTotalCost() < bestFrom && tempTo.GetTotalCost() < bestTo) {
+                int bestTo = tempTo.GetTotalCost();
+                if (Move1FromTo(tempTo, tempFrom, false) && tempFrom.GetTotalCost() < bestFrom && tempTo.GetTotalCost() < bestTo) {
                     std::get<0>(bests) = tempFrom;
                     std::get<1>(bests) = tempTo;
                     indexFrom = i;
@@ -290,10 +296,12 @@ bool VRP::Opt01() {
  * an improvement of the total cost in both routes.
  * @param source Route where to choose a random customer
  * @param dest Route destination
+ * @param force Force the movement
  * @return True if the customer is moved.
  */
-bool VRP::Move1FromTo(Route &source, Route &dest) {
+bool VRP::Move1FromTo(Route &source, Route &dest, bool force) {
     bool ret = false;
+    bool flag = false;
     int best = dest.GetTotalCost();
     int sourceCost = source.GetTotalCost();
     int index = 0;
@@ -302,31 +310,32 @@ bool VRP::Move1FromTo(Route &source, Route &dest) {
     // cannot move the depot
     std::advance(itSource, 1);
     // for each position in source route
-    for (int i = 1; itSource != source.GetRoute()->cend(); std::advance(itSource, 1), i++) {
+    for (int i = 1; itSource != source.GetRoute()->cend(); ++itSource, ++i) {
         // cannot move the depot
         if ((unsigned)i < source.GetRoute()->size() - 1) {
             // copy the destination route to try some path configuration
             Route temp = dest.CopyRoute();
             // find the best position and update (if needed) the best route
-            if (temp.AddElem(itSource->first) && temp.GetTotalCost() < best) {
+            if (temp.AddElem(itSource->first) && (temp.GetTotalCost() < best || force)) {
                 // copy the source route to check out if this configuration is valid and better
                 Route copySource = source.CopyRoute();
                 copySource.RemoveCustomer(itSource->first);
-                if (copySource.GetTotalCost() < sourceCost) {
+                if (copySource.size() <= 2 || copySource.GetTotalCost() < sourceCost || force) {
                     best = temp.GetTotalCost();
                     bestRoute = temp;
                     // index of customer to remove
                     index = i;
+                    flag = true;
                 }
             }
         }
     }
     // if the route is better than before, update
-    if (best < dest.GetTotalCost()) {
-        dest = bestRoute;
+    if (best < dest.GetTotalCost() || flag) {
         itSource = source.GetRoute()->begin();
         std::advance(itSource, index);
         source.RemoveCustomer(itSource);
+        dest = bestRoute;
         ret = true;
     }
     return ret;
@@ -350,7 +359,8 @@ bool VRP::Move1FromTo(Route &source, Route &dest) {
                 Route tempFrom = *it;
                 Route tempTo = *jt;
                 int bestFrom = tempFrom.GetTotalCost();
-                int bestTo = tempFrom.GetTotalCost();
+                int bestTo = tempTo.GetTotalCost();
+                // swap the customers from a route to another and save the movement if better
                 if (SwapFromTo(tempFrom, tempTo) && tempFrom.GetTotalCost() < bestFrom && tempTo.GetTotalCost() < bestTo) {
                     std::get<0>(bests) = tempFrom;
                     std::get<1>(bests) = tempTo;
@@ -479,7 +489,7 @@ bool VRP::Opt12() {
                 Route tempFrom = *it;
                 Route tempTo = *jt;
                 int bestFrom = tempFrom.GetTotalCost();
-                int bestTo = tempFrom.GetTotalCost();
+                int bestTo = tempTo.GetTotalCost();
                 if (AddRemoveFromTo(tempFrom, tempTo, 1, 2) && tempFrom.GetTotalCost() < bestFrom && tempTo.GetTotalCost() < bestTo) {
                     std::get<0>(bests) = tempFrom;
                     std::get<1>(bests) = tempTo;
@@ -589,7 +599,7 @@ bool VRP::Opt21() {
                 Route tempFrom = *it;
                 Route tempTo = *jt;
                 int bestFrom = tempFrom.GetTotalCost();
-                int bestTo = tempFrom.GetTotalCost();
+                int bestTo = tempTo.GetTotalCost();
                 if (AddRemoveFromTo(tempFrom, tempTo, 2, 1) && tempFrom.GetTotalCost() < bestFrom && tempTo.GetTotalCost() < bestTo) {
                     std::get<0>(bests) = tempFrom;
                     std::get<1>(bests) = tempTo;
@@ -616,7 +626,7 @@ bool VRP::Opt21() {
  *
  * This function swaps two customers from the first route
  * with two customers from the second.
- * @return True if the routes are improves
+ * @return True if the routes are improved
  */
 bool VRP::Opt22() {
     bool flag = false;
@@ -630,7 +640,7 @@ bool VRP::Opt22() {
                 Route tempFrom = *it;
                 Route tempTo = *jt;
                 int bestFrom = tempFrom.GetTotalCost();
-                int bestTo = tempFrom.GetTotalCost();
+                int bestTo = tempTo.GetTotalCost();
                 if (AddRemoveFromTo(tempFrom, tempTo, 2, 2) && tempFrom.GetTotalCost() < bestFrom && tempTo.GetTotalCost() < bestTo) {
                     std::get<0>(bests) = tempFrom;
                     std::get<1>(bests) = tempTo;
@@ -653,12 +663,151 @@ bool VRP::Opt22() {
     return flag;
 }
 
+/** @brief Compute the total cost of routes.
+ *
+ * Compute the amount of costs for each route.
+ * The cost is used to check improvement on paths.
+ * @return The total cost
+ */
 int VRP::GetTotalCost() const {
     int tCost = 0;
     for (auto e : this->routes) {
         tCost += e.GetTotalCost();
     }
     return tCost;
+}
+
+
+/** @brief Try to balance the routes.
+ *
+ * Find route with one customer and move it to another route:
+ * execute a Opt10.
+ */
+void VRP::RouteBalancer() {
+    bool flag = false;
+    std::list<Route>::const_iterator it = this->routes.cbegin();
+    std::pair<Route, Route> bests = std::make_pair(*it, *it);
+    int indexFrom, indexTo;
+    // for each route
+    for (int i = 0; it != this->routes.cend(); ++it, ++i) {
+        if (it->size() == 3) {
+            std::list<Route>::const_iterator jt = this->routes.cbegin();
+            for (int j = 0; jt != this->routes.cend(); ++jt, ++j) {
+                if (jt != it && jt->size() > 3) {
+                    Route tempFrom = *it;
+                    Route tempTo = *jt;
+                    if (Move1FromTo(tempFrom, tempTo, true)) {
+                        std::get<0>(bests) = tempFrom;
+                        std::get<1>(bests) = tempTo;
+                        indexFrom = i;
+                        indexTo = j;
+                        flag = true;
+                    }
+                }
+            }
+        }
+    }
+    if (flag) {
+        std::list<Route>::iterator itFinal = this->routes.begin();
+        std::advance(itFinal, indexFrom);
+        *itFinal= std::get<0>(bests);
+        itFinal = this->routes.begin();
+        std::advance(itFinal, indexTo);
+        *itFinal = std::get<1>(bests);
+        this->CleanVoid();
+    }
+}
+
+/** @brief Swap two customer for each route.
+ *
+ * For every route swap two customer with distance lower than the average distance
+ * of the route and save the best solution.
+ * @return True if routes are improved
+ */
+bool VRP::Opt2() {
+    // per ogni route provo a fare 2opt:
+    // ritorno true se c'è un miglioramento
+    // per ogni route calcolo la media delle distanze e prendo i tratti minori o uguali alla media
+    // per ogni punto trovato lo scambio con un altro compatibile 2optSwap(route, i, k) e salvo la combinazione migliore
+    // 2optSwap(route, i, k):
+    // la nuova route è costruita da route[1] a route[i-1], route[i], route[k], route[k+1] fino alle fine
+    bool ret = false;
+    std::list<Route>::iterator it = this->routes.begin();
+    // Customers with short path (less than average)
+    std::list<Customer> custs;
+    int bestCost;
+    // for each route
+    for (; it != this->routes.end(); ++it) {
+        Route bestRoute = *it;
+        // get customers eligible to be swapped
+        it->GetUnderAverageCustomers(custs);
+        // need at least two customers
+        if (custs.size() > 1) {
+            bestCost = it->GetTotalCost();
+            std::list<Customer>::iterator i = custs.begin();
+            // for each pair of customers with min cost swap them e get the best result
+            for (; *i != custs.back(); ++i) {
+                std::list<Customer>::iterator k = i;
+                for (k++; k != custs.end(); ++k) {
+                    // swap customers
+                    Route tempRoute = this->Opt2Swap(*it, i, k);
+                    if (tempRoute.GetTotalCost() <= bestCost) {
+                        bestCost = tempRoute.GetTotalCost();
+                        bestRoute = tempRoute;
+                    }
+                }
+            }
+            // update the route
+            *it = bestRoute;
+        }
+    }
+    return ret;
+}
+
+/** @brief Swap two customer in a route
+ *
+ * This function swap two customers in a route.
+ * @param route The route to work with
+ * @param i The first customer to swap
+ * @param k The second customer to swap
+ * @return The new route with customers swapped
+ */
+Route VRP::Opt2Swap(Route route, std::list<Customer>::iterator i, std::list<Customer>::iterator k) {
+    std::list<Customer> cust;
+    Route tempRoute = route;
+    RouteList::iterator it = tempRoute.GetRoute()->begin();
+    // from start to i-1
+    while((*it).first != *i) {
+        cust.push_back((*it).first);
+        ++it;
+    }
+    it = tempRoute.GetRoute()->end();
+    it--;
+    while((*it).first != *k) {
+        --it;
+    }
+    // from i to k in reverse order
+    while((*it).first != *i) {
+        cust.push_back((*it).first);
+        --it;
+    }
+    // push i
+    cust.push_back(*i);
+    it = route.GetRoute()->begin();
+    while((*it).first != *k) {
+        ++it;
+    }
+    ++it;
+    // from k to end
+    while(it != route.GetRoute()->end()) {
+        cust.push_back((*it).first);
+        ++it;
+    }
+    // rebuild route
+    if (tempRoute.RebuildRoute(cust))
+        return tempRoute;
+    else
+        return route;
 }
 
 /* destructor */

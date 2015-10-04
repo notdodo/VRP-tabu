@@ -12,7 +12,7 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with Nome-Programma.  If not, see <http://www.gnu.org/licenses/>.
+    along with VRP.  If not, see <http://www.gnu.org/licenses/>.
  ****************************************************************************/
 
 #include "Route.h"
@@ -171,7 +171,7 @@ std::list<StepType>* Route::GetRoute() {
 }
 
 /** @brief Get a copy of the route class. */
-Route Route::CopyRoute() {
+Route Route::CopyRoute() const {
     return *this;
 }
 
@@ -227,7 +227,7 @@ bool Route::AddElem(const Customer c) {
         }
     }while (it != this->route.cend() && (unsigned)iter < this->route.size());
     // if the route is changed return the best match
-    if (best.size() > 0 && this->totalCost <= (*best.cbegin()).second.totalCost) {
+    if (best.size() > 0 && this->totalCost < (*best.cbegin()).second.totalCost) {
         *this = (*best.cbegin()).second;
         ret = true;
     }else
@@ -370,7 +370,7 @@ void Route::RemoveCustomer(std::list<StepType>::iterator &it) {
 void Route::RemoveCustomer(const Customer c) {
     std::list<StepType>::iterator it;
     if (c != this->route.front().first || c != this->route.back().first) {
-        for (it = this->route.begin(); it != this->route.cend(); it++) {
+        for (it = this->route.begin(); it != this->route.cend(); ++it) {
             if (it->first == c) {
                 this->RemoveCustomer(it);
                 break;
@@ -446,4 +446,61 @@ bool Route::AddElem(const Customer c, const Customer rem) {
 
 int Route::GetTotalCost() const {
     return this->totalCost;
+}
+
+void Route::SetAverageCost() {
+    this->averageCost = (float)this->totalCost / (this->route.size() - 1);
+}
+
+void Route::GetUnderAverageCustomers(std::list<Customer> &customers) {
+    this->SetAverageCost();
+    customers.clear();
+    std::list<std::pair<Customer, int>>::const_iterator i = this->route.cbegin();
+    for (; i != this->route.cend(); ++i) {
+        if (i->second > 0 && i->second <= this->averageCost) {
+            i++;
+            if (i->first != this->route.back().first)
+                customers.push_back(i->first);
+        }
+    }
+}
+
+bool Route::RebuildRoute(std::list<Customer> cust) {
+    this->route.clear();
+    this->totalCost = 0;
+    this->capacity = this->initialCapacity;
+    this->workTime = this->initialWorkTime;
+    std::list<Customer>::iterator i = cust.begin();
+    std::list<Customer>::iterator k = i;
+    k++;
+    Customer depot = cust.front();
+    bool ret = true;
+    int returnTime, tCost, capac, travelCost;
+    float workT;
+    for (; k != cust.end(); ++i, ++k) {
+        // save the route state
+        tCost = this->totalCost;
+        capac = this->capacity;
+        workT = this->workTime;
+        travelCost = this->graph.GetCosts(*i, *k).second;
+        tCost += travelCost;
+        capac -= (*k).request;
+        // service + travel time
+        workT -= (*k).serviceTime + (travelCost * this->TRAVEL_COST);
+        // must consider the time to return to depot
+        returnTime = (this->graph.GetCosts(*k, depot).second) * this->TRAVEL_COST;
+        // after the travel if constraints fails
+        if (capac < 0 || workT < returnTime) {
+            // no time or capacity to serve the customer: return to depot
+            ret = false;
+        } else {
+            // the travel can be added to the route
+            this->totalCost = tCost;
+            this->capacity = capac;
+            this->workTime = workT;
+            this->route.push_back({*i, travelCost});
+        }
+    }
+    this->route.push_back({depot, 0});
+    return ret;
 }
