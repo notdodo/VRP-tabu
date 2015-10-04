@@ -35,12 +35,13 @@ private:
     static const int INFO = 3;                  /**< Simple logging code */
     VRP* InitParameters (char **);
     void SaveResult(std::list<Route>);
-    template <typename T>
+
     /** @brief Print a log string
      *
      * @param s The string to print
      * @param c The code for log level
      */
+    template <typename T>
     void logger(T s, int c = 4) const {
         switch(c) {
             case SUCCESS:
