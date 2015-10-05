@@ -171,7 +171,7 @@ The program appended two more attribute which represent the final routes with re
 
 ## Web-UI
 Create files as the example above is something long and tedious, expecially for complex initial configurations.
-The Web-UI, created in HTML5, CSS3 and JavaScript, allows easily creation of input files in JSON simply creating the customers in a click. User can set all other settings without writing a single line of JSON.
+The [Web-UI](vrp-init/), created in HTML5, CSS3 and JavaScript, allows easily creation of input files in JSON simply creating the customers in a click. User can set all other settings without writing a single line of JSON.
 
 ![Example with customers](https://raw.githubusercontent.com/edoz90/VRP-tabu/master/screenshot/customers.png "Example")
 
