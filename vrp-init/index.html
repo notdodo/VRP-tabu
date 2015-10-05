@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>coord</title>
+    <link rel="stylesheet" href="coords.css">
+    <script src="jquery-1.11.3.js" type="text/javascript" charset="utf-8"></script>
+    <script src="min.fabric.js" type="text/javascript" charset="utf-8"></script>
+    <script src="coords.js" type="text/javascript" charset="utf-8" async defer></script>
+</head>
+
+<body>
+    <div id="left">
+        <canvas id="coords" width="800" height="600"></canvas>
+        <div id="controls">
+            <div id="log">Position: <span id="coord_msg">-----, -----</span></div>
+            <a download="input.json" id="download">Download</a>
+            <div id="routes"></div>
+        </div>
+    </div>
+    <div id="right">
+        <div id="clicks"></div>
+        <div id="parameters">
+            <label>m
+                <input type="number" name="vehicles" value="10">
+            </label>
+            <label>Q
+                <input type="number" name="capacity" size="4" value="600">
+            </label>
+            <label>L
+                <input type="number" name="time" size="4" value="480">
+            </label>
+            <label>max c<sub>ij</sub>
+                <input type="number" name="maxcost" size="4" value="12">
+            </label>
+            <label>max q<sub>i</sub>
+                <input type="number" name="maxrequest" size="4" value="50">
+            </label>
+            <label>max &delta;<sub>i</sub>
+                <input type="number" name="maxtime" size="4" value="40">
+            </label>
+            <button onclick="saveToFile()">Generate JSON</button>
+            <a download="input.json" id="download">Download</a>
+			<label><a href="#" onclick='fileupload.click();'>Select a file...</a>
+                <input id="fileupload" type="file" accept=".json">
+            </label>
+        </div>
+    </div>
+</body>
+
+</html>

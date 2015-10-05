@@ -1,0 +1,159 @@
+html {
+    box-sizing: border-box;
+    font-family: "Droid Sans", sans-serif;
+    color: white;
+}
+
+*, *:before, *:after {
+    box-sizing: inherit;
+}
+
+body {
+    background-color: #52B3D9;
+}
+
+a {
+	text-decoration: none;
+}
+
+#left, #right div {
+    float: left;
+}
+
+#right {
+    float: right;
+    width: 36%;
+}
+
+#right #parameters {
+    float: right;
+}
+
+.canvas-container, #clicks, #parameters {
+    margin: 10px 20px;
+}
+
+.canvas-container {
+    border: 2px solid white;
+    border-radius: 1%;
+}
+
+#clicks {
+    font-family: monospace;
+    font-size: 1.1em;
+}
+
+h2 {
+    font-family: "Droid Sans";
+    color: #019875;
+    font-size: 1.8em;
+}
+
+h2, h3 {
+    margin: 0 auto;
+}
+
+#parameters label, #parameters button {
+    margin: 30px;
+    text-align: right;
+    display: block;
+}
+
+#parameters label input[type="number"] {
+    width: 60px;
+    border: none;
+    background: #E4F1FE;
+    border-radius: 5px;
+    font-size: 1.2em;
+    text-align: center;
+}
+
+#parameters label {
+    padding-right: 20px;
+}
+
+#parameters button, #parameters label:last-child {
+    overflow: hidden !important;
+    padding: 5px;
+    font-size: 1.2em;
+    color: #F22613;
+    background: transparent;
+    border: 2px solid #E4F1FE;
+    border-radius: 10em;
+}
+
+#parameters button, #parameters label:last-child a {
+	color: #F22613;
+}
+
+#parameters label:last-child {
+    font-size: 1.3em;
+}
+
+#parameters button:hover {
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+#controls {
+    margin: 10px 30px;
+    clear: both;
+}
+
+#controls #log {
+    float: left;
+    font-family: sans;
+    width: 200px;
+    display: block;
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+#controls #log #coord_msg {
+    float: right;
+    color: white;
+    font-weight: normal;
+}
+
+#controls #routes {
+    width: 580px;
+    font-family: monospace;
+    font-size: 1.3em;
+    display: block;
+    float: left;
+}
+
+#controls #routes .cost {
+	color: #ECF0F1;
+}
+
+#controls #routes div span {
+    color: yellow;
+}
+
+#controls #routes div {
+    margin: 10px 2px;
+    cursor: help;
+}
+
+#controls #routes div:first-child {
+    margin-top: 0;
+}
+
+#controls #routes div .arrow {
+    color: black;
+}
+
+.num {
+    color: #1F3A93;
+}
+
+#download {
+    display: none;
+}
+
+#parameters #fileupload {
+    width: 10px;
+    height: 22px;
+    opacity: 0 !important;
+}
