@@ -444,14 +444,25 @@ bool Route::AddElem(const Customer c, const Customer rem) {
     return ret;
 }
 
+/** @brief Return the cost of the route
+ *
+ *  @return Cost of the route
+ */
 int Route::GetTotalCost() const {
     return this->totalCost;
 }
 
+/** @brief Compute the average cost of all paths */
 void Route::SetAverageCost() {
     this->averageCost = (float)this->totalCost / (this->route.size() - 1);
 }
 
+/** @brief List all customers with cost path lower the average.
+ *
+ * Create a list of customers which have a cost path lower than the average cost
+ * of the route.
+ * @param customers Initial list of customers
+ */
 void Route::GetUnderAverageCustomers(std::list<Customer> &customers) {
     this->SetAverageCost();
     customers.clear();
@@ -459,12 +470,22 @@ void Route::GetUnderAverageCustomers(std::list<Customer> &customers) {
     for (; i != this->route.cend(); ++i) {
         if (i->second > 0 && i->second <= this->averageCost) {
             i++;
-            if (i->first != this->route.back().first)
+            if (i->first != this->route.back().first) {
                 customers.push_back(i->first);
+                --i;
+            }else {
+                --i;
+                customers.push_back(i->first);
+            }
         }
     }
 }
 
+/** @brief Rebuild the route starting from a list of customers
+ *
+ * From a list of customers this function rebuild the route (checking all constraint)
+ * @return True if the new route is valid
+ */
 bool Route::RebuildRoute(std::list<Customer> cust) {
     this->route.clear();
     this->totalCost = 0;

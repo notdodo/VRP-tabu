@@ -718,19 +718,13 @@ void VRP::RouteBalancer() {
     }
 }
 
-/** @brief Swap two customer for each route.
+/** @brief Reorder the customers of route to delete cross over path.
  *
  * For every route swap two customer with distance lower than the average distance
  * of the route and save the best solution.
  * @return True if routes are improved
  */
 bool VRP::Opt2() {
-    // per ogni route provo a fare 2opt:
-    // ritorno true se c'è un miglioramento
-    // per ogni route calcolo la media delle distanze e prendo i tratti minori o uguali alla media
-    // per ogni punto trovato lo scambio con un altro compatibile 2optSwap(route, i, k) e salvo la combinazione migliore
-    // 2optSwap(route, i, k):
-    // la nuova route è costruita da route[1] a route[i-1], route[i], route[k], route[k+1] fino alle fine
     bool ret = false;
     std::list<Route>::iterator it = this->routes.begin();
     // Customers with short path (less than average)
@@ -754,11 +748,12 @@ bool VRP::Opt2() {
                     if (tempRoute.GetTotalCost() <= bestCost) {
                         bestCost = tempRoute.GetTotalCost();
                         bestRoute = tempRoute;
+                        ret = true;
                     }
                 }
             }
-            // update the route
-            *it = bestRoute;
+            if (ret)
+                *it = bestRoute;
         }
     }
     return ret;
@@ -782,7 +777,6 @@ Route VRP::Opt2Swap(Route route, std::list<Customer>::iterator i, std::list<Cust
         ++it;
     }
     it = tempRoute.GetRoute()->end();
-    it--;
     while((*it).first != *k) {
         --it;
     }
@@ -793,12 +787,131 @@ Route VRP::Opt2Swap(Route route, std::list<Customer>::iterator i, std::list<Cust
     }
     // push i
     cust.push_back(*i);
+    // from k+1 to end
     it = route.GetRoute()->begin();
     while((*it).first != *k) {
         ++it;
     }
     ++it;
-    // from k to end
+    while(it != route.GetRoute()->end()) {
+        cust.push_back((*it).first);
+        ++it;
+    }
+    // rebuild route
+    if (tempRoute.RebuildRoute(cust))
+        return tempRoute;
+    else
+        return route;
+}
+
+/** @brief Reorder the customers of route to delete cross over path.
+ *
+ * For every route swap two customer with distance lower than the average distance
+ * (the route crosses over itself) of the route and save the best solution.
+ * @return True if routes are improved
+ */
+bool VRP::Opt3() {
+    bool ret = false;
+    std::list<Route>::iterator it = this->routes.begin();
+    // Customers with short path (less than average)
+    std::list<Customer> custs;
+    int bestCost;
+    // for each route
+    for (; it != this->routes.end(); ++it) {
+        Route bestRoute = *it;
+        // get customers eligible to be swapped
+        it->GetUnderAverageCustomers(custs);
+        // need at least two customers
+        if (custs.size() > 3) {
+            bestCost = it->GetTotalCost();
+            std::list<Customer>::iterator i = custs.begin();
+            std::advance(i, custs.size() - 2);
+            Customer lastK = *i;
+            std::advance(i, -1);
+            Customer lastI = *i;
+            i = custs.begin();
+            // for each tuple of customers with min cost swap them e get the best result
+            for (; *i != lastI; ++i) {
+                std::list<Customer>::iterator k = i;
+                for (k++; *k != lastK; ++k) {
+                    std::list<Customer>::iterator l = k;
+                    for (l++; *l != custs.back(); ++l) {
+                        std::list<Customer>::iterator m = l;
+                        for (m++; m != custs.end(); ++m) {
+                            // swap customers
+                            Route tempRoute = this->Opt3Swap(*it, i, k, l, m);
+                            if (tempRoute.GetTotalCost() <= bestCost) {
+                                bestCost = tempRoute.GetTotalCost();
+                                bestRoute = tempRoute;
+                                ret = true;
+                            }
+                        }
+                    }
+                }
+            }
+            if (ret)
+                *it = bestRoute;
+        }
+    }
+    return ret;
+}
+
+/** @brief Swap three customer in a route
+ *
+ * This function swap two customers in a route.
+ * @param route The route to work with
+ * @param i The first customer to swap
+ * @param k The second customer to swap
+ * @param l The third customer to swap
+ * @param m The fourth customer to swap
+ * @return The new route with customers swapped
+ */
+Route VRP::Opt3Swap(Route route, std::list<Customer>::iterator i, std::list<Customer>::iterator k,
+                    std::list<Customer>::iterator l, std::list<Customer>::iterator m) {
+    std::list<Customer> cust;
+    Route tempRoute = route;
+    RouteList::iterator it = tempRoute.GetRoute()->begin();
+    // from start to i-1
+    while((*it).first != *i) {
+        cust.push_back((*it).first);
+        ++it;
+    }
+    // from i to k in reverse order
+    it = tempRoute.GetRoute()->end();
+    while((*it).first != *k) {
+        --it;
+    }
+    while((*it).first != *i) {
+        cust.push_back((*it).first);
+        --it;
+    }
+    // push i
+    cust.push_back(*i);
+    // from k+1 to l-1
+    while((*it).first != *k)
+        ++it;
+    ++it;
+    while((*it).first != *l) {
+        cust.push_back((*it).first);
+        ++it;
+    }
+    // from l to m in reverse order
+    it = tempRoute.GetRoute()->end();
+    while((*it).first != *m) {
+        --it;
+    }
+    while ((*it).first != *l) {
+        cust.push_back((*it).first);
+        --it;
+    }
+    // push l
+    cust.push_back(*l);
+    // from m+1 to end
+    it = route.GetRoute()->begin();
+    while((*it).first != *m) {
+        ++it;
+    }
+    ++it;
     while(it != route.GetRoute()->end()) {
         cust.push_back((*it).first);
         ++it;

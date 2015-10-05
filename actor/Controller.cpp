@@ -73,9 +73,10 @@ void Controller::RunOpts(int times) {
         if (!result)
             result = this->v->Opt22();
         i++;
-        this->v->RouteBalancer();
         this->v->Opt2();
+        this->v->Opt3();
     }
+    this->v->RouteBalancer();
 }
 
 void Controller::SaveResult() {
