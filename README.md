@@ -169,7 +169,8 @@ After the execution of the program the output file should be like this:
 ```
 The program appended two more attribute which represent the final routes with relative costs.
 The first route costs '923' and is:
-`v0 -> v1 -> v2 -> v3 -> v0`
+`v0 -> v1 -> v2 -> v3 -> v0`.
+
 The second route costs '356' and the path is:
 `v0 -> v4 -> v0`
 
