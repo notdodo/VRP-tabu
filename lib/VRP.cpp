@@ -24,13 +24,18 @@
  * @param v The number of vehicles
  * @param c The capacity of each vehicle
  * @param t The work time of each driver
+ * @param flagTime If the service time is a constraint
  */
-VRP::VRP(const Graph g, const int n, const int v, const int c, const int t) {
+VRP::VRP(const Graph g, const int n, const int v, const int c, const float t, const bool flagTime) {
     this->graph = g;
     this->numVertices = n;
     this->vehicles = v;
     this->capacity = c;
-    this->workTime = t;
+    // if no service time is needed
+    if (flagTime)
+        this->workTime = t;
+    else
+        this->workTime = std::numeric_limits<int>::max();
 }
 
 /** @brief This function creates the routes.

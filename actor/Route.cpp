@@ -23,11 +23,14 @@
  * @param wt Initial work time of the driver
  * @param g Graph of the customers
  */
-Route::Route(int c, int wt, const Graph g) {
+Route::Route(int c, float wt, const Graph g) {
     this->initialCapacity = this->capacity = c;
-    this->initialWorkTime = this->workTime = (float)wt;
+    this->initialWorkTime = this->workTime = wt;
     this->graph = g;
     this->totalCost = 0;
+    // if the service time is not a constraint reset the cost of travelling
+    if (wt == std::numeric_limits<int>::max())
+        this->TRAVEL_COST = (float)0;
 }
 
 /** @brief Close a route.

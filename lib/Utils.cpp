@@ -55,6 +55,7 @@ VRP* Utils::InitParameters(char **argv) {
                                     this->d["vertices"][0]["y"].GetInt());
             g.InsertVertex(customers[0]);
             int x, y, request, serviceTime;
+            bool flagTime = false;
             /* parsing all customers */
             for (int i = 1; i < numVertices; i++) {
                 auto& item = d["vertices"][i];
@@ -67,8 +68,10 @@ VRP* Utils::InitParameters(char **argv) {
                         y = this->d["vertices"][i]["y"].GetInt();
                         request = this->d["vertices"][i]["request"].GetInt();
                         serviceTime = this->d["vertices"][i]["time"].GetInt();
-
                         customers[i] = Customer(n, x, y, request, serviceTime);
+                        // if no service time
+                        if (!flagTime && serviceTime > 0)
+                            flagTime = true;
                         g.InsertVertex(customers[i]);
                 }else {
                     throw s;
@@ -95,7 +98,7 @@ VRP* Utils::InitParameters(char **argv) {
                       numVertices,
                       this->d["vehicles"].GetInt(),
                       this->d["capacity"].GetInt(),
-                      this->d["worktime"].GetInt());
+                      this->d["worktime"].GetInt(), flagTime);
             }else {
                 throw s;
             }

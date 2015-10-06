@@ -3,6 +3,7 @@
 
 #include <list>
 #include <iomanip>
+#include <limits>
 #include "Graph.h"
 
 typedef std::pair<Customer, int> StepType;
@@ -28,7 +29,7 @@ private:
     int totalCost;                  /**< Total cost of the route: sum of the weight */
     float averageCost;              /**< Average of all path costs */
     // cost of traveling
-    const float TRAVEL_COST = 0.3f; /**< Parameter for each travel */
+    float TRAVEL_COST = 0.3f; /**< Parameter for each travel */
     Graph graph;                    /**< Graph of the customers */
 protected:
     std::list<StepType> route;      /**< This list represent the route */
@@ -45,7 +46,7 @@ public:
         return *this;
     }
     // constructor
-    Route(int, int, const Graph);       //!< constructor
+    Route(const int, const float, const Graph);       //!< constructor
     void CloseTravel(const Customer);
     bool CloseTravel(const Customer, const Customer);
     void PrintRoute();

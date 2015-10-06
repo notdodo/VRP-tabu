@@ -1,8 +1,6 @@
 #ifndef VRP_H
 #define VRP_H
 
-#include <chrono>
-#include <algorithm>
 #include "Graph.h"
 #include "Route.h"
 
@@ -16,7 +14,7 @@ private:
     int numVertices;            /**< Number of customers */
     int vehicles;               /**< Number of vehicles */
     int capacity;               /**< Capacity of each vehicle */
-    int workTime;               /**< Work time for each driver */
+    float workTime;               /**< Work time for each driver */
     int totalCost;              /**< Total cost of the routes */
     Map::const_iterator InsertStep(Customer, Map::iterator, Map::const_iterator, Route &, Map &);
     bool SwapFromTo(Route &, Route &);
@@ -27,7 +25,7 @@ private:
     Route Opt3Swap(Route, std::list<Customer>::iterator, std::list<Customer>::iterator, std::list<Customer>::iterator, std::list<Customer>::iterator);
 public:
     VRP() {} //!< constructor
-    VRP(const Graph g, const int n, const int v, const int c, const int t); //!< constructor
+    VRP(const Graph, const int, const int, const int, const float, const bool); //!< constructor
     int InitSolutions();
     std::list<Route>* GetRoutes();
     void OrderByCosts();
