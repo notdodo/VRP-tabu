@@ -175,12 +175,12 @@ The second route costs '356' and the path is:
 `v0 -> v4 -> v0`
 
 ## Web-UI
-Create files as the example above is something long and tedious, expecially for complex initial configurations.
-The [Web-UI](vrp-init/), created in HTML5, CSS3 and JavaScript, allows easily creation of input files in JSON simply creating the customers in a click. User can set all other settings without writing a single line of JSON.
+Creating files as the example above is something long and tedious, expecially for complex initial configurations.
+The [Web-UI](vrp-init/), created in HTML5, CSS3 and JavaScript, allows easily generation of JSON input file creating various clients with a click. User can set all other settings without writing a single line of JSON.
 
 ![Example with customers](https://raw.githubusercontent.com/edoz90/VRP-tabu/master/screenshot/customers.png "Example")
 
-The application could be run in a web server or simply opening the `coords.html` file.
+The application could be run in a web server or simply opening the file `index.html`.
 
 After creating and executing the JSON file through the VRP program the Web-UI can read the output file to display costs and routes.
 
