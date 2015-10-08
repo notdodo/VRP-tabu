@@ -28,8 +28,7 @@ private:
     float workTime;                 /**< Work time remaining */
     int totalCost;                  /**< Total cost of the route: sum of the weight */
     float averageCost;              /**< Average of all path costs */
-    // cost of traveling
-    float TRAVEL_COST = 0.3f; /**< Parameter for each travel */
+    float TRAVEL_COST = 0.3f;       /**< Parameter for each travel */
     Graph graph;                    /**< Graph of the customers */
 protected:
     std::list<StepType> route;      /**< This list represent the route */
@@ -45,7 +44,6 @@ public:
         this->graph = r.graph;
         return *this;
     }
-    // constructor
     Route(const int, const float, const Graph);       //!< constructor
     void CloseTravel(const Customer);
     bool CloseTravel(const Customer, const Customer);

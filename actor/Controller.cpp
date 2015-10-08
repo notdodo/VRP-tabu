@@ -72,9 +72,9 @@ void Controller::RunOpts(int times) {
             result = this->v->Opt21();
         if (!result)
             result = this->v->Opt22();
-        i++;
         this->v->Opt2();
         this->v->Opt3();
+        ++i;
     }
     this->v->RouteBalancer();
 }
