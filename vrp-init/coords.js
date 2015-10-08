@@ -11,6 +11,7 @@ var vertex = [], routes = [], canvasCustomers = [], costs = [];
 var centerX = canvas.width / 2 - 6, centerY = canvas.height / 2 - 2;
 var fontSize = 14;
 var intRegex = /(\d+)/g;
+var flagVRP = false;
 
 /* display the center of the canvas */
 $(function() {
@@ -135,12 +136,12 @@ function setRequestTime(par) {
     }
 }
 
-/* generate the trinagular matrix of the arcs cost with null diagonal*/
+/* generate the triangular matrix of the arcs cost with null diagonal*/
 function getCostsMatrix(max) {
     var costs = [];
-    for (var k = 0; k < i; k++) {
+    for (var k = 0; k < vertex.length; k++) {
         var row = [];
-        for (j = 0; j < i; j++) {
+        for (j = 0; j < vertex.length; j++) {
             if ( k !== j) {
                 var item = {
                     from : k,
@@ -157,6 +158,8 @@ function getCostsMatrix(max) {
 
 function distance(a, b) {
     var dist = Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
+    if (Math.floor(dist) <= 0)
+        dist = 1;
     return dist;
 }
 
@@ -202,10 +205,13 @@ function readSingleFile(evt) {
         var r = new FileReader();
         r.onload = function(e) {
             var contents = e.target.result;
-            if (f.type == "application/json") {
+			var extension = f.name.substr((~-f.name.lastIndexOf(".") >>> 0) + 2);
+            if (f.type == "application/json" && extension === "json") {
                 var data = JSON.parse(contents);
                 parseCustomer(data);
-            }
+            }else if (f.type === "" && extension === "vrp") {
+				convertFile(contents);
+			}
         };
         r.onerror = function(e) {
             alert("Errore!");
@@ -220,7 +226,9 @@ function readSingleFile(evt) {
 /* ~130 microseconds */
 function parseCustomer(cs) {
     var start = performance.now();
-    if (Array.isArray(cs.vertices) && Array.isArray(cs.routes)) {
+    if (cs.type === "VRP")
+        flagVRP = true;
+    if (Array.isArray(cs.vertices)) {
         // before draw clean all the canvas
         canvas.on('mouse:over', onMouse);
         canvas.on('mouse:out', onMouse);
@@ -245,6 +253,10 @@ function parseCustomer(cs) {
             }
             var a = [];
             /* calculate real points for canvas */
+            if (flagVRP) {
+                cs.vertices[c].x = cs.vertices[c].x * cs.size;
+                cs.vertices[c].y = cs.vertices[c].y * cs.size;
+            }
             a.clientX = cs.vertices[c].x + canvas.width / 2 + rect.left;
             a.clientY = -(cs.vertices[c].y - canvas.height / 2) + rect.top;
             drawCustomer(i, a, false);
@@ -265,7 +277,8 @@ function parseCustomer(cs) {
         pars[2].value = cs.worktime;
         for (var n in pars)
             pars[n].disabled = true;
-        drawRoutes(cs.routes);
+        if(Array.isArray(cs.routes))
+            drawRoutes(cs.routes);
         var stop = performance.now();
         console.log(stop-start);
         fileupload.value = "";
@@ -346,6 +359,8 @@ function onMouse(e) {
                 drawOneRoute(id);
                 break;
         }
+    }else {
+
     }
 }
 
@@ -410,6 +425,11 @@ var lastCustomer = {
     text: null
 };
 function showOneCustomer(i) {
+    if (lastCustomer.text != null) {
+        canvas.remove(lastCustomer.text);
+        lastCustomer.i = null;
+        lastCustomer.text = null;
+    }
     var customer = vertex[i];
     var req = customer.request;
     var tim = customer.time;
@@ -456,4 +476,77 @@ function drawAll(r) {
         if (!routes[route].draw && route != r)
             canvas.add(routes[route].path);
     }
+}
+
+function convertFile(data) {
+	data = data.split("\n");
+    var dimension, capacity;
+    var i = 0;
+    while(data[i].lastIndexOf("EOF") < 0) {
+        if (data[i].lastIndexOf("DIMENSION") >= 0) {
+            // remove the depot
+            dimension = parseInt(data[i].split(" ")[2].trim()) - 1;
+        }
+        if (data[i].lastIndexOf("CAPACITY") >= 0) {
+            capacity = parseInt(data[i].split(" ")[2].trim());
+        }
+        if (data[i].lastIndexOf("NODE_COORD_SECTION") >= 0 && dimension > 0) {
+            i++;
+            var iCustomer = 0;
+            vertex = [];
+            var item = {
+                "name" : "V0",
+                "x": 0,
+                "y": 0
+            };
+            xDepot = parseInt(data[i].split(" ")[1].trim());
+            yDepot = parseInt(data[i].split(" ")[2].trim());
+            // push depot
+            vertex.push(item);
+            i++;
+            while (iCustomer < dimension) {
+                item = "";
+                X = parseInt(data[i].split(" ")[1].trim()) - xDepot;
+                Y = parseInt(data[i].split(" ")[2].trim()) - yDepot;
+                console.log(X, Y);
+                item = {
+                    "name" : "V" + (iCustomer + 1),
+                    "x": X,
+                    "y": Y,
+                    "request": 0,
+                    "time" : 0
+                }
+                vertex.push(item);
+                iCustomer++;
+                i++;
+            }
+            i--;
+        }
+        if (data[i].lastIndexOf("DEMAND_SECTION") >= 0 && dimension > 0 && vertex.length > 1) {
+            // jump to the first customer
+            i += 2;
+            var iCustomer = 1;
+            // push depot
+            while (iCustomer < vertex.length) {
+                vertex[iCustomer].request = parseInt(data[i].split(" ")[1].trim());
+                iCustomer++;
+                i++;
+            }
+            i--;
+        }
+        i++;
+    }
+    if (vertex.length > 1) {
+        outputJSON = JSON.stringify({
+            "type": "VRP",
+            "size": 4,
+            vertices: vertex,
+            "vehicles": parseInt(pars[0].value, 10),
+            "capacity": capacity,
+            "worktime": vertex.length,
+            "costs": getCostsMatrix(pars[3].value)
+        }, null, 4);
+        createFile(outputJSON);
+    }else
+        alert("Something went wrong");
 }
