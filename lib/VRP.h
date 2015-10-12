@@ -3,12 +3,17 @@
 
 #include "Graph.h"
 #include "Route.h"
+#include <thread>
+#include <mutex>
 
 typedef std::multimap<int, Customer> Map;
 typedef std::list<std::pair<Customer, int>> RouteList;
+// contains: the index of the two routes and the two routes
+typedef std::list<std::pair<std::pair<int, int>, std::pair<Route, Route>>> ResultList;
 
 class VRP {
 private:
+    std::mutex *mtx;
     Graph graph;                /**< Graph of customers */
     std::list<Route> routes;    /**< List of all routes */
     int numVertices;            /**< Number of customers */

@@ -27,6 +27,7 @@
  * @param flagTime If the service time is a constraint
  */
 VRP::VRP(const Graph g, const int n, const int v, const int c, const float t, const bool flagTime) {
+    this->mtx = new std::mutex();
     this->graph = g;
     this->numVertices = n;
     this->vehicles = v;
@@ -216,39 +217,48 @@ void VRP::CleanVoid() {
 bool VRP::Opt10() {
     bool flag = false;
     std::list<Route>::const_iterator it = this->routes.cbegin();
-    // best combination of swap/move
-    std::pair<Route, Route> bests = std::make_pair(*it, *it);
-    int indexFrom, indexTo;
-    // for each route choose one customer
-    for (int i = 0; it != this->routes.cend(); ++it, ++i) {
+    // list of best results from threads
+    ResultList l;
+    // list of threads
+    std::list<std::thread> th;
+    for (int i = 0; it != this->routes.cend(); std::advance(it, 1), ++i) {
         std::list<Route>::const_iterator jt = this->routes.cbegin();
-        // try to move the chosen customer in every route
-        for (int j = 0; jt != this->routes.cend(); ++jt, ++j) {
+        for (int j = 0; jt != this->routes.cend(); std::advance(jt, 1), ++j) {
             if (jt != it) {
-                Route tempFrom = *it;
-                Route tempTo = *jt;
-                int bestFrom = tempFrom.GetTotalCost();
-                int bestTo = tempTo.GetTotalCost();
-                // try to insert the customer in each position of the route and save the best combination
-                if (Move1FromTo(tempFrom, tempTo, false) && tempFrom.GetTotalCost() < bestFrom && tempTo.GetTotalCost() < bestTo) {
-                    std::get<0>(bests) = tempFrom;
-                    std::get<1>(bests) = tempTo;
-                    indexFrom = i;
-                    indexTo = j;
-                    flag = true;
-                }
+                // create a thread to run Move1FromTo function and save the result in l list
+                th.push_back(std::thread([it, jt, i, j, &l, this]() {
+                    Route tFrom = *it;
+                    Route tTo = *jt;
+                    int costFrom = tFrom.GetTotalCost();
+                    int costTo = tTo.GetTotalCost();
+                    // if the swap is done and the cost of routes is less than before
+                    if (Move1FromTo(tFrom, tTo, false) && tFrom.GetTotalCost() < costFrom && tTo.GetTotalCost() < costTo) {
+                        // wait until the lock is unlocked from an onther thread, which is terminated
+                        std::lock_guard<std::mutex> lock(*this->mtx);
+                        // LOCK acquired, if the cost of routes is better than the actual best, update the list
+                        if ((tFrom.GetTotalCost() < l.front().second.first.GetTotalCost() && tTo.GetTotalCost() < l.front().second.second.GetTotalCost()) || l.size() == 0)
+                            l.push_front(std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo)));
+                    }
+                }));
             }
         }
     }
-    if (flag) {
-        // update routes with the best movement
+    // wait to finish all threads
+    for (std::list<std::thread>::iterator tl = th.begin(); tl != th.end(); ++tl)
+        tl->join();
+    std::cout << "opt10 " << l.size() << std::endl;
+    // if some improvement are made update the routes
+    if (l.size() > 0) {
         std::list<Route>::iterator itFinal = this->routes.begin();
+        int indexFrom = l.front().first.first;
+        int indexTo = l.front().first.second;
         std::advance(itFinal, indexFrom);
-        *itFinal= std::get<0>(bests);
+        *itFinal= l.front().second.first;
         itFinal = this->routes.begin();
         std::advance(itFinal, indexTo);
-        *itFinal = std::get<1>(bests);
+        *itFinal = l.front().second.second;
         this->CleanVoid();
+        flag = true;
     }
     return flag;
 }
@@ -262,34 +272,40 @@ bool VRP::Opt10() {
 bool VRP::Opt01() {
     bool flag = false;
     std::list<Route>::const_iterator it = this->routes.cbegin();
-    std::pair<Route, Route> bests = std::make_pair(*it, *it);
-    int indexFrom, indexTo;
-    for (int i = 0; it != this->routes.cend(); ++it, ++i) {
+    ResultList l;
+    std::list<std::thread> th;
+    for (int i = 0; it != this->routes.cend(); std::advance(it, 1), ++i) {
         std::list<Route>::const_iterator jt = this->routes.cbegin();
-        for (int j = 0; jt != this->routes.cend(); ++jt, ++j) {
+        for (int j = 0; jt != this->routes.cend(); std::advance(jt, 1), ++j) {
             if (jt != it) {
-                Route tempFrom = *it;
-                Route tempTo = *jt;
-                int bestFrom = tempFrom.GetTotalCost();
-                int bestTo = tempTo.GetTotalCost();
-                if (Move1FromTo(tempTo, tempFrom, false) && tempFrom.GetTotalCost() < bestFrom && tempTo.GetTotalCost() < bestTo) {
-                    std::get<0>(bests) = tempFrom;
-                    std::get<1>(bests) = tempTo;
-                    indexFrom = i;
-                    indexTo = j;
-                    flag = true;
-                }
+                th.push_back(std::thread([it, jt, i, j, &l, this]() {
+                    Route tFrom = *it;
+                    Route tTo = *jt;
+                    int costFrom = tFrom.GetTotalCost();
+                    int costTo = tTo.GetTotalCost();
+                    if (Move1FromTo(tTo, tFrom, false) && tFrom.GetTotalCost() < costFrom && tTo.GetTotalCost() < costTo) {
+                        std::lock_guard<std::mutex> lock(*this->mtx);
+                        if ((tFrom.GetTotalCost() < l.front().second.first.GetTotalCost() && tTo.GetTotalCost() < l.front().second.second.GetTotalCost()) || l.size() == 0)
+                            l.push_front(std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo)));
+                    }
+                }));
             }
         }
     }
-    if (flag) {
+    for (std::list<std::thread>::iterator tl = th.begin(); tl != th.end(); ++tl)
+        tl->join();
+    std::cout << "opt01 " << l.size() << std::endl;
+    if (l.size() > 0) {
         std::list<Route>::iterator itFinal = this->routes.begin();
+        int indexFrom = l.front().first.first;
+        int indexTo = l.front().first.second;
         std::advance(itFinal, indexFrom);
-        *itFinal= std::get<0>(bests);
+        *itFinal= l.front().second.first;
         itFinal = this->routes.begin();
         std::advance(itFinal, indexTo);
-        *itFinal = std::get<1>(bests);
+        *itFinal = l.front().second.second;
         this->CleanVoid();
+        flag = true;
     }
     return flag;
 }
@@ -355,34 +371,40 @@ bool VRP::Move1FromTo(Route &source, Route &dest, bool force) {
  bool VRP::Opt11() {
     bool flag = false;
     std::list<Route>::const_iterator it = this->routes.cbegin();
-    std::pair<Route, Route> bests = std::make_pair(*it, *it);
-    int indexFrom, indexTo;
-    for (int i = 0; it != this->routes.cend(); ++it, ++i) {
+    ResultList l;
+    std::list<std::thread> th;
+    for (int i = 0; it != this->routes.cend(); std::advance(it, 1), ++i) {
         std::list<Route>::const_iterator jt = this->routes.cbegin();
-        for (int j = 0; jt != this->routes.cend(); ++jt, ++j) {
+        for (int j = 0; jt != this->routes.cend(); std::advance(jt, 1), ++j) {
             if (jt != it) {
-                Route tempFrom = *it;
-                Route tempTo = *jt;
-                int bestFrom = tempFrom.GetTotalCost();
-                int bestTo = tempTo.GetTotalCost();
-                // swap the customers from a route to another and save the movement if better
-                if (SwapFromTo(tempFrom, tempTo) && tempFrom.GetTotalCost() < bestFrom && tempTo.GetTotalCost() < bestTo) {
-                    std::get<0>(bests) = tempFrom;
-                    std::get<1>(bests) = tempTo;
-                    indexFrom = i;
-                    indexTo = j;
-                    flag = true;
-                }
+                th.push_back(std::thread([it, jt, i, j, &l, this]() {
+                    Route tFrom = *it;
+                    Route tTo = *jt;
+                    int costFrom = tFrom.GetTotalCost();
+                    int costTo = tTo.GetTotalCost();
+                    if (SwapFromTo(tFrom, tTo) && tFrom.GetTotalCost() < costFrom && tTo.GetTotalCost() < costTo) {
+                        std::lock_guard<std::mutex> lock(*this->mtx);
+                        if ((tFrom.GetTotalCost() < l.front().second.first.GetTotalCost() && tTo.GetTotalCost() < l.front().second.second.GetTotalCost()) || l.size() == 0)
+                            l.push_front(std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo)));
+                    }
+                }));
             }
         }
     }
-    if (flag) {
+    for (std::list<std::thread>::iterator tl = th.begin(); tl != th.end(); ++tl)
+        tl->join();
+    std::cout << "opt11 " << l.size() << std::endl;
+    if (l.size() > 0) {
         std::list<Route>::iterator itFinal = this->routes.begin();
+        int indexFrom = l.front().first.first;
+        int indexTo = l.front().first.second;
         std::advance(itFinal, indexFrom);
-        *itFinal= std::get<0>(bests);
+        *itFinal= l.front().second.first;
         itFinal = this->routes.begin();
         std::advance(itFinal, indexTo);
-        *itFinal = std::get<1>(bests);
+        *itFinal = l.front().second.second;
+        this->CleanVoid();
+        flag = true;
     }
     return flag;
 }
@@ -396,13 +418,10 @@ bool VRP::Move1FromTo(Route &source, Route &dest, bool force) {
  */
 bool VRP::SwapFromTo(Route &source, Route &dest) {
     bool ret = false;
-    int bestSourceCost = source.GetTotalCost();
-    int bestDestCost = dest.GetTotalCost();
+    int bestSourceCost = source.GetTotalCost(), bestDestCost = dest.GetTotalCost();
     int sourceCost = source.GetTotalCost();
-    int removeSource = 0;
-    int removeDest = 0;
-    Route bestRouteSource = source.CopyRoute();
-    Route bestRouteDest = dest.CopyRoute();
+    int removeSource = 0, removeDest = 0;
+    Route bestRouteSource = source.CopyRoute(), bestRouteDest = dest.CopyRoute();
     RouteList::iterator itSource = source.GetRoute()->begin();
     RouteList::iterator itDest;
     // cannot move the depot (start)
@@ -485,34 +504,40 @@ bool VRP::SwapFromTo(Route &source, Route &dest) {
 bool VRP::Opt12() {
     bool flag = false;
     std::list<Route>::const_iterator it = this->routes.cbegin();
-    std::pair<Route, Route> bests = std::make_pair(*it, *it);
-    int indexFrom, indexTo;
+    ResultList l;
+    std::list<std::thread> th;
     for (int i = 0; it != this->routes.cend(); std::advance(it, 1), ++i) {
         std::list<Route>::const_iterator jt = this->routes.cbegin();
         for (int j = 0; jt != this->routes.cend(); std::advance(jt, 1), ++j) {
             if (jt != it) {
-                Route tempFrom = *it;
-                Route tempTo = *jt;
-                int bestFrom = tempFrom.GetTotalCost();
-                int bestTo = tempTo.GetTotalCost();
-                if (AddRemoveFromTo(tempFrom, tempTo, 1, 2) && tempFrom.GetTotalCost() < bestFrom && tempTo.GetTotalCost() < bestTo) {
-                    std::get<0>(bests) = tempFrom;
-                    std::get<1>(bests) = tempTo;
-                    indexFrom = i;
-                    indexTo = j;
-                    flag = true;
-                }
+                th.push_back(std::thread([it, jt, i, j, &l, this]() {
+                    Route tFrom = *it;
+                    Route tTo = *jt;
+                    int costFrom = tFrom.GetTotalCost();
+                    int costTo = tTo.GetTotalCost();
+                    if (AddRemoveFromTo(tFrom, tTo, 1, 2) && tFrom.GetTotalCost() < costFrom && tTo.GetTotalCost() < costTo) {
+                        std::lock_guard<std::mutex> lock(*this->mtx);
+                        if ((tFrom.GetTotalCost() < l.front().second.first.GetTotalCost() && tTo.GetTotalCost() < l.front().second.second.GetTotalCost()) || l.size() == 0)
+                            l.push_front(std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo)));
+                    }
+                }));
             }
         }
     }
-    if (flag) {
+    for (std::list<std::thread>::iterator tl = th.begin(); tl != th.end(); ++tl)
+        tl->join();
+    std::cout << "opt12 " << l.size() << std::endl;
+    if (l.size() > 0) {
         std::list<Route>::iterator itFinal = this->routes.begin();
+        int indexFrom = l.front().first.first;
+        int indexTo = l.front().first.second;
         std::advance(itFinal, indexFrom);
-        *itFinal= std::get<0>(bests);
+        *itFinal= l.front().second.first;
         itFinal = this->routes.begin();
         std::advance(itFinal, indexTo);
-        *itFinal = std::get<1>(bests);
+        *itFinal = l.front().second.second;
         this->CleanVoid();
+        flag = true;
     }
     return flag;
 }
@@ -595,34 +620,40 @@ bool VRP::AddRemoveFromTo(Route &source, Route &dest, int nInsert, int nRemove) 
 bool VRP::Opt21() {
     bool flag = false;
     std::list<Route>::const_iterator it = this->routes.cbegin();
-    std::pair<Route, Route> bests = std::make_pair(*it, *it);
-    int indexFrom, indexTo;
+    ResultList l;
+    std::list<std::thread> th;
     for (int i = 0; it != this->routes.cend(); std::advance(it, 1), ++i) {
         std::list<Route>::const_iterator jt = this->routes.cbegin();
         for (int j = 0; jt != this->routes.cend(); std::advance(jt, 1), ++j) {
             if (jt != it) {
-                Route tempFrom = *it;
-                Route tempTo = *jt;
-                int bestFrom = tempFrom.GetTotalCost();
-                int bestTo = tempTo.GetTotalCost();
-                if (AddRemoveFromTo(tempFrom, tempTo, 2, 1) && tempFrom.GetTotalCost() < bestFrom && tempTo.GetTotalCost() < bestTo) {
-                    std::get<0>(bests) = tempFrom;
-                    std::get<1>(bests) = tempTo;
-                    indexFrom = i;
-                    indexTo = j;
-                    flag = true;
-                }
+                th.push_back(std::thread([it, jt, i, j, &l, this]() {
+                    Route tFrom = *it;
+                    Route tTo = *jt;
+                    int costFrom = tFrom.GetTotalCost();
+                    int costTo = tTo.GetTotalCost();
+                    if (AddRemoveFromTo(tFrom, tTo, 2, 1) && tFrom.GetTotalCost() < costFrom && tTo.GetTotalCost() < costTo) {
+                        std::lock_guard<std::mutex> lock(*this->mtx);
+                        if ((tFrom.GetTotalCost() < l.front().second.first.GetTotalCost() && tTo.GetTotalCost() < l.front().second.second.GetTotalCost()) || l.size() == 0)
+                            l.push_front(std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo)));
+                    }
+                }));
             }
         }
     }
-    if (flag) {
+    for (std::list<std::thread>::iterator tl = th.begin(); tl != th.end(); ++tl)
+        tl->join();
+    std::cout << "opt21 " << l.size() << std::endl;
+    if (l.size() > 0) {
         std::list<Route>::iterator itFinal = this->routes.begin();
+        int indexFrom = l.front().first.first;
+        int indexTo = l.front().first.second;
         std::advance(itFinal, indexFrom);
-        *itFinal= std::get<0>(bests);
+        *itFinal= l.front().second.first;
         itFinal = this->routes.begin();
         std::advance(itFinal, indexTo);
-        *itFinal = std::get<1>(bests);
+        *itFinal = l.front().second.second;
         this->CleanVoid();
+        flag = true;
     }
     return flag;
 }
@@ -636,34 +667,40 @@ bool VRP::Opt21() {
 bool VRP::Opt22() {
     bool flag = false;
     std::list<Route>::const_iterator it = this->routes.cbegin();
-    std::pair<Route, Route> bests = std::make_pair(*it, *it);
-    int indexFrom, indexTo;
+    ResultList l;
+    std::list<std::thread> th;
     for (int i = 0; it != this->routes.cend(); std::advance(it, 1), ++i) {
         std::list<Route>::const_iterator jt = this->routes.cbegin();
         for (int j = 0; jt != this->routes.cend(); std::advance(jt, 1), ++j) {
             if (jt != it) {
-                Route tempFrom = *it;
-                Route tempTo = *jt;
-                int bestFrom = tempFrom.GetTotalCost();
-                int bestTo = tempTo.GetTotalCost();
-                if (AddRemoveFromTo(tempFrom, tempTo, 2, 2) && tempFrom.GetTotalCost() < bestFrom && tempTo.GetTotalCost() < bestTo) {
-                    std::get<0>(bests) = tempFrom;
-                    std::get<1>(bests) = tempTo;
-                    indexFrom = i;
-                    indexTo = j;
-                    flag = true;
-                }
+                th.push_back(std::thread([it, jt, i, j, &l, this]() {
+                    Route tFrom = *it;
+                    Route tTo = *jt;
+                    int costFrom = tFrom.GetTotalCost();
+                    int costTo = tTo.GetTotalCost();
+                    if (AddRemoveFromTo(tFrom, tTo, 2, 2) && tFrom.GetTotalCost() < costFrom && tTo.GetTotalCost() < costTo) {
+                        std::lock_guard<std::mutex> lock(*this->mtx);
+                        if ((tFrom.GetTotalCost() < l.front().second.first.GetTotalCost() && tTo.GetTotalCost() < l.front().second.second.GetTotalCost()) || l.size() == 0)
+                            l.push_front(std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo)));
+                    }
+                }));
             }
         }
     }
-    if (flag) {
+    for (std::list<std::thread>::iterator tl = th.begin(); tl != th.end(); ++tl)
+        tl->join();
+    std::cout << "opt22 " << l.size() << std::endl;
+    if (l.size() > 0) {
         std::list<Route>::iterator itFinal = this->routes.begin();
+        int indexFrom = l.front().first.first;
+        int indexTo = l.front().first.second;
         std::advance(itFinal, indexFrom);
-        *itFinal= std::get<0>(bests);
+        *itFinal= l.front().second.first;
         itFinal = this->routes.begin();
         std::advance(itFinal, indexTo);
-        *itFinal = std::get<1>(bests);
+        *itFinal = l.front().second.second;
         this->CleanVoid();
+        flag = true;
     }
     return flag;
 }
