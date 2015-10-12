@@ -12,15 +12,41 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with VRP.  If not, see <http://www.gnu.org/licenses/>.
+    along with Nome-Programma.  If not, see <http://www.gnu.org/licenses/>.
  ****************************************************************************/
 
 #include "Controller.h"
+#include <thread>         // std::thread
 #include <chrono>
 
 using namespace std;
 
+/*void a() {
+    cout << this_thread::get_id() << endl;
+    this_thread::sleep_for (chrono::seconds(1));
+}
+
+void b() {
+    cout << "NO"<< endl;
+    std::this_thread::sleep_for (std::chrono::seconds(1));
+}
+
+
+class prova {
+private:
+    int coso;
+public:
+    prova(){cout << "conS" << endl; coso=0;};
+    void ciao(int n) {
+        coso = n;
+        cout << n << endl;
+    }
+    int get() {return this->coso;}
+};*/
 int main(int argc, char** argv) {
+    /*prova p;
+    int n = 40;
+    hread t(&prova::ciao, &p, n);*/
     chrono::high_resolution_clock::time_point t1 = chrono::high_resolution_clock::now();
     Controller &c = Controller::Instance();
     Utils &u = Utils::Instance();
@@ -32,9 +58,11 @@ int main(int argc, char** argv) {
         }
     }else
         u.logger("Usage: ./VRP data.json", u.ERROR);
-
+    /*t.join();
+    cout << p.get() << endl;*/
     chrono::high_resolution_clock::time_point t2 = chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+
     cout << std::to_string(duration) << " milliseconds" << std::endl;
     return 0;
 }
