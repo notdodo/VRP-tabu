@@ -59,22 +59,27 @@ void Controller::PrintRoutes() {
 
 void Controller::RunOpts(int times) {
     int i = 0;
-    bool result;
+    bool result, optxx = true;
     while (i < times) {
-        result = this->v->Opt10();
+        if (optxx) {
+            result = this->v->Opt10();
+            if (!result)
+                result = this->v->Opt01();
+            if (!result)
+                result = this->v->Opt11();
+            if (!result)
+                result = this->v->Opt12();
+            if (!result)
+                result = this->v->Opt21();
+            if (!result)
+                result = this->v->Opt22();
+        }
+        // if no more improvements run only 2-opt and 3-opt
         if (!result)
-            result = this->v->Opt01();
-        if (!result)
-            result = this->v->Opt11();
-        if (!result)
-            result = this->v->Opt12();
-        if (!result)
-            result = this->v->Opt21();
-        if (!result)
-            result = this->v->Opt22();
+            optxx = false;
         this->v->Opt2();
         this->v->Opt3();
-        ++i;
+        i++;
     }
     this->v->RouteBalancer();
 }
