@@ -29,10 +29,15 @@ VRP* Utils::InitParameters(char **argv) {
     std::string s;
     VRP *v;
     Graph g;
+    int fileIndex = 1;
     /* open the file */
-    FILE* fp = fopen(argv[1], "r");
+    if (strcmp(argv[1], "-v") == 0) {
+        this->verbose = true;
+        fileIndex = 2;
+    }
+    FILE* fp = fopen(argv[fileIndex], "r");
     if (fp == NULL) {
-        s = "The file " + std::string(argv[1]) +  " doesn't exist.";
+        s = "The file " + std::string(argv[fileIndex]) +  " doesn't exist.";
         throw s;
     }else {
         /* little buffer more fread, big buffer less fread() big access time */

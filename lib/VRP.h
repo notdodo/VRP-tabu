@@ -3,6 +3,7 @@
 
 #include "Graph.h"
 #include "Route.h"
+#include "Utils.h"
 #include <thread>
 #include <mutex>
 
@@ -19,8 +20,9 @@ private:
     int numVertices;            /**< Number of customers */
     int vehicles;               /**< Number of vehicles */
     int capacity;               /**< Capacity of each vehicle */
-    float workTime;               /**< Work time for each driver */
+    float workTime;             /**< Work time for each driver */
     int totalCost;              /**< Total cost of the routes */
+    bool verbose;               /**< Flag for verbose prints */
     Map::const_iterator InsertStep(Customer, Map::iterator, Map::const_iterator, Route &, Map &);
     bool SwapFromTo(Route &, Route &);
     bool Move1FromTo(Route &, Route &, bool);

@@ -19,23 +19,24 @@
 #include <chrono>
 
 using namespace std;
+using namespace chrono;
 
 int main(int argc, char** argv) {
-    chrono::high_resolution_clock::time_point t1 = chrono::high_resolution_clock::now();
+    high_resolution_clock::time_point t1 = high_resolution_clock::now();
     Controller &c = Controller::Instance();
     Utils &u = Utils::Instance();
-    if (argc == 2) {
+    if (argc == 2 || argc == 3) {
         try {
             c.Init(argv);
         }catch(string i) {
             u.logger("\r\n"+i, u.ERROR);
         }
     }else
-        u.logger("Usage: ./VRP data.json", u.ERROR);
+        u.logger("Usage: ./VRP [-v] data.json", u.ERROR);
 
-    chrono::high_resolution_clock::time_point t2 = chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-    cout << std::to_string(duration) << " milliseconds" << std::endl;
+    high_resolution_clock::time_point t2 = high_resolution_clock::now();
+    auto duration = duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+    u.logger(to_string(duration) + " milliseconds", u.INFO);
     return 0;
 }
 

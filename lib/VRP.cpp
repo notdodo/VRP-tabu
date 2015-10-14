@@ -96,6 +96,7 @@ int VRP::InitSolutions() {
         j = 0;
     else
         j = 1;
+    Utils::Instance().logger("Routes created", Utils::VERBOSE);
     return j;
 }
 
@@ -246,7 +247,7 @@ bool VRP::Opt10() {
     // wait to finish all threads
     for (std::list<std::thread>::iterator tl = th.begin(); tl != th.end(); ++tl)
         tl->join();
-    std::cout << "opt10 " << l.size() << std::endl;
+    Utils::Instance().logger("opt10 - " + std::to_string(l.size()), Utils::VERBOSE);
     // if some improvement are made update the routes
     if (l.size() > 0) {
         std::list<Route>::iterator itFinal = this->routes.begin();
@@ -294,7 +295,7 @@ bool VRP::Opt01() {
     }
     for (std::list<std::thread>::iterator tl = th.begin(); tl != th.end(); ++tl)
         tl->join();
-    std::cout << "opt01 " << l.size() << std::endl;
+    Utils::Instance().logger("opt01 - " + std::to_string(l.size()), Utils::VERBOSE);
     if (l.size() > 0) {
         std::list<Route>::iterator itFinal = this->routes.begin();
         int indexFrom = l.front().first.first;
@@ -393,7 +394,7 @@ bool VRP::Move1FromTo(Route &source, Route &dest, bool force) {
     }
     for (std::list<std::thread>::iterator tl = th.begin(); tl != th.end(); ++tl)
         tl->join();
-    std::cout << "opt11 " << l.size() << std::endl;
+    Utils::Instance().logger("opt11 - " + std::to_string(l.size()), Utils::VERBOSE);
     if (l.size() > 0) {
         std::list<Route>::iterator itFinal = this->routes.begin();
         int indexFrom = l.front().first.first;
@@ -526,7 +527,7 @@ bool VRP::Opt12() {
     }
     for (std::list<std::thread>::iterator tl = th.begin(); tl != th.end(); ++tl)
         tl->join();
-    std::cout << "opt12 " << l.size() << std::endl;
+    Utils::Instance().logger("opt12 - " + std::to_string(l.size()), Utils::VERBOSE);
     if (l.size() > 0) {
         std::list<Route>::iterator itFinal = this->routes.begin();
         int indexFrom = l.front().first.first;
@@ -642,7 +643,7 @@ bool VRP::Opt21() {
     }
     for (std::list<std::thread>::iterator tl = th.begin(); tl != th.end(); ++tl)
         tl->join();
-    std::cout << "opt21 " << l.size() << std::endl;
+    Utils::Instance().logger("opt21 - " + std::to_string(l.size()), Utils::VERBOSE);
     if (l.size() > 0) {
         std::list<Route>::iterator itFinal = this->routes.begin();
         int indexFrom = l.front().first.first;
@@ -689,7 +690,7 @@ bool VRP::Opt22() {
     }
     for (std::list<std::thread>::iterator tl = th.begin(); tl != th.end(); ++tl)
         tl->join();
-    std::cout << "opt22 " << l.size() << std::endl;
+    Utils::Instance().logger("opt22 - " + std::to_string(l.size()), Utils::VERBOSE);
     if (l.size() > 0) {
         std::list<Route>::iterator itFinal = this->routes.begin();
         int indexFrom = l.front().first.first;
@@ -726,36 +727,39 @@ int VRP::GetTotalCost() const {
  * execute a Opt10.
  */
 void VRP::RouteBalancer() {
-    bool flag = false;
     std::list<Route>::const_iterator it = this->routes.cbegin();
-    std::pair<Route, Route> bests = std::make_pair(*it, *it);
-    int indexFrom, indexTo;
-    // for each route
-    for (int i = 0; it != this->routes.cend(); ++it, ++i) {
+    ResultList l;
+    std::list<std::thread> th;
+    for (int i = 0; it != this->routes.cend(); std::advance(it, 1), ++i) {
         if (it->size() == 3) {
             std::list<Route>::const_iterator jt = this->routes.cbegin();
-            for (int j = 0; jt != this->routes.cend(); ++jt, ++j) {
+            for (int j = 0; jt != this->routes.cend(); std::advance(jt, 1), ++j) {
                 if (jt != it && jt->size() > 3) {
-                    Route tempFrom = *it;
-                    Route tempTo = *jt;
-                    if (Move1FromTo(tempFrom, tempTo, true)) {
-                        std::get<0>(bests) = tempFrom;
-                        std::get<1>(bests) = tempTo;
-                        indexFrom = i;
-                        indexTo = j;
-                        flag = true;
-                    }
+                    th.push_back(std::thread([it, jt, i, j, &l, this]() {
+                        Route tFrom = *it;
+                        Route tTo = *jt;
+                        if (Move1FromTo(tFrom, tTo, true)) {
+                            std::lock_guard<std::mutex> lock(*this->mtx);
+                            if ((tFrom.GetTotalCost() < l.front().second.first.GetTotalCost() && tTo.GetTotalCost() < l.front().second.second.GetTotalCost()) || l.size() == 0)
+                                l.push_front(std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo)));
+                        }
+                    }));
                 }
             }
         }
     }
-    if (flag) {
+    for (std::list<std::thread>::iterator tl = th.begin(); tl != th.end(); ++tl)
+        tl->join();
+    Utils::Instance().logger("Routes balancing - " + std::to_string(l.size()), Utils::VERBOSE);
+    if (l.size() > 0) {
         std::list<Route>::iterator itFinal = this->routes.begin();
+        int indexFrom = l.front().first.first;
+        int indexTo = l.front().first.second;
         std::advance(itFinal, indexFrom);
-        *itFinal= std::get<0>(bests);
+        *itFinal= l.front().second.first;
         itFinal = this->routes.begin();
         std::advance(itFinal, indexTo);
-        *itFinal = std::get<1>(bests);
+        *itFinal = l.front().second.second;
         this->CleanVoid();
     }
 }
@@ -794,8 +798,10 @@ bool VRP::Opt2() {
                     }
                 }
             }
-            if (ret)
+            if (ret) {
                 *it = bestRoute;
+                Utils::Instance().logger("2-Opt" , Utils::VERBOSE);
+            }
         }
     }
     return ret;
@@ -891,8 +897,10 @@ bool VRP::Opt3() {
                     }
                 }
             }
-            if (ret)
+            if (ret) {
                 *it = bestRoute;
+                Utils::Instance().logger("3-Opt" , Utils::VERBOSE);
+            }
         }
     }
     return ret;

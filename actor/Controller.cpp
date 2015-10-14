@@ -19,9 +19,9 @@
 
 void Controller::Init(char **argv) {
     Utils &u = this->GetUtils();
-    u.logger("Initializing...", u.WARNING);
-    this->v = Utils::Instance().InitParameters(argv);
-    int res = this->v->InitSolutions();
+    u.logger("Initializing...", u.INFO);
+    this->vrp = Utils::Instance().InitParameters(argv);
+    int res = this->vrp->InitSolutions();
     switch (res) {
         case -1:
             u.logger("You need less vehicles.", u.WARNING);
@@ -34,7 +34,8 @@ void Controller::Init(char **argv) {
         break;
     }
     this->PrintRoutes();
-    this->RunOpts(5);
+    u.logger("Starting opt", u.VERBOSE);
+    this->RunOpts(10);
     this->PrintRoutes();
     this->SaveResult();
 }
@@ -45,7 +46,7 @@ Utils& Controller::GetUtils() const {
 
 void Controller::PrintRoutes() {
     Utils &u = this->GetUtils();
-    std::list<Route> *e = this->v->GetRoutes();
+    std::list<Route> *e = this->vrp->GetRoutes();
     std::cout << std::endl;
     for (auto i = e->begin(); i != e->cend(); i++) {
         u.logger(*i);
@@ -53,7 +54,7 @@ void Controller::PrintRoutes() {
         if (i == e->cend()) break;
         u.logger(*i, u.SUCCESS);
     }
-    u.logger("Total cost: " + std::to_string(this->v->GetTotalCost()), u.INFO);
+    u.logger("Total cost: " + std::to_string(this->vrp->GetTotalCost()), u.INFO);
     std::cout << std::endl;
 }
 
@@ -62,30 +63,31 @@ void Controller::RunOpts(int times) {
     bool result, optxx = true;
     while (i < times) {
         if (optxx) {
-            result = this->v->Opt10();
+            result = this->vrp->Opt10();
             if (!result)
-                result = this->v->Opt01();
+                result = this->vrp->Opt01();
             if (!result)
-                result = this->v->Opt11();
+                result = this->vrp->Opt11();
             if (!result)
-                result = this->v->Opt12();
+                result = this->vrp->Opt12();
             if (!result)
-                result = this->v->Opt21();
+                result = this->vrp->Opt21();
             if (!result)
-                result = this->v->Opt22();
+                result = this->vrp->Opt22();
         }
         // if no more improvements run only 2-opt and 3-opt
         if (!result)
             optxx = false;
-        this->v->Opt2();
-        this->v->Opt3();
+        this->vrp->Opt2();
+        this->vrp->Opt3();
         i++;
     }
-    this->v->RouteBalancer();
+    this->vrp->RouteBalancer();
 }
 
 void Controller::SaveResult() {
     Utils &u = this->GetUtils();
-    std::list<Route> *e = this->v->GetRoutes();
+    u.logger("Saving to output.json", u.VERBOSE);
+    std::list<Route> *e = this->vrp->GetRoutes();
     u.SaveResult(*e);
 }

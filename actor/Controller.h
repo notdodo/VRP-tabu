@@ -6,7 +6,7 @@
 
 class Controller {
 private:
-    VRP *v;
+    VRP *vrp;
     Controller() {}
     Controller(Controller const&) = delete;
     void operator=(Controller const&) = delete;
