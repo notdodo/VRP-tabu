@@ -35,7 +35,7 @@ VRP* Utils::InitParameters(char **argv) {
         this->verbose = true;
         fileIndex = 2;
     }
-    FILE* fp = fopen(argv[fileIndex], "r");
+    FILE *fp = fopen(argv[fileIndex], "r");
     if (fp == NULL) {
         s = "The file " + std::string(argv[fileIndex]) +  " doesn't exist.";
         throw s;
@@ -118,7 +118,7 @@ VRP* Utils::InitParameters(char **argv) {
  * @param routes The routes list to save to the file
  */
 void Utils::SaveResult(std::list<Route> routes) {
-    FILE* fp = fopen("output.json", "w");
+    FILE *fp = fopen("output.json", "w");
     if (fp != NULL) {
         char writeBuffer[65536];
         rapidjson::FileWriteStream os(fp, writeBuffer, sizeof(writeBuffer));
