@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
 /*
  * Tabu Search is a meta-heuristic method designed for the solution of hard optimization problems.
  * This algorithm starts form an initial solution and jumps from one solution to another one in the
- * space but tries to avoid cucling by forbidding or penalizing moves which take the solution, in
+ * space but tries to avoid cicling by forbidding or penalizing moves which take the solution, in
  * the next iteration, to solutions previously visited.
  *
  * Problem.
