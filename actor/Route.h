@@ -55,7 +55,7 @@ public:
     std::list<StepType>* GetRoute();
     Route CopyRoute() const;
     bool AddElem(const Customer);
-    bool AddElem(const std::list<Customer>);
+    bool AddElem(const std::list<Customer> &);
     bool AddElem(const Customer, const Customer);
     void RemoveCustomer(std::list<StepType>::iterator &);
     void RemoveCustomer(const Customer);

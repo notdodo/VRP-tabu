@@ -94,6 +94,7 @@ function getMousePos(evt) {
 }
 
 /* onclick draw a customer */
+// lint
 function drawCustomer(uid, evt, drag=true) {
     var x = evt.clientX - rect.left, y = evt.clientY - rect.top;
     var last = new fabric.Text('⌂', {
@@ -248,7 +249,8 @@ function parseCustomer(cs) {
         i = 1;
         costs = cs.costs;
         for (var c in cs.vertices) {
-            if (c == 0) {
+            // lint
+            if (c === 0) {
                 continue;
             }
             var a = [];
@@ -410,7 +412,8 @@ function drawOneRoute(r) {
         lastRemoved = null;
         return;
     }
-    if (lastRemoved == null)
+    // lint
+    if (lastRemoved === null)
         lastRemoved = route;
     else {
         route.draw = true;
@@ -425,7 +428,8 @@ var lastCustomer = {
     text: null
 };
 function showOneCustomer(i) {
-    if (lastCustomer.text != null) {
+    // lint
+    if (lastCustomer.text !== null) {
         canvas.remove(lastCustomer.text);
         lastCustomer.i = null;
         lastCustomer.text = null;
@@ -480,7 +484,7 @@ function drawAll(r) {
 
 function convertFile(data) {
 	data = data.split("\n");
-    var dimension, capacity;
+    var dimension, capacity, iCustomer;
     var i = 0;
     while(data[i].lastIndexOf("EOF") < 0) {
         if (data[i].lastIndexOf("DIMENSION") >= 0) {
@@ -492,7 +496,7 @@ function convertFile(data) {
         }
         if (data[i].lastIndexOf("NODE_COORD_SECTION") >= 0 && dimension > 0) {
             i++;
-            var iCustomer = 0;
+            iCustomer = 0;
             vertex = [];
             var item = {
                 "name" : "V0",
@@ -515,7 +519,7 @@ function convertFile(data) {
                     "y": Y,
                     "request": 0,
                     "time" : 0
-                }
+                };
                 vertex.push(item);
                 iCustomer++;
                 i++;
@@ -525,7 +529,7 @@ function convertFile(data) {
         if (data[i].lastIndexOf("DEMAND_SECTION") >= 0 && dimension > 0 && vertex.length > 1) {
             // jump to the first customer
             i += 2;
-            var iCustomer = 1;
+            iCustomer = 1;
             // push depot
             while (iCustomer < vertex.length) {
                 vertex[iCustomer].request = parseInt(data[i].split(" ")[1].trim());

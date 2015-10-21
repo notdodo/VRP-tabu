@@ -47,9 +47,10 @@ h2 {
     font-family: "Droid Sans";
     color: #019875;
     font-size: 1.8em;
+    margin: 0 auto;
 }
 
-h2, h3 {
+h3 {
     margin: 0 auto;
 }
 
@@ -155,5 +156,5 @@ h2, h3 {
 #parameters #fileupload {
     width: 10px;
     height: 22px;
-    opacity: 0 !important;
+    opacity: 0;
 }

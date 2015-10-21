@@ -188,7 +188,7 @@ Map::const_iterator VRP::InsertStep(Customer depot, Map::iterator stop, Map::con
 
 /** @brief Return the routes.
  *
- * @return The pointer to the routes' list
+ * @return The pointer to the routes list
  */
 std::list<Route>* VRP::GetRoutes() {
     return &this->routes;
@@ -369,7 +369,7 @@ bool VRP::Move1FromTo(Route &source, Route &dest, bool force) {
  * from a route with another random customer from the next.
  * @return True if the routes are improves
  */
- bool VRP::Opt11() {
+bool VRP::Opt11() {
     bool flag = false;
     std::list<Route>::const_iterator it = this->routes.cbegin();
     ResultList l;

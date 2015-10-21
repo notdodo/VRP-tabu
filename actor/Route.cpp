@@ -31,6 +31,7 @@ Route::Route(int c, float wt, const Graph g) {
     // if the service time is not a constraint reset the cost of travelling
     if (wt == std::numeric_limits<int>::max())
         this->TRAVEL_COST = (float)0;
+    this->SetAverageCost();
 }
 
 /** @brief Close a route.
@@ -188,14 +189,14 @@ Route Route::CopyRoute() const {
 bool Route::AddElem(const Customer c) {
     // in this case 'this' need to be updated
     bool ret = false;
-    int travelCost, costNext, tCost, capac, fallbackCost;
-    float workT;
     // the map is sorted by costs
     std::map<int, Route> best;
     Customer depot = this->GetRoute()->front().first;
     std::list<std::pair<Customer, int>>::iterator it;
     int iter = 0;
     do {
+        int travelCost, costNext, tCost, capac, fallbackCost;
+        float workT;
         Route r = *this;
         it = r.route.begin();
         capac = r.capacity - c.request;
@@ -245,17 +246,17 @@ bool Route::AddElem(const Customer c) {
  * the best insertion.
  * @param custs List of customers to insert
  */
-bool Route::AddElem(const std::list<Customer> custs) {
+bool Route::AddElem(const std::list<Customer> &custs) {
     // in this case 'this' need to be updated
     bool ret = false;
-    int travelCost, costNext, tCost, capac, fallbackCost;
-    int custsRequest, custsServiceTime;
-    float workT;
     // the map is sorted by costs
     std::map<int, Route> best;
     std::list<std::pair<Customer, int>>::iterator it;
     int iter = 0;
     do {
+        int travelCost, costNext, tCost, capac, fallbackCost;
+        int custsRequest, custsServiceTime;
+        float workT;
         Route r = *this;
         it = r.route.begin();
         custsRequest = 0;
@@ -392,14 +393,15 @@ void Route::RemoveCustomer(const Customer c) {
 bool Route::AddElem(const Customer c, const Customer rem) {
     // in this case 'this' need to be updated
     bool ret = false;
-    int travelCost, costNext, tCost, capac, fallbackCost;
-    float workT;
+
     // the map is sorted by totalcost
     std::map<int, Route> best;
     Customer depot = this->GetRoute()->front().first;
     std::list<std::pair<Customer, int>>::iterator it;
     int iter = 0;
     do {
+        int travelCost, costNext, tCost, capac, fallbackCost;
+        float workT;
         Route r = *this;
         it = r.route.begin();
         // remove the customer, free resources
@@ -472,7 +474,7 @@ void Route::GetUnderAverageCustomers(std::list<Customer> &customers) {
     std::list<std::pair<Customer, int>>::const_iterator i = this->route.cbegin();
     for (; i != this->route.cend(); ++i) {
         if (i->second > 0 && i->second <= this->averageCost) {
-            i++;
+            std::advance(i, 1);
             if (i->first != this->route.back().first) {
                 customers.push_back(i->first);
                 --i;
@@ -496,12 +498,12 @@ bool Route::RebuildRoute(std::list<Customer> cust) {
     this->workTime = this->initialWorkTime;
     std::list<Customer>::iterator i = cust.begin();
     std::list<Customer>::iterator k = i;
-    k++;
+    std::advance(k, 1);
     Customer depot = cust.front();
     bool ret = true;
-    int returnTime, tCost, capac, travelCost;
-    float workT;
     for (; k != cust.end(); ++i, ++k) {
+        int returnTime, tCost, capac, travelCost;
+        float workT;
         // save the route state
         tCost = this->totalCost;
         capac = this->capacity;
