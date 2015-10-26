@@ -48,7 +48,7 @@ private:
                 std::cout << ANSI_LIGHTGREEN << s << ANSI_RESET << std::endl;
             break;
             case WARNING:
-                std::cout << ANSI_YELLOW << "[w]\t " << s << ANSI_RESET << std::endl;
+                std::cout << ANSI_YELLOW << "[w]\t" << s << ANSI_RESET << std::endl;
             break;
             case ERROR:
                 std::cout << ANSI_RED << s << ANSI_RESET << std::endl;
