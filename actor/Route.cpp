@@ -500,7 +500,6 @@ bool Route::RebuildRoute(std::list<Customer> cust) {
     std::list<Customer>::iterator k = i;
     std::advance(k, 1);
     Customer depot = cust.front();
-    bool ret = true;
     for (; k != cust.end(); ++i, ++k) {
         int returnTime, tCost, capac, travelCost;
         float workT;
@@ -518,7 +517,7 @@ bool Route::RebuildRoute(std::list<Customer> cust) {
         // after the travel if constraints fails
         if (capac < 0 || workT < returnTime) {
             // no time or capacity to serve the customer: return to depot
-            ret = false;
+            return false;
         } else {
             // the travel can be added to the route
             this->totalCost = tCost;
@@ -528,5 +527,5 @@ bool Route::RebuildRoute(std::list<Customer> cust) {
         }
     }
     this->route.push_back({depot, 0});
-    return ret;
+    return true;
 }

@@ -28,7 +28,7 @@ private:
     bool Move1FromTo(Route &, Route &, bool);
     bool AddRemoveFromTo(Route &, Route &, int, int);
     void CleanVoid();
-    Route Opt2Swap(Route, std::list<Customer>::iterator, std::list<Customer>::iterator);
+    Route Opt2Swap(Route r, std::list<Customer>::iterator i , std::list<Customer>::iterator k);
     Route Opt3Swap(Route, std::list<Customer>::iterator, std::list<Customer>::iterator, std::list<Customer>::iterator, std::list<Customer>::iterator);
 public:
     VRP() {} //!< constructor

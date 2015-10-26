@@ -63,7 +63,7 @@ int VRP::InitSolutions() {
     dist.erase(dist.begin());
     /* choosing a random customer, from 0 to numVertices-1 */
     start = rand() % (this->numVertices-1);
-    std::cout << start << std::endl;
+    Utils::Instance().logger(std::to_string(start), Utils::VERBOSE);
     it = dist.begin();
     // getting the index (customer) to start with
     std::advance(it, start);
@@ -775,13 +775,14 @@ bool VRP::Opt2() {
     std::list<Route>::iterator it = this->routes.begin();
     // Customers with short path (less than average)
     std::list<Customer> custs;
-    int bestCost;
+    int bestCost, diffCost;
     // for each route
     for (; it != this->routes.end(); ++it) {
         Route bestRoute = *it;
         // get customers eligible to be swapped
         it->GetUnderAverageCustomers(custs);
-        // need at least two customers
+        diffCost = it->GetTotalCost();
+        // need two customers at least
         if (custs.size() > 1) {
             bestCost = it->GetTotalCost();
             std::list<Customer>::iterator i = custs.begin();
@@ -800,7 +801,8 @@ bool VRP::Opt2() {
             }
             if (ret) {
                 *it = bestRoute;
-                Utils::Instance().logger("2-Opt" , Utils::VERBOSE);
+                diffCost -= bestRoute.GetTotalCost();
+                Utils::Instance().logger("2-Opt improved: " + std::to_string(diffCost), Utils::VERBOSE);
             }
         }
     }
@@ -817,39 +819,39 @@ bool VRP::Opt2() {
  */
 Route VRP::Opt2Swap(Route route, std::list<Customer>::iterator i, std::list<Customer>::iterator k) {
     std::list<Customer> cust;
-    Route tempRoute = route;
-    RouteList::iterator it = tempRoute.GetRoute()->begin();
+    Route tempRoute = route.CopyRoute();
+    RouteList::const_iterator it = tempRoute.GetRoute()->cbegin();
     // from start to i-1
-    while((*it).first != *i) {
-        cust.push_back((*it).first);
+    while(it->first != *i) {
+        cust.push_back(it->first);
         ++it;
     }
-    it = tempRoute.GetRoute()->end();
-    while((*it).first != *k) {
+    it = tempRoute.GetRoute()->cend();
+    while(it == tempRoute.GetRoute()->cend() || it->first != *k) {
         --it;
     }
     // from i to k in reverse order
-    while((*it).first != *i) {
-        cust.push_back((*it).first);
+    while(it->first != *i) {
+        cust.push_back(it->first);
         --it;
     }
     // push i
     cust.push_back(*i);
     // from k+1 to end
     it = route.GetRoute()->begin();
-    while((*it).first != *k) {
+    while(it->first != *k) {
         ++it;
     }
     ++it;
-    while(it != route.GetRoute()->end()) {
-        cust.push_back((*it).first);
+    while(it != route.GetRoute()->cend()) {
+        cust.push_back(it->first);
         ++it;
     }
     // rebuild route
-    if (tempRoute.RebuildRoute(cust))
-        return tempRoute;
-    else
-        return route;
+    Route ret = route.CopyRoute();
+    if ((unsigned)tempRoute.size() == cust.size() && tempRoute.RebuildRoute(cust))
+        ret = tempRoute;
+    return ret;
 }
 
 /** @brief Reorder the customers of route to delete cross over path.
@@ -863,10 +865,11 @@ bool VRP::Opt3() {
     std::list<Route>::iterator it = this->routes.begin();
     // Customers with short path (less than average)
     std::list<Customer> custs;
-    int bestCost;
+    int bestCost, diffCost;
     // for each route
     for (; it != this->routes.end(); ++it) {
         Route bestRoute = *it;
+        diffCost = it->GetTotalCost();
         // get customers eligible to be swapped
         it->GetUnderAverageCustomers(custs);
         // need at least two customers
@@ -899,7 +902,8 @@ bool VRP::Opt3() {
             }
             if (ret) {
                 *it = bestRoute;
-                Utils::Instance().logger("3-Opt" , Utils::VERBOSE);
+                diffCost -= bestRoute.GetTotalCost();
+                Utils::Instance().logger("3-Opt improved " + std::to_string(diffCost), Utils::VERBOSE);
             }
         }
     }
@@ -920,57 +924,60 @@ Route VRP::Opt3Swap(Route route, std::list<Customer>::iterator i, std::list<Cust
                     std::list<Customer>::iterator l, std::list<Customer>::iterator m) {
     std::list<Customer> cust;
     Route tempRoute = route;
-    RouteList::iterator it = tempRoute.GetRoute()->begin();
+    RouteList::const_iterator it = tempRoute.GetRoute()->cbegin();
     // from start to i-1
-    while((*it).first != *i) {
-        cust.push_back((*it).first);
+    while(it->first != *i) {
+        cust.push_back(it->first);
         ++it;
     }
     // from i to k in reverse order
-    it = tempRoute.GetRoute()->end();
-    while((*it).first != *k) {
+    it = tempRoute.GetRoute()->cend();
+    while(it == tempRoute.GetRoute()->cend() || it->first != *k) {
         --it;
     }
-    while((*it).first != *i) {
-        cust.push_back((*it).first);
+    while(it->first != *i) {
+        cust.push_back(it->first);
         --it;
     }
     // push i
     cust.push_back(*i);
     // from k+1 to l-1
-    while((*it).first != *k)
+    while(it->first != *k)
         ++it;
     ++it;
-    while((*it).first != *l) {
-        cust.push_back((*it).first);
+    while(it->first != *l) {
+        if (it != tempRoute.GetRoute()->cend())
+            cust.push_back(it->first);
         ++it;
     }
     // from l to m in reverse order
-    it = tempRoute.GetRoute()->end();
-    while((*it).first != *m) {
+    it = tempRoute.GetRoute()->cend();
+    while(it == tempRoute.GetRoute()->cend() || it->first != *m) {
         --it;
     }
-    while ((*it).first != *l) {
-        cust.push_back((*it).first);
+    while (it->first != *l) {
+        if (it != tempRoute.GetRoute()->cend())
+            cust.push_back(it->first);
         --it;
     }
     // push l
     cust.push_back(*l);
     // from m+1 to end
-    it = route.GetRoute()->begin();
-    while((*it).first != *m) {
+    it = route.GetRoute()->cbegin();
+    while(it->first != *m && it != tempRoute.GetRoute()->cend()) {
         ++it;
     }
-    ++it;
-    while(it != route.GetRoute()->end()) {
-        cust.push_back((*it).first);
+    if (it != tempRoute.GetRoute()->cend())
+        ++it;
+    while(it != route.GetRoute()->cend()) {
+        cust.push_back(it->first);
         ++it;
     }
     // rebuild route
-    if (tempRoute.RebuildRoute(cust))
-        return tempRoute;
-    else
-        return route;
+    Route ret = route;
+    if ((unsigned)tempRoute.size() == cust.size() && tempRoute.RebuildRoute(cust))
+        ret = tempRoute;
+    return ret;
 }
 
 /* destructor */
