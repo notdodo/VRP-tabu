@@ -30,10 +30,10 @@ public:
     int y;                  /**< Coordinate Y of the customer */
     int request;            /**< Quantity request from the customer */
     int serviceTime;        /**< Time for serving the customer */
-    Customer() {}                                               //!< Constructor
-    Customer(std::string name, int x, int y, int r, int t);     //!< Constructor
-    Customer(std::string v0, int x, int y);                     //!< Constructor
-    ~Customer();                                                //!< Destructor
+    Customer() {}                                  //!< Constructor
+    Customer(std::string, int, int, int, int);     //!< Constructor
+    Customer(std::string, int, int);               //!< Constructor
+    ~Customer();                                   //!< Destructor
 };
 
 #endif /* Vehicle_H */
