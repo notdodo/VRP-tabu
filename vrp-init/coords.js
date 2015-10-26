@@ -250,7 +250,7 @@ function parseCustomer(cs) {
         costs = cs.costs;
         for (var c in cs.vertices) {
             // lint
-            if (c === 0) {
+            if (c == 0) {
                 continue;
             }
             var a = [];
@@ -284,6 +284,7 @@ function parseCustomer(cs) {
         var stop = performance.now();
         console.log(stop-start);
         fileupload.value = "";
+        flagVRP = false;
     } else {
         alert("Invalid file format!");
         return;
