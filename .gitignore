@@ -29,3 +29,9 @@ doc/
 
 # file input/output
 *.json
+
+# gdb
+.gdb_history
+peda*
+
+*.swp
