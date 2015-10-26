@@ -65,34 +65,52 @@ int VRP::InitSolutions() {
     start = rand() % (this->numVertices-1);
     Utils::Instance().logger(std::to_string(start), Utils::VERBOSE);
     it = dist.begin();
-    // getting the index (customer) to start with
     std::advance(it, start);
-    int j = 1;
-    // preparing the route
-    Route r(this->capacity, this->workTime, this->graph);
-    // doing the first step, from to first customer
-    Map::const_iterator m = this->InsertStep(depot, it, it, r, dist);
-    // saving the route
-    this->routes.push_back(r);
-    // for all vehicles, or one the Map dist is empty
-    while (j < this->vehicles && !dist.empty()) {
+    bool stop;
+    // for each customer try to insert it in a route, othwerwise create a new route
+    while(!dist.empty()) {
+        stop = true;
+        // create an empty route
         Route v(this->capacity, this->workTime, this->graph);
-        // if is remaing only one customer add it to route
+        Customer from, to;
+        // start the route with a depot
+        if (!v.Travel(depot, it->second))
+            throw std::string("Customer" + it->second.name + " is unreachable!!!");
+        // if remain one customer add it to route
         if (dist.size() == 1) {
-            last = m->second;
-            v.Travel(depot, last);
-            v.CloseTravel(last);
+            v.CloseTravel(it->second);
+            stop = false;
             dist.clear();
-        }else {
-            m = this->InsertStep(depot, it, m, v, dist);
+        }
+        // while the route is not empty
+        while (stop) {
+            from = it->second;
+            Map::iterator fallback = it;
+            ++it;
+            if (it == dist.cend())
+                it = dist.begin();
+            to = it->second;
+            // add path from 'from' to 'to'
+            if(from != to && !v.Travel(from, to)) {
+                stop = false;
+                // if cannot add the customer try to close the route
+                if (!v.CloseTravel(from, depot)) {
+                    v.CloseTravel(from);
+                }
+            // if the customer is added and remain one customer add it to route
+            }else if (dist.size() == 1) {
+                    if (!v.CloseTravel(to, depot))
+                        v.CloseTravel(from);
+                    stop = false;
+            }
+            dist.erase(fallback);
         }
         this->routes.push_back(v);
-        // counting the vehicles
-        j++;
     }
-    if (j < this->vehicles)
+    int j = 0;
+    if (this->routes.size() < (unsigned)this->vehicles)
         j = -1;
-    else if (j == this->vehicles && dist.size() == 0)
+    else if (this->routes.size() == (unsigned)this->vehicles)
         j = 0;
     else
         j = 1;
@@ -105,7 +123,7 @@ int VRP::InitSolutions() {
  * Starting from a customer this function creates the route until
  * a constraint result invalid looping the list of sorted customers.
  * @param depot The depot
- * @param stop The last customer, in the list in the j-1, where j is the initial random customer
+ * @param stop The last customer, in the list is the j-1, where j is the initial random customer
  * @param i The customer which starts the route
  * @param r The route to create
  * @param distances The sorted list of customers
@@ -126,8 +144,8 @@ Map::const_iterator VRP::InsertStep(Customer depot, Map::iterator stop, Map::con
     if (index != last)
         index++;
     else
-        index = distances.begin();
-    // the route need only the last customer (last before the stop)
+        index = distances.cbegin();
+    // the route needs only the last customer (last before the stop)
     if (index == distances.cbegin() && index == stop) {
         r.CloseTravel(to);
         // clear the map to stop the loop
@@ -150,7 +168,7 @@ Map::const_iterator VRP::InsertStep(Customer depot, Map::iterator stop, Map::con
                 return fallback;
             } else {
                 // otherwise index move to the next customer (the first one)
-                index = distances.begin();
+                index = distances.cbegin();
             }
         } else {
             if (!r.Travel(from, to)) {
@@ -247,20 +265,25 @@ bool VRP::Opt10() {
     // wait to finish all threads
     for (std::list<std::thread>::iterator tl = th.begin(); tl != th.end(); ++tl)
         tl->join();
-    Utils::Instance().logger("opt10 - " + std::to_string(l.size()), Utils::VERBOSE);
     // if some improvement are made update the routes
     if (l.size() > 0) {
         std::list<Route>::iterator itFinal = this->routes.begin();
         int indexFrom = l.front().first.first;
         int indexTo = l.front().first.second;
         std::advance(itFinal, indexFrom);
-        *itFinal= l.front().second.first;
+        int diffCost = itFinal->GetTotalCost();
+        *itFinal = l.front().second.first;
+        diffCost -= itFinal->GetTotalCost();
         itFinal = this->routes.begin();
         std::advance(itFinal, indexTo);
+        diffCost += itFinal->GetTotalCost();
         *itFinal = l.front().second.second;
+        diffCost -= itFinal->GetTotalCost();
         this->CleanVoid();
         flag = true;
-    }
+        Utils::Instance().logger("opt10 - " + std::to_string(diffCost), Utils::VERBOSE);
+    }else
+        Utils::Instance().logger("opt10 no improvement", Utils::VERBOSE);
     return flag;
 }
 
@@ -295,19 +318,24 @@ bool VRP::Opt01() {
     }
     for (std::list<std::thread>::iterator tl = th.begin(); tl != th.end(); ++tl)
         tl->join();
-    Utils::Instance().logger("opt01 - " + std::to_string(l.size()), Utils::VERBOSE);
     if (l.size() > 0) {
         std::list<Route>::iterator itFinal = this->routes.begin();
         int indexFrom = l.front().first.first;
         int indexTo = l.front().first.second;
         std::advance(itFinal, indexFrom);
+        int diffCost = itFinal->GetTotalCost();
         *itFinal= l.front().second.first;
+        diffCost -= itFinal->GetTotalCost();
         itFinal = this->routes.begin();
         std::advance(itFinal, indexTo);
+        diffCost += itFinal->GetTotalCost();
         *itFinal = l.front().second.second;
+        diffCost -= itFinal->GetTotalCost();
         this->CleanVoid();
         flag = true;
-    }
+        Utils::Instance().logger("opt01 improved " + std::to_string(diffCost), Utils::VERBOSE);
+    }else
+        Utils::Instance().logger("opt01 no improvement", Utils::VERBOSE);
     return flag;
 }
 
@@ -394,19 +422,24 @@ bool VRP::Opt11() {
     }
     for (std::list<std::thread>::iterator tl = th.begin(); tl != th.end(); ++tl)
         tl->join();
-    Utils::Instance().logger("opt11 - " + std::to_string(l.size()), Utils::VERBOSE);
     if (l.size() > 0) {
         std::list<Route>::iterator itFinal = this->routes.begin();
         int indexFrom = l.front().first.first;
         int indexTo = l.front().first.second;
         std::advance(itFinal, indexFrom);
+        int diffCost = itFinal->GetTotalCost();
         *itFinal= l.front().second.first;
+        diffCost -= itFinal->GetTotalCost();
         itFinal = this->routes.begin();
         std::advance(itFinal, indexTo);
+        diffCost += itFinal->GetTotalCost();
         *itFinal = l.front().second.second;
+        diffCost -= itFinal->GetTotalCost();
         this->CleanVoid();
         flag = true;
-    }
+        Utils::Instance().logger("opt11 improved: " + std::to_string(diffCost), Utils::VERBOSE);
+    }else
+        Utils::Instance().logger("opt11 no improvement", Utils::VERBOSE);
     return flag;
 }
 
@@ -527,19 +560,24 @@ bool VRP::Opt12() {
     }
     for (std::list<std::thread>::iterator tl = th.begin(); tl != th.end(); ++tl)
         tl->join();
-    Utils::Instance().logger("opt12 - " + std::to_string(l.size()), Utils::VERBOSE);
     if (l.size() > 0) {
         std::list<Route>::iterator itFinal = this->routes.begin();
         int indexFrom = l.front().first.first;
         int indexTo = l.front().first.second;
         std::advance(itFinal, indexFrom);
+        int diffCost = itFinal->GetTotalCost();
         *itFinal= l.front().second.first;
+        diffCost -= itFinal->GetTotalCost();
         itFinal = this->routes.begin();
         std::advance(itFinal, indexTo);
+        diffCost += itFinal->GetTotalCost();
         *itFinal = l.front().second.second;
+        diffCost -= itFinal->GetTotalCost();
         this->CleanVoid();
         flag = true;
-    }
+        Utils::Instance().logger("opt12 improved: " + std::to_string(diffCost), Utils::VERBOSE);
+    }else
+        Utils::Instance().logger("opt12 no improvement", Utils::VERBOSE);
     return flag;
 }
 
@@ -643,19 +681,24 @@ bool VRP::Opt21() {
     }
     for (std::list<std::thread>::iterator tl = th.begin(); tl != th.end(); ++tl)
         tl->join();
-    Utils::Instance().logger("opt21 - " + std::to_string(l.size()), Utils::VERBOSE);
     if (l.size() > 0) {
         std::list<Route>::iterator itFinal = this->routes.begin();
         int indexFrom = l.front().first.first;
         int indexTo = l.front().first.second;
         std::advance(itFinal, indexFrom);
-        *itFinal= l.front().second.first;
+        int diffCost = itFinal->GetTotalCost();
+        *itFinal = l.front().second.first;
+        diffCost -= itFinal->GetTotalCost();
         itFinal = this->routes.begin();
         std::advance(itFinal, indexTo);
+        diffCost += itFinal->GetTotalCost();
         *itFinal = l.front().second.second;
+        diffCost -= itFinal->GetTotalCost();
         this->CleanVoid();
         flag = true;
-    }
+        Utils::Instance().logger("opt21 improved: " + std::to_string(diffCost), Utils::VERBOSE);
+    }else
+        Utils::Instance().logger("opt21 no improvement", Utils::VERBOSE);
     return flag;
 }
 
@@ -690,19 +733,24 @@ bool VRP::Opt22() {
     }
     for (std::list<std::thread>::iterator tl = th.begin(); tl != th.end(); ++tl)
         tl->join();
-    Utils::Instance().logger("opt22 - " + std::to_string(l.size()), Utils::VERBOSE);
     if (l.size() > 0) {
         std::list<Route>::iterator itFinal = this->routes.begin();
         int indexFrom = l.front().first.first;
         int indexTo = l.front().first.second;
         std::advance(itFinal, indexFrom);
-        *itFinal= l.front().second.first;
+        int diffCost = itFinal->GetTotalCost();
+        *itFinal = l.front().second.first;
+        diffCost -= itFinal->GetTotalCost();
         itFinal = this->routes.begin();
         std::advance(itFinal, indexTo);
+        diffCost += itFinal->GetTotalCost();
         *itFinal = l.front().second.second;
+        diffCost -= itFinal->GetTotalCost();
         this->CleanVoid();
         flag = true;
-    }
+        Utils::Instance().logger("opt22 improved: " + std::to_string(diffCost), Utils::VERBOSE);
+    }else
+        Utils::Instance().logger("opt22 no improvement", Utils::VERBOSE);
     return flag;
 }
 
@@ -750,8 +798,8 @@ void VRP::RouteBalancer() {
     }
     for (std::list<std::thread>::iterator tl = th.begin(); tl != th.end(); ++tl)
         tl->join();
-    Utils::Instance().logger("Routes balancing - " + std::to_string(l.size()), Utils::VERBOSE);
     if (l.size() > 0) {
+        Utils::Instance().logger("Routes balancing - " + std::to_string(l.size()), Utils::VERBOSE);
         std::list<Route>::iterator itFinal = this->routes.begin();
         int indexFrom = l.front().first.first;
         int indexTo = l.front().first.second;
@@ -761,6 +809,8 @@ void VRP::RouteBalancer() {
         std::advance(itFinal, indexTo);
         *itFinal = l.front().second.second;
         this->CleanVoid();
+    }else {
+        Utils::Instance().logger("No routes balancing", Utils::VERBOSE);
     }
 }
 
@@ -792,7 +842,7 @@ bool VRP::Opt2() {
                 for (k++; k != custs.end(); ++k) {
                     // swap customers
                     Route tempRoute = this->Opt2Swap(*it, i, k);
-                    if (tempRoute.GetTotalCost() <= bestCost) {
+                    if (tempRoute.GetTotalCost() < bestCost) {
                         bestCost = tempRoute.GetTotalCost();
                         bestRoute = tempRoute;
                         ret = true;
@@ -802,8 +852,10 @@ bool VRP::Opt2() {
             if (ret) {
                 *it = bestRoute;
                 diffCost -= bestRoute.GetTotalCost();
-                Utils::Instance().logger("2-Opt improved: " + std::to_string(diffCost), Utils::VERBOSE);
-            }
+                if (diffCost > 0)
+                    Utils::Instance().logger("2-Opt improved: " + std::to_string(diffCost), Utils::VERBOSE);
+            }else
+                Utils::Instance().logger("2-Opt no improvement", Utils::VERBOSE);
         }
     }
     return ret;
@@ -891,7 +943,7 @@ bool VRP::Opt3() {
                         for (m++; m != custs.end(); ++m) {
                             // swap customers
                             Route tempRoute = this->Opt3Swap(*it, i, k, l, m);
-                            if (tempRoute.GetTotalCost() <= bestCost) {
+                            if (tempRoute.GetTotalCost() < bestCost) {
                                 bestCost = tempRoute.GetTotalCost();
                                 bestRoute = tempRoute;
                                 ret = true;
@@ -903,8 +955,10 @@ bool VRP::Opt3() {
             if (ret) {
                 *it = bestRoute;
                 diffCost -= bestRoute.GetTotalCost();
-                Utils::Instance().logger("3-Opt improved " + std::to_string(diffCost), Utils::VERBOSE);
-            }
+                if (diffCost > 0)
+                    Utils::Instance().logger("3-Opt improved: " + std::to_string(diffCost), Utils::VERBOSE);
+            }else
+                Utils::Instance().logger("3-Opt no improvement", Utils::VERBOSE);
         }
     }
     return ret;
