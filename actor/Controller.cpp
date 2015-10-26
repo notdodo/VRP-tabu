@@ -62,6 +62,7 @@ void Controller::RunOpts(int times) {
     int i = 0;
     bool result, optxx = true;
     while (i < times) {
+        Utils::Instance().logger("Round " + std::to_string(i), Utils::VERBOSE);
         if (optxx) {
             result = this->vrp->Opt10();
             if (!result)
