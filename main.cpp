@@ -29,14 +29,14 @@ int main(int argc, char** argv) {
     if (argc == 2 || argc == 3) {
         try {
             c.Init(argv);
-        }catch(string i) {
-            u.logger("\r\n"+i, u.ERROR);
+        }catch(const char *i) {
+            u.logger(i, u.ERROR);
         }
     }else
         u.logger("Usage: ./VRP [-v] data.json", u.ERROR);
 
     high_resolution_clock::time_point t2 = high_resolution_clock::now();
-    auto duration = duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+    int duration = duration_cast<milliseconds>(t2 - t1).count();
     u.logger(to_string(duration) + " milliseconds", u.INFO);
     return 0;
 }
@@ -69,8 +69,8 @@ int main(int argc, char** argv) {
  * Move.
  *          A transition from a feasible solution to another feasible solution is called move.
  *          Moves can be given the tabu status if they lead to previously visited solutions, but
- *          TS establishes an aspiration criteria so that tabu moves can be accepted if the satify
- *          such a criteria.
+ *          TS establishes an aspiration criteria so that tabu moves can be accepted if the solution
+ *          satify such a criteria.
  *
  * Taby list and efficient use of memory.
  *          To prevent the search from cycling between the same solutions, TS uses a short term memory

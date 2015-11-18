@@ -30,13 +30,16 @@ void Controller::Init(char **argv) {
             u.logger("Done!", u.SUCCESS);
         break;
         case 1:
-            throw std::string("You need more vehicles");
+            throw "You need more vehicles";
         break;
     }
+    int initCost = this->vrp->GetTotalCost();
     this->PrintRoutes();
     u.logger("Starting opt", u.VERBOSE);
-    this->RunOpts(10);
+    this->RunOpts(this->vrp->GetNumberOfCustomers());
+    initCost -= this->vrp->GetTotalCost();
     this->PrintRoutes();
+    u.logger("Total improvement: " + std::to_string(initCost), u.INFO);
     this->SaveResult();
 }
 
@@ -47,18 +50,19 @@ Utils& Controller::GetUtils() const {
 void Controller::PrintRoutes() {
     Utils &u = this->GetUtils();
     std::list<Route> *e = this->vrp->GetRoutes();
-    std::cout << std::endl;
-    for (auto i = e->begin(); i != e->cend(); i++) {
+	std::cout << std::endl;
+    for (auto i = e->cbegin(); i != e->cend(); i++) {
         u.logger(*i);
         std::advance(i, 1);
         if (i == e->cend()) break;
         u.logger(*i, u.SUCCESS);
     }
     u.logger("Total cost: " + std::to_string(this->vrp->GetTotalCost()), u.INFO);
-    std::cout << std::endl;
+	std::cout << std::endl;
 }
 
 void Controller::RunOpts(int times) {
+    this->vrp->RouteBalancer();
     int i = 0;
     bool result, optxx = true;
     while (i < times) {
@@ -79,8 +83,12 @@ void Controller::RunOpts(int times) {
         // if no more improvements run only 2-opt and 3-opt
         if (!result)
             optxx = false;
-        this->vrp->Opt2();
-        this->vrp->Opt3();
+        if (this->vrp->Opt2())
+            optxx = true;
+        if (this->vrp->Opt3())
+            optxx = true;
+        if (!result && !optxx)
+            break;
         i++;
     }
     this->vrp->RouteBalancer();

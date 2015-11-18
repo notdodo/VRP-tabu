@@ -51,7 +51,7 @@ private:
                 std::cout << ANSI_YELLOW << "[w]\t" << s << ANSI_RESET << std::endl;
             break;
             case ERROR:
-                std::cout << ANSI_RED << s << ANSI_RESET << std::endl;
+                std::cout << ANSI_RED << "\r\n" << s << ANSI_RESET << std::endl;
             break;
             case INFO:
                 std::cout << ANSI_BLUE << s << ANSI_RESET << std::endl;
