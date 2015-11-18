@@ -20,7 +20,10 @@ public:
     void RemoveEdge(const Customer &);
     int GetWeight(const Customer &) const;
     const std::map<Customer, Edge> GetEdges() const;
+	bool SwapState();
+	bool GetState() { return this->isFree; }
 private:
+	bool isFree = true;
     std::map<Customer, Edge> edges;             /**< List of all the edges from customer */
 
     /** @brief Overriding of '<<' operator */

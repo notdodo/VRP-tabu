@@ -77,13 +77,27 @@ std::multimap<int, Customer> Graph::sortV0() {
     // insert the depot
     v.insert(std::pair<int, Customer>(0, c));
     Vertex it = vertexes.find(c)->second;
-    for (auto& edge : it.GetEdges()) {
+    for (auto &edge : it.GetEdges()) {
         v.insert(std::pair<int, Customer>(edge.second.weight, edge.first));
     }
     return v;
 }
 
-/* return the weight of edges &from &to */
+/** @brief Find the neighborhood of a customer.
+ *
+ * This function sorts the neighborhood of a customer by distance;
+ * the order is crescent.
+ * @return The map of customer sorted
+ */
+std::multimap<int, Customer> Graph::GetNeighborhood(const Customer c) {
+    std::multimap<int, Customer> mm;
+    Vertex it = vertexes.find(c)->second;
+    for (auto &edge : it.GetEdges()) {
+        mm.insert(std::pair<int, Customer>(edge.second.weight, edge.first));
+    }
+    return mm;
+}
+
 /** @brief Return the weight of an edge.
  *
  * This function compute the cost of travelling from a customer to another.
@@ -97,19 +111,10 @@ std::pair<Customer, int> Graph::GetCosts(const Customer &from, const Customer &t
     return {from, it.GetEdges().find(to)->second.weight};
 }
 
-/*std::string Graph::ToPrint() {
-    std::string out = "";
-    std::vector<Customer> end_points;
-    // for each pair Customer-Vertex
-    for(auto&  pair : this->vertexes) {
-        end_points = pair.second.copy_edges();
-        out += pair.first.name + " : "; // Customer name
-        for(auto& edge : end_points) {
-            int n = pair.second.GetWeight(edge); // edge weight
-            out += "\t -(" + std::to_string(n) + ")-> " + edge.name;
-            out += "\r\n";
-        }
-        out += "\n";
-    }
-    return out;
-}*/
+bool Graph::GetState(const Customer c) {
+		return vertexes.find(c)->second.GetState();
+}
+
+void Graph::SwapState(const Customer c) {
+		vertexes.find(c)->second.SwapState();
+}

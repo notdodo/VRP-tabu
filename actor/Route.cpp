@@ -108,12 +108,13 @@ bool Route::Travel(const Customer from, const Customer to) {
     // must consider the time to return to depot
     returnTime = (this->graph.GetCosts(to, depot).second) * this->TRAVEL_COST;
     // after the travel if constraints fails
-    if (capac < 0 || workT < returnTime) {
+    if (capac < 0 || workT < returnTime || !this->graph.GetState(to)) {
         // no time or capacity to serve the customer: return to depot
         ret = false;
     } else {
         // the travel can be added to the route
-        this->totalCost = tCost;
+        this->graph.SwapState(to);
+		this->totalCost = tCost;
         this->capacity = capac;
         this->workTime = workT;
         this->route.push_back({from, travelCost});

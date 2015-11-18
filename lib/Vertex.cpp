@@ -55,3 +55,16 @@ int Vertex::GetWeight(const Customer &c) const {
 const std::map<Customer, Edge> Vertex::GetEdges() const {
     return this->edges;
 }
+
+/** @brief Change the state of a vertex.
+ *
+ * Swap the state of the vertex from free to member of a route.
+ * @return The actual state of the vertex
+ */
+bool Vertex::SwapState() {
+    if (this->isFree)
+        this->isFree = false;
+    else
+        this->isFree = true;
+    return this->isFree;
+}

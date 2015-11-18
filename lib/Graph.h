@@ -12,8 +12,11 @@ public:
     void RemoveEdge(Customer, Customer);
     /* multimap allow same keys */
     std::multimap<int, Customer> sortV0();
+    std::multimap<int, Customer> GetNeighborhood(const Customer);
     std::string ToPrint();
     std::pair<Customer, int> GetCosts(const Customer&, const Customer&);
+	bool GetState(const Customer);
+    void SwapState(const Customer);
 protected:
     void InsertVertex(Customer, Vertex);
     void InsertEdge(Customer, Edge, int);
