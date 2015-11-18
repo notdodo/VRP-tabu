@@ -23,7 +23,6 @@ private:
     float workTime;             /**< Work time for each driver */
     int totalCost;              /**< Total cost of the routes */
     bool verbose;               /**< Flag for verbose prints */
-    Map::const_iterator InsertStep(Customer, Map::iterator, Map::const_iterator, Route &, Map &);
     bool SwapFromTo(Route &, Route &);
     bool Move1FromTo(Route &, Route &, bool);
     bool AddRemoveFromTo(Route &, Route &, int, int);
@@ -31,7 +30,7 @@ private:
     Route Opt2Swap(Route r, std::list<Customer>::iterator i , std::list<Customer>::iterator k);
     Route Opt3Swap(Route, std::list<Customer>::iterator, std::list<Customer>::iterator, std::list<Customer>::iterator, std::list<Customer>::iterator);
 public:
-    VRP() {} //!< constructor
+    VRP() {}					//!< constructor
     VRP(const Graph, const int, const int, const int, const float, const bool); //!< constructor
     int InitSolutions();
     std::list<Route>* GetRoutes();
@@ -46,7 +45,8 @@ public:
     bool Opt2();
     bool Opt3();
     int GetTotalCost() const;
-    ~VRP(); //!< destructor
+    int GetNumberOfCustomers() const;
+    ~VRP();						//!< destructor
 };
 
 #endif /* VRP_H */

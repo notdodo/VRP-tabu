@@ -67,7 +67,7 @@ int VRP::InitSolutions() {
     it = dist.begin();
     std::advance(it, start);
     bool stop;
-    // for each customer try to insert it in a route, othwerwise create a new route
+    // for each customer try to insert it in a route, otherwise create a new route
     while(!dist.empty()) {
         stop = true;
         // create an empty route
@@ -76,7 +76,7 @@ int VRP::InitSolutions() {
         // start the route with a depot
         if (!v.Travel(depot, it->second))
             throw std::string("Customer" + it->second.name + " is unreachable!!!");
-        // if remain one customer add it to route
+        // if one customer is left add it to route
         if (dist.size() == 1) {
             v.CloseTravel(it->second);
             stop = false;
@@ -116,92 +116,6 @@ int VRP::InitSolutions() {
         j = 1;
     Utils::Instance().logger("Routes created", Utils::VERBOSE);
     return j;
-}
-
-/** @brief This function creates a route.
- *
- * Starting from a customer this function creates the route until
- * a constraint result invalid looping the list of sorted customers.
- * @param depot The depot
- * @param stop The last customer, in the list is the j-1, where j is the initial random customer
- * @param i The customer which starts the route
- * @param r The route to create
- * @param distances The sorted list of customers
- */
-Map::const_iterator VRP::InsertStep(Customer depot, Map::iterator stop, Map::const_iterator i, Route &r, Map &distances) {
-    Customer from, to;
-    Map::const_iterator index = i;
-    Map::const_iterator end = distances.cend(); end--;
-    Map::const_iterator last = end;
-    Map::const_iterator fallback = index;
-    // init the route with the travel from depot to first customer
-    to = index->second;
-    if (!r.Travel(depot, to)) {
-        // if the customer is unreachable stop the program
-        throw std::string("Customer" + to.name + " is unreachable!!!");
-    }
-    // increment the index, computing the next customer
-    if (index != last)
-        index++;
-    else
-        index = distances.cbegin();
-    // the route needs only the last customer (last before the stop)
-    if (index == distances.cbegin() && index == stop) {
-        r.CloseTravel(to);
-        // clear the map to stop the loop
-        distances.clear();
-    }
-    while (index != stop && !distances.empty()) {
-        // set up from and to customers
-        from = to;
-        // a fallback index to recover the state
-        fallback = index;
-        to = index->second;
-        // incrementing (if possible) the index for the next step of the route
-        index++;
-        if (index == distances.cend()) {
-            std::advance(index, -1);
-            to = index->second;
-            // if cannot add the customer, close the route and return
-            if (!r.Travel(from, to)) {
-                r.CloseTravel(from);
-                return fallback;
-            } else {
-                // otherwise index move to the next customer (the first one)
-                index = distances.cbegin();
-            }
-        } else {
-            if (!r.Travel(from, to)) {
-                r.CloseTravel(from);
-                // the route is closed but if remains the last customer to serve, return it
-                if (stop != distances.cbegin())
-                    std::advance(stop, -1);
-                if (stop->second == to) {
-                    // cannot insert the last customer, need to create a new route, only for it
-                    distances.clear();
-                    // a map with only this customer
-                    Map::iterator last = distances.insert({0, to});
-                    fallback = last;
-                }
-                break;
-            }else {
-                // the customer is inserted
-                if (stop != distances.cbegin())
-                    std::advance(stop, -1);
-                // but if remain only one customer to serve, try to serve it
-                if (stop == fallback) {
-                    // no customers left
-                    if (r.CloseTravel(to, depot)) {
-                        distances.clear();
-                        break;
-                    }
-                } else
-                    std::advance(stop, 1);
-            }
-        }
-    }
-    // return the index fallback to start a new route
-    return fallback;
 }
 
 /** @brief Return the routes.
@@ -252,7 +166,7 @@ bool VRP::Opt10() {
                     int costTo = tTo.GetTotalCost();
                     // if the swap is done and the cost of routes is less than before
                     if (Move1FromTo(tFrom, tTo, false) && tFrom.GetTotalCost() < costFrom && tTo.GetTotalCost() < costTo) {
-                        // wait until the lock is unlocked from an onther thread, which is terminated
+                        // wait until the lock is unlocked from an other thread, which is terminated
                         std::lock_guard<std::mutex> lock(*this->mtx);
                         // LOCK acquired, if the cost of routes is better than the actual best, update the list
                         if ((tFrom.GetTotalCost() < l.front().second.first.GetTotalCost() && tTo.GetTotalCost() < l.front().second.second.GetTotalCost()) || l.size() == 0)
@@ -584,11 +498,11 @@ bool VRP::Opt12() {
 /** @brief Move some customers from the routes.
  *
  * This function moves a number of customers from two routes and find the best
- * moves checking all possibile route configurations.
+ * moves checking all possible route configurations.
  * @param source Route where to choose a random customer
  * @param dest Route destination
  * @param nInsert Number of customer to move from 'source' to 'dest'
- * @param nRemove Number of customer to mvoe from 'dest' to 'source'
+ * @param nRemove Number of customer to move from 'dest' to 'source'
  * @return True if the customer is moved.
  */
 bool VRP::AddRemoveFromTo(Route &source, Route &dest, int nInsert, int nRemove) {
@@ -768,11 +682,20 @@ int VRP::GetTotalCost() const {
     return tCost;
 }
 
+/** @brief Compute the total cost of routes.
+ *
+ * Compute the amount of costs for each route.
+ * The cost is used to check improvement on paths.
+ * @return The total cost
+ */
+int VRP::GetNumberOfCustomers() const {
+    return numVertices;
+}
 
 /** @brief Try to balance the routes.
  *
  * Find route with one customer and move it to another route:
- * execute a Opt10.
+ * execute an Opt10.
  */
 void VRP::RouteBalancer() {
     std::list<Route>::const_iterator it = this->routes.cbegin();
@@ -799,16 +722,20 @@ void VRP::RouteBalancer() {
     for (std::list<std::thread>::iterator tl = th.begin(); tl != th.end(); ++tl)
         tl->join();
     if (l.size() > 0) {
-        Utils::Instance().logger("Routes balancing - " + std::to_string(l.size()), Utils::VERBOSE);
         std::list<Route>::iterator itFinal = this->routes.begin();
         int indexFrom = l.front().first.first;
         int indexTo = l.front().first.second;
         std::advance(itFinal, indexFrom);
+        int diffCost = itFinal->GetTotalCost();
         *itFinal= l.front().second.first;
+        diffCost -= itFinal->GetTotalCost();
         itFinal = this->routes.begin();
         std::advance(itFinal, indexTo);
+        diffCost += itFinal->GetTotalCost();
         *itFinal = l.front().second.second;
+        diffCost -= itFinal->GetTotalCost();
         this->CleanVoid();
+        Utils::Instance().logger("Routes balancing: " + std::to_string(diffCost), Utils::VERBOSE);
     }else {
         Utils::Instance().logger("No routes balancing", Utils::VERBOSE);
     }
@@ -825,13 +752,12 @@ bool VRP::Opt2() {
     std::list<Route>::iterator it = this->routes.begin();
     // Customers with short path (less than average)
     std::list<Customer> custs;
-    int bestCost, diffCost;
+    int bestCost, diffCost = 0;
     // for each route
     for (; it != this->routes.end(); ++it) {
         Route bestRoute = *it;
         // get customers eligible to be swapped
         it->GetUnderAverageCustomers(custs);
-        diffCost = it->GetTotalCost();
         // need two customers at least
         if (custs.size() > 1) {
             bestCost = it->GetTotalCost();
@@ -850,14 +776,16 @@ bool VRP::Opt2() {
                 }
             }
             if (ret) {
+				diffCost += it->GetTotalCost();
                 *it = bestRoute;
                 diffCost -= bestRoute.GetTotalCost();
-                if (diffCost > 0)
-                    Utils::Instance().logger("2-Opt improved: " + std::to_string(diffCost), Utils::VERBOSE);
-            }else
-                Utils::Instance().logger("2-Opt no improvement", Utils::VERBOSE);
+            }
         }
     }
+    if (ret && diffCost > 0)
+        Utils::Instance().logger("2-Opt improved: " + std::to_string(diffCost), Utils::VERBOSE);
+    else
+        Utils::Instance().logger("2-Opt no improvement", Utils::VERBOSE);
     return ret;
 }
 
@@ -917,11 +845,11 @@ bool VRP::Opt3() {
     std::list<Route>::iterator it = this->routes.begin();
     // Customers with short path (less than average)
     std::list<Customer> custs;
-    int bestCost, diffCost;
+    int bestCost, diffCost = 0;
     // for each route
     for (; it != this->routes.end(); ++it) {
         Route bestRoute = *it;
-        diffCost = it->GetTotalCost();
+        diffCost += it->GetTotalCost();
         // get customers eligible to be swapped
         it->GetUnderAverageCustomers(custs);
         // need at least two customers
@@ -953,14 +881,16 @@ bool VRP::Opt3() {
                 }
             }
             if (ret) {
+				diffCost += it->GetTotalCost();
                 *it = bestRoute;
                 diffCost -= bestRoute.GetTotalCost();
-                if (diffCost > 0)
-                    Utils::Instance().logger("3-Opt improved: " + std::to_string(diffCost), Utils::VERBOSE);
-            }else
-                Utils::Instance().logger("3-Opt no improvement", Utils::VERBOSE);
+            }
         }
     }
+    if (ret && diffCost > 0)
+        Utils::Instance().logger("3-Opt improved: " + std::to_string(diffCost), Utils::VERBOSE);
+    else
+        Utils::Instance().logger("3-Opt no improvement", Utils::VERBOSE);
     return ret;
 }
 
