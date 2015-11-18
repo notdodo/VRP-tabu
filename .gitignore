@@ -34,4 +34,7 @@ doc/
 .gdb_history
 peda*
 
+# random
 *.swp
+*.py
+*.pyc
