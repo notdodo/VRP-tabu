@@ -185,3 +185,6 @@ The application could be run in a web server or simply opening the file `index.h
 After creating and executing the JSON file through the VRP program the Web-UI can read the output file to display costs and routes.
 
 ![Example of routes](https://raw.githubusercontent.com/edoz90/VRP-tabu/master/screenshot/routes.png "Routes and costs")
+
+## Documentation
+Run `doxygen` in root folder and the documentation will be generated in `doc/` folder
