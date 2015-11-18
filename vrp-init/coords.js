@@ -94,8 +94,8 @@ function getMousePos(evt) {
 }
 
 /* onclick draw a customer */
-// lint
-function drawCustomer(uid, evt, drag=true) {
+function drawCustomer(uid, evt, drag) {
+	if (typeof(drag) === 'undefined') drag = true;
     var x = evt.clientX - rect.left, y = evt.clientY - rect.top;
     var last = new fabric.Text('⌂', {
         fontFamily: 'Roboto',
@@ -249,7 +249,6 @@ function parseCustomer(cs) {
         i = 1;
         costs = cs.costs;
         for (var c in cs.vertices) {
-            // lint
             if (c == 0) {
                 continue;
             }
@@ -413,7 +412,6 @@ function drawOneRoute(r) {
         lastRemoved = null;
         return;
     }
-    // lint
     if (lastRemoved === null)
         lastRemoved = route;
     else {
@@ -429,7 +427,6 @@ var lastCustomer = {
     text: null
 };
 function showOneCustomer(i) {
-    // lint
     if (lastCustomer.text !== null) {
         canvas.remove(lastCustomer.text);
         lastCustomer.i = null;
