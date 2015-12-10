@@ -21,8 +21,6 @@ private:
     int vehicles;               /**< Number of vehicles */
     int capacity;               /**< Capacity of each vehicle */
     float workTime;             /**< Work time for each driver */
-    int totalCost;              /**< Total cost of the routes */
-    bool verbose;               /**< Flag for verbose prints */
     bool SwapFromTo(Route &, Route &);
     bool Move1FromTo(Route &, Route &, bool);
     bool AddRemoveFromTo(Route &, Route &, int, int);
@@ -31,7 +29,7 @@ private:
     Route Opt3Swap(Route, std::list<Customer>::iterator, std::list<Customer>::iterator, std::list<Customer>::iterator, std::list<Customer>::iterator);
 public:
     VRP() {}					//!< constructor
-    VRP(const Graph, const int, const int, const int, const float, const bool); //!< constructor
+    VRP(Graph, const int, const int, const int, const float, const bool); //!< constructor
     int InitSolutions();
     std::list<Route>* GetRoutes();
     void OrderByCosts();
@@ -46,7 +44,8 @@ public:
     bool Opt3();
     int GetTotalCost() const;
     int GetNumberOfCustomers() const;
-    ~VRP();						//!< destructor
+	void TabuSearch();
+	~VRP();						//!< destructor
 };
 
 #endif /* VRP_H */

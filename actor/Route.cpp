@@ -22,12 +22,14 @@
  * @param c Initial capacity of the vehicle
  * @param wt Initial work time of the driver
  * @param g Graph of the customers
+ * @param n Identification number of the route
  */
-Route::Route(int c, float wt, const Graph g) {
+Route::Route(int c, float wt, const Graph g, int n) {
     this->initialCapacity = this->capacity = c;
     this->initialWorkTime = this->workTime = wt;
     this->graph = g;
     this->totalCost = 0;
+    this->routeNumber = n;
     // if the service time is not a constraint reset the cost of travelling
     if (wt == std::numeric_limits<int>::max())
         this->TRAVEL_COST = (float)0;
@@ -86,7 +88,7 @@ bool Route::CloseTravel(const Customer from, const Customer depot) {
  *  @param to The destination customer
  *  @return True if the travel is added to the route
  */
-bool Route::Travel(const Customer from, const Customer to) {
+bool Route::Travel(Customer from, const Customer to) {
     Customer depot;
     bool ret = true;
     int returnTime;
@@ -108,13 +110,12 @@ bool Route::Travel(const Customer from, const Customer to) {
     // must consider the time to return to depot
     returnTime = (this->graph.GetCosts(to, depot).second) * this->TRAVEL_COST;
     // after the travel if constraints fails
-    if (capac < 0 || workT < returnTime || !this->graph.GetState(to)) {
+	if (capac < 0 || workT < returnTime) {
         // no time or capacity to serve the customer: return to depot
         ret = false;
     } else {
         // the travel can be added to the route
-        this->graph.SwapState(to);
-		this->totalCost = tCost;
+        this->totalCost = tCost;
         this->capacity = capac;
         this->workTime = workT;
         this->route.push_back({from, travelCost});
@@ -487,9 +488,27 @@ void Route::GetUnderAverageCustomers(std::list<Customer> &customers) {
     }
 }
 
+/** @brief Find a customer in the route
+ *
+ * Search for a customer in the route, if it is present return True,
+ * otherwise False.
+ * @param c The customer to search for
+ * @return The result
+ */
+bool Route::FindCustomer(const Customer &c) {
+	auto findIter = std::find_if(this->route.begin(), this->route.end(),
+			[c](StepType &e) {
+				return e.first == c;
+			});
+	bool ret = false;
+	if (findIter != this->route.end())
+		ret = true;
+	return ret;
+}
+
 /** @brief Rebuild the route starting from a list of customers
  *
- * From a list of customers this function rebuild the route (checking all constraint)
+ * From a list of customers this function rebuild the route (checking all constraint).
  * @return True if the new route is valid
  */
 bool Route::RebuildRoute(std::list<Customer> cust) {

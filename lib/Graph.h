@@ -7,19 +7,15 @@ class Graph {
 public:
     Graph() = default;
 
-    void InsertVertex(Customer);
-    void InsertEdge(Customer, Customer, int);
-    void RemoveEdge(Customer, Customer);
+    void InsertVertex(Customer &);
+    void InsertEdge(Customer &, Customer &, int);
+    void RemoveEdge(Customer &, Customer &);
     /* multimap allow same keys */
     std::multimap<int, Customer> sortV0();
-    std::multimap<int, Customer> GetNeighborhood(const Customer);
-    std::string ToPrint();
+    std::multimap<int, Customer> GetNeighborhood(Customer);
     std::pair<Customer, int> GetCosts(const Customer&, const Customer&);
-	bool GetState(const Customer);
-    void SwapState(const Customer);
 protected:
-    void InsertVertex(Customer, Vertex);
-    void InsertEdge(Customer, Edge, int);
+    void InsertVertex(Customer &, Vertex &);
 
 private:
     std::map<Customer, Vertex> vertexes;            /**< Map of vertexes: for each customer the vertex in input or output */

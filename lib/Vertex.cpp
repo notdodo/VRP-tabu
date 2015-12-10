@@ -17,10 +17,8 @@
 
 #include "Vertex.h"
 
-using edge_pair = std::pair<Customer, Edge>;
-
 /** @brief Constructor of Vertex */
-Vertex::Vertex(const ConstructionToken &) {}
+Vertex::Vertex(ConstructionToken &) { }
 
 /** @brief Insert an Edge.
  *
@@ -28,9 +26,9 @@ Vertex::Vertex(const ConstructionToken &) {}
  * @param end_point The destination customer
  * @param weight The weight of the edge
  */
-void Vertex::InsertEdge(const Customer &end_point, const int &weight) {
+void Vertex::InsertEdge(Customer &end_point, int weight) {
     Edge new_edge { Edge::ConstructionToken{}, weight };
-    edge_pair temp(end_point, new_edge);
+	std::pair<Customer, Edge> temp(end_point, new_edge);
     edges.insert(temp);
 }
 
@@ -38,7 +36,7 @@ void Vertex::InsertEdge(const Customer &end_point, const int &weight) {
  *
  * @param edge The customer which the edge end
  */
-void Vertex::RemoveEdge(const Customer &edge) {
+void Vertex::RemoveEdge(Customer &edge) {
     edges.erase(edge);
 }
 
@@ -47,24 +45,11 @@ void Vertex::RemoveEdge(const Customer &edge) {
  * @param c Customer at the end of the edge
  * @return The weight of the customer
  */
-int Vertex::GetWeight(const Customer &c) const {
+int Vertex::GetWeight(Customer &c) {
     return edges.find(c)->second.weight;
 }
 
 /** @brief Get the map of the edges */
-const std::map<Customer, Edge> Vertex::GetEdges() const {
+std::map<Customer, Edge> Vertex::GetEdges() {
     return this->edges;
-}
-
-/** @brief Change the state of a vertex.
- *
- * Swap the state of the vertex from free to member of a route.
- * @return The actual state of the vertex
- */
-bool Vertex::SwapState() {
-    if (this->isFree)
-        this->isFree = false;
-    else
-        this->isFree = true;
-    return this->isFree;
 }

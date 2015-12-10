@@ -1,10 +1,10 @@
 #ifndef Route_H
 #define Route_H
 
+#include "Graph.h"
 #include <list>
 #include <iomanip>
-#include <limits>
-#include "Graph.h"
+#include <algorithm>
 
 typedef std::pair<Customer, int> StepType;
 
@@ -29,6 +29,7 @@ private:
     int totalCost;                  /**< Total cost of the route: sum of the weight */
     float averageCost;              /**< Average of all path costs */
     float TRAVEL_COST = 0.3f;       /**< Parameter for each travel */
+    int routeNumber;				/**< Identifier of the route */
     Graph graph;                    /**< Graph of the customers */
 protected:
     std::list<StepType> route;      /**< This list represent the route */
@@ -44,12 +45,12 @@ public:
         this->graph = r.graph;
         return *this;
     }
-    Route(const int, const float, const Graph);       //!< constructor
+    Route(const int, const float, const Graph, const int);       //!< constructor
     void CloseTravel(const Customer);
     bool CloseTravel(const Customer, const Customer);
     void PrintRoute();
     void PrintRoute(std::list<StepType>);
-    bool Travel(const Customer, const Customer);
+    bool Travel(Customer, const Customer);
     void EmptyRoute(const Customer);
     int size() const;
     std::list<StepType>* GetRoute();
@@ -62,6 +63,8 @@ public:
     int GetTotalCost() const;
     void SetAverageCost();
     void GetUnderAverageCustomers(std::list<Customer> &);
+	int GetNumber() { return this->routeNumber; }
+	bool FindCustomer(const Customer &);
     bool RebuildRoute(std::list<Customer>);
 };
 

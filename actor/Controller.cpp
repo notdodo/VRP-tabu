@@ -35,6 +35,7 @@ void Controller::Init(char **argv) {
     }
     int initCost = this->vrp->GetTotalCost();
     this->PrintRoutes();
+    this->vrp->TabuSearch();
     u.logger("Starting opt", u.VERBOSE);
     this->RunOpts(this->vrp->GetNumberOfCustomers());
     initCost -= this->vrp->GetTotalCost();

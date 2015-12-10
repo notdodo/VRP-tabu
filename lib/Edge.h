@@ -13,7 +13,7 @@ public:
     };
 
     Edge(const Edge &);
-    Edge(const ConstructionToken &, const int &); //!< constructor
+    Edge(const ConstructionToken &, int); //!< constructor
     int weight;         /**< Weight of the Edge */
 private:
 };

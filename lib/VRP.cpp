@@ -26,7 +26,7 @@
  * @param t The work time of each driver
  * @param flagTime If the service time is a constraint
  */
-VRP::VRP(const Graph g, const int n, const int v, const int c, const float t, const bool flagTime) {
+VRP::VRP(Graph g, const int n, const int v, const int c, const float t, const bool flagTime) {
     this->mtx = new std::mutex();
     this->graph = g;
     this->numVertices = n;
@@ -52,8 +52,6 @@ int VRP::InitSolutions() {
     srand((unsigned)time(NULL));
     int start;
     Customer depot, last;
-    /* keyring of distances */
-    std::vector<int> keys;
     // the iterator for the sorted customer
     Map::iterator it;
     /* distances of customers sorted from depot */
@@ -66,17 +64,16 @@ int VRP::InitSolutions() {
     Utils::Instance().logger(std::to_string(start), Utils::VERBOSE);
     it = dist.begin();
     std::advance(it, start);
-    bool stop;
     // for each customer try to insert it in a route, otherwise create a new route
     while(!dist.empty()) {
-        stop = true;
+        bool stop = true;
         // create an empty route
-        Route v(this->capacity, this->workTime, this->graph);
+        Route v(this->capacity, this->workTime, this->graph, (this->routes.size() + 1));
         Customer from, to;
         // start the route with a depot
-        if (!v.Travel(depot, it->second))
-            throw std::string("Customer" + it->second.name + " is unreachable!!!");
-        // if one customer is left add it to route
+		if (!v.Travel(depot, it->second))
+            throw ("Customer" + it->second.name + " is unreachable!!!");
+		// if one customer is left add it to route
         if (dist.size() == 1) {
             v.CloseTravel(it->second);
             stop = false;
@@ -122,9 +119,7 @@ int VRP::InitSolutions() {
  *
  * @return The pointer to the routes list
  */
-std::list<Route>* VRP::GetRoutes() {
-    return &this->routes;
-}
+std::list<Route>* VRP::GetRoutes() { return &this->routes; }
 
 /** @brief Sort the list of routes by cost.
  *
@@ -137,8 +132,29 @@ void VRP::OrderByCosts() {
 }
 
 /** @brief Remove all void routes. */
-void VRP::CleanVoid() {
-    this->routes.remove_if([](Route r){ return r.size() < 2; });
+void VRP::CleanVoid() { this->routes.remove_if([](Route r){ return r.size() < 2; }); }
+
+/** @brief Primary function, search for better solution and update the tabu list
+ *
+ */
+void VRP::TabuSearch() {
+	std::list<Route>::iterator it = this->routes.begin();
+    // for each route
+	for (; it != this->routes.end(); ++it) {
+		Route r = *it;
+		std::list<StepType>::const_iterator ic = r.GetRoute()->cbegin();
+        // choose a customer
+		int ran = (rand() % (r.size()-2)) + 1;
+		std::advance(ic, ran);
+		Customer c = ic->first;
+        // find the neighborhood of the customer and clean the result
+		std::multimap<int, Customer> m = this->graph.GetNeighborhood(c);
+		for (auto i = m.begin();  i != m.end(); i++) {
+            // remove customers already in the route
+			if (it->FindCustomer(i->second))
+				m.erase(i);
+		}
+	}
 }
 
 /** @brief Move a customer from a route to another.
@@ -688,9 +704,7 @@ int VRP::GetTotalCost() const {
  * The cost is used to check improvement on paths.
  * @return The total cost
  */
-int VRP::GetNumberOfCustomers() const {
-    return numVertices;
-}
+int VRP::GetNumberOfCustomers() const { return numVertices; }
 
 /** @brief Try to balance the routes.
  *
@@ -904,8 +918,7 @@ bool VRP::Opt3() {
  * @param m The fourth customer to swap
  * @return The new route with customers swapped
  */
-Route VRP::Opt3Swap(Route route, std::list<Customer>::iterator i, std::list<Customer>::iterator k,
-                    std::list<Customer>::iterator l, std::list<Customer>::iterator m) {
+Route VRP::Opt3Swap(Route route, std::list<Customer>::iterator i, std::list<Customer>::iterator k, std::list<Customer>::iterator l, std::list<Customer>::iterator m) {
     std::list<Customer> cust;
     Route tempRoute = route;
     RouteList::const_iterator it = tempRoute.GetRoute()->cbegin();

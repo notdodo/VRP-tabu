@@ -22,7 +22,7 @@
  * Create and insert a vertex in the graph.
  * @param cust The customer who form the vertex
  */
-void Graph::InsertVertex(Customer cust) {
+void Graph::InsertVertex(Customer &cust) {
     Vertex::ConstructionToken c;
     Vertex v { c };
     InsertVertex(cust, v);
@@ -34,7 +34,7 @@ void Graph::InsertVertex(Customer cust) {
  * @param c The customer who form the vertex
  * @param v The vertex created
  */
-void Graph::InsertVertex(Customer c, Vertex v) {
+void Graph::InsertVertex(Customer &c, Vertex &v) {
     std::pair<Customer, Vertex> temp (c, v);
     vertexes.insert(temp);
 }
@@ -46,10 +46,9 @@ void Graph::InsertVertex(Customer c, Vertex v) {
  * @param new_edge The destination customer
  * @param weight The weight of the edge
  */
-void Graph::InsertEdge(Customer node, Customer new_edge, int weight) {
+void Graph::InsertEdge(Customer &node, Customer &new_edge, int weight) {
     auto it = vertexes.find(node);
-    if (node.name != new_edge.name &&
-       it != vertexes.end())
+    if (node.name != new_edge.name && it != vertexes.end())
         it->second.InsertEdge(new_edge, weight);
 }
 
@@ -58,7 +57,7 @@ void Graph::InsertEdge(Customer node, Customer new_edge, int weight) {
  * @param node The customer which the edge start
  * @param edge The customer which the edge finish
  */
-void Graph::RemoveEdge(Customer node, Customer edge) {
+void Graph::RemoveEdge(Customer &node, Customer &edge) {
     auto it = vertexes.find(node);
     if(it != vertexes.end())
         it->second.RemoveEdge(edge);
@@ -89,12 +88,12 @@ std::multimap<int, Customer> Graph::sortV0() {
  * the order is crescent.
  * @return The map of customer sorted
  */
-std::multimap<int, Customer> Graph::GetNeighborhood(const Customer c) {
+std::multimap<int, Customer> Graph::GetNeighborhood(Customer c) {
     std::multimap<int, Customer> mm;
     Vertex it = vertexes.find(c)->second;
-    for (auto &edge : it.GetEdges()) {
-        mm.insert(std::pair<int, Customer>(edge.second.weight, edge.first));
-    }
+    for (std::pair<Customer, Edge> edge : it.GetEdges()) {
+		mm.insert(std::pair<int, Customer>(edge.second.weight, edge.first));
+	}
     return mm;
 }
 
@@ -109,12 +108,4 @@ std::pair<Customer, int> Graph::GetCosts(const Customer &from, const Customer &t
     /* get all edges from &from */
     Vertex it = vertexes.find(from)->second;
     return {from, it.GetEdges().find(to)->second.weight};
-}
-
-bool Graph::GetState(const Customer c) {
-		return vertexes.find(c)->second.GetState();
-}
-
-void Graph::SwapState(const Customer c) {
-		vertexes.find(c)->second.SwapState();
 }

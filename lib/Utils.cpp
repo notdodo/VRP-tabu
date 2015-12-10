@@ -53,7 +53,7 @@ VRP* Utils::InitParameters(char **argv) {
         }else {
             s = "Invalid file format!";
             int numVertices = this->d["vertices"].Size();
-            Customer *customers = new Customer[numVertices];
+			std::vector<Customer> customers(numVertices);
             /* inserting the depot = v0 */
             customers[0] = Customer(this->d["vertices"][0]["name"].GetString(),
                                     this->d["vertices"][0]["x"].GetInt(),
@@ -95,7 +95,6 @@ VRP* Utils::InitParameters(char **argv) {
                     g.InsertEdge(customers[from], customers[to], value);
                 }
             }
-            delete [] customers;
             if (this->d["vehicles"].IsInt() &&
                 this->d["capacity"].IsInt() && this->d["worktime"].IsInt()) {
                 /* creating the VRP */

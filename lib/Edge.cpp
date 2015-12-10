@@ -25,6 +25,6 @@ Edge::Edge(const Edge &) = default;
  *
  * @param w Weight of the arch
  */
-Edge::Edge(const ConstructionToken &, const int &w) {
+Edge::Edge(const ConstructionToken &, int w) {
     this->weight = w;
 }
