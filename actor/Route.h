@@ -59,7 +59,7 @@ public:
     bool AddElem(const std::list<Customer> &);
     bool AddElem(const Customer, const Customer);
     void RemoveCustomer(std::list<StepType>::iterator &);
-    void RemoveCustomer(const Customer);
+    bool RemoveCustomer(const Customer);
     int GetTotalCost() const;
     void SetAverageCost();
     void GetUnderAverageCustomers(std::list<Customer> &);

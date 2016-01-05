@@ -336,6 +336,7 @@ bool Route::AddElem(const std::list<Customer> &custs) {
  *
  * Remove a customer in a position in the route.
  * @param it The position of the customer to remove
+ * @return The state of the operation
  */
 void Route::RemoveCustomer(std::list<StepType>::iterator &it) {
     // if the route is depot -> customer -> depot delete the route
@@ -373,16 +374,17 @@ void Route::RemoveCustomer(std::list<StepType>::iterator &it) {
  * Find and remove a customer from the route.
  * @param c The customer to remove
  */
-void Route::RemoveCustomer(const Customer c) {
+bool Route::RemoveCustomer(const Customer c) {
     std::list<StepType>::iterator it;
     if (c != this->route.front().first || c != this->route.back().first) {
         for (it = this->route.begin(); it != this->route.cend(); ++it) {
             if (it->first == c) {
                 this->RemoveCustomer(it);
-                break;
+                return true;
             }
         }
     }
+    return false;
 }
 
 /** @brief Add a customer and remove another.
@@ -500,10 +502,7 @@ bool Route::FindCustomer(const Customer &c) {
 			[c](StepType &e) {
 				return e.first == c;
 			});
-	bool ret = false;
-	if (findIter != this->route.end())
-		ret = true;
-	return ret;
+    return findIter != this->route.end();
 }
 
 /** @brief Rebuild the route starting from a list of customers
