@@ -11,6 +11,8 @@ private:
     Controller(Controller const&) = delete;
     void operator=(Controller const&) = delete;
     void RunOpts(int);
+    void RunVRP();
+    void RunTabuSearch(int);
     void SaveResult();
 protected:
     void PrintRoutes();

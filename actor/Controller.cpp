@@ -35,31 +35,30 @@ void Controller::Init(char **argv) {
     }
     int initCost = this->vrp->GetTotalCost();
     this->PrintRoutes();
-    this->vrp->TabuSearch();
-    u.logger("Starting opt", u.VERBOSE);
-    this->RunOpts(this->vrp->GetNumberOfCustomers());
-    initCost -= this->vrp->GetTotalCost();
+    this->RunVRP();
+    int finalCost = this->vrp->GetTotalCost();
+    int percCost = (float)(finalCost-initCost)/initCost * 100;
     this->PrintRoutes();
-    u.logger("Total improvement: " + std::to_string(initCost), u.INFO);
+    u.logger("Total improvement: " + std::to_string(initCost - finalCost) + " " + std::to_string(percCost) + "%", u.INFO);
     this->SaveResult();
 }
 
-Utils& Controller::GetUtils() const {
-    return Utils::Instance();
+void Controller::RunVRP() {
+    int customers = this->vrp->GetNumberOfCustomers();
+    for (int i = 0; i < customers; i++) {
+        this->RunTabuSearch(customers);
+        Utils::Instance().logger("Starting opt", Utils::VERBOSE);
+        this->RunOpts(customers);
+    }
 }
 
-void Controller::PrintRoutes() {
-    Utils &u = this->GetUtils();
-    std::list<Route> *e = this->vrp->GetRoutes();
-	std::cout << std::endl;
-    for (auto i = e->cbegin(); i != e->cend(); i++) {
-        u.logger(*i);
-        std::advance(i, 1);
-        if (i == e->cend()) break;
-        u.logger(*i, u.SUCCESS);
+void Controller::RunTabuSearch(int times) {
+    int initCost = this->vrp->GetTotalCost();
+    Utils::Instance().logger("Starting Tabu Search", Utils::VERBOSE);
+    for (int k = 0; k < times; ++k) {
+        this->vrp->TabuSearch();
     }
-    u.logger("Total cost: " + std::to_string(this->vrp->GetTotalCost()), u.INFO);
-	std::cout << std::endl;
+    Utils::Instance().logger("Tabu Search improved: " + std::to_string(initCost - this->vrp->GetTotalCost()), Utils::VERBOSE);
 }
 
 void Controller::RunOpts(int times) {
@@ -93,6 +92,24 @@ void Controller::RunOpts(int times) {
         i++;
     }
     this->vrp->RouteBalancer();
+}
+
+Utils& Controller::GetUtils() const {
+    return Utils::Instance();
+}
+
+void Controller::PrintRoutes() {
+    Utils &u = this->GetUtils();
+    std::list<Route> *e = this->vrp->GetRoutes();
+	std::cout << std::endl;
+    for (auto i = e->cbegin(); i != e->cend(); i++) {
+        u.logger(*i);
+        std::advance(i, 1);
+        if (i == e->cend()) break;
+        u.logger(*i, u.SUCCESS);
+    }
+    u.logger("Total cost: " + std::to_string(this->vrp->GetTotalCost()), u.INFO);
+	std::cout << std::endl;
 }
 
 void Controller::SaveResult() {
