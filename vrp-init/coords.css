@@ -1,6 +1,6 @@
 html {
     box-sizing: border-box;
-    font-family: "Droid Sans", sans-serif;
+    font-family: Lato, "Droid Sans";
     color: white;
 }
 
@@ -84,7 +84,7 @@ h3 {
 	line-height: 1.471;
 	font-weight: 400;
 	color: #FFFFFF;
-	transition: all 0.3s ease 0s;
+	transition: all 0.35s ease 0s;
 }
 
 #parameters label:last-child a {
@@ -98,6 +98,7 @@ h3 {
 #parameters button:hover, #parameters label:last-child:hover {
     cursor: pointer;
 	filter: brightness(1.1);
+	background-color: #D91E18;
 }
 
 #controls {
