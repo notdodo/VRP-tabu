@@ -4,11 +4,12 @@
 #include "Graph.h"
 #include "Route.h"
 #include "Utils.h"
+#include "TabuList.h"
 #include <thread>
 #include <mutex>
 
 typedef std::multimap<int, Customer> Map;
-typedef std::list<std::pair<Customer, int>> RouteList;
+typedef std::list<StepType> RouteList;
 // contains: the index of the two routes and the two routes
 typedef std::list<std::pair<std::pair<int, int>, std::pair<Route, Route>>> ResultList;
 
@@ -45,6 +46,8 @@ public:
     int GetTotalCost() const;
     int GetNumberOfCustomers() const;
 	void TabuSearch();
+    int FindRouteFromCustomer(Customer);
+    bool CheckIntegrity();
 	~VRP();						//!< destructor
 };
 
