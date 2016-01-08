@@ -10,7 +10,7 @@ typedef std::pair<Customer, int> StepType;
 
 class Route {
 private:
-    /** @brief overriding of the "<<" operator for printing the route */
+    /** @brief overriding of the "<<" operator to print the route */
     friend std::ostream& operator<<(std::ostream& out, const Route &r) {
         if (r.route.size() > 1) {
             out << "Cost:" << std::setw(5) << std::to_string(r.totalCost) << " ";
@@ -19,7 +19,7 @@ private:
                     out << i.first << " -(" << std::to_string(i.second) << ")-> ";
                 else
                     out << i.first;
-        }
+        };
         return out;
     }
     int initialCapacity;            /**< Initial capacity of the route, equals to VRP.capacity */
@@ -29,6 +29,7 @@ private:
     int totalCost;                  /**< Total cost of the route: sum of the weight */
     float averageCost;              /**< Average of all path costs */
     float TRAVEL_COST = 0.3f;       /**< Parameter for each travel */
+    float ALPHA = 0.4f;
     int routeNumber;				/**< Identifier of the route */
     Graph graph;                    /**< Graph of the customers */
 protected:
@@ -66,6 +67,7 @@ public:
 	int GetNumber() { return this->routeNumber; }
 	bool FindCustomer(const Customer &);
     bool RebuildRoute(std::list<Customer>);
+    float Evaluate();
 };
 
 #endif /* Route_H */

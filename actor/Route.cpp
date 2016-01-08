@@ -548,3 +548,16 @@ bool Route::RebuildRoute(std::list<Customer> cust) {
     this->route.push_back({depot, 0});
     return true;
 }
+
+/** @brief Quality assessment of the route.
+ *
+ */
+float Route::Evaluate() {
+    float percLoad = (float(this->capacity) / this->initialCapacity) * 100;
+    float percTime = (float(this->workTime) / this->initialWorkTime) * 100;
+    float g = this->totalCost *
+                std::sqrt(
+                    std::pow(percLoad, 2) * std::pow(percTime, 2)
+                );
+    return g * this->ALPHA;
+}
