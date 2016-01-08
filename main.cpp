@@ -45,12 +45,12 @@ int main(int argc, char** argv) {
 /*
  * Tabu Search is a meta-heuristic method designed for the solution of hard optimization problems.
  * This algorithm starts form an initial solution and jumps from one solution to another one in the
- * space but tries to avoid cicling by forbidding or penalizing moves which take the solution, in
+ * space but tries to avoid cycling by forbidding or penalizing moves which take the solution, in
  * the next iteration, to solutions previously visited.
  *
  * Problem.
  *          The optimization problem consisting of:
- *              - a set of istances I;
+ *              - a set of instances I;
  *              - to a given x in I, there corresponds a set of  feasible solutions S(x)
  *              - a cost function f: S -> R associating a cost f(x) to solution s in S.
  *          The solution s* in S should respect some criteria (minimization or maximization).
@@ -70,12 +70,12 @@ int main(int argc, char** argv) {
  *          A transition from a feasible solution to another feasible solution is called move.
  *          Moves can be given the tabu status if they lead to previously visited solutions, but
  *          TS establishes an aspiration criteria so that tabu moves can be accepted if the solution
- *          satify such a criteria.
+ *          satisfy such a criteria.
  *
- * Taby list and efficient use of memory.
+ * Tabu list and efficient use of memory.
  *          To prevent the search from cycling between the same solutions, TS uses a short term memory
  *          - the so-called tabu list- to the aim of representing the trajectory of solutions encountered.
- *          Based on certain restrictions the tabu list implicity keeps track of moves by recording
+ *          Based on certain restrictions the tabu list implicitly keeps track of moves by recording
  *          their attributes. The goal is to permit "good" moves in each iteration without re-visiting
  *          solutions already encountered. The key point to the TS procedure lies in the tabu list
  *          management.
