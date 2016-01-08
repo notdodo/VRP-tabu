@@ -17,6 +17,12 @@
 
 #include "Controller.h"
 
+/** @brief Configure variable and routes
+ *
+ * The controller start the program settings all the variable and calling
+ * the functions to configure the routes.
+ * @param[in] argv The arguments passed through command line.
+ */
 void Controller::Init(char **argv) {
     Utils &u = this->GetUtils();
     u.logger("Initializing...", u.INFO);
@@ -43,6 +49,10 @@ void Controller::Init(char **argv) {
     this->SaveResult();
 }
 
+/** @brief Runs all the main functions
+ *
+ * This function sets and call the tabu search and optimal functions.
+ */
 void Controller::RunVRP() {
     int customers = this->vrp->GetNumberOfCustomers();
     for (int i = 0; i < customers; i++) {
@@ -51,7 +61,10 @@ void Controller::RunVRP() {
         this->RunOpts(customers);
     }
 }
-
+/** @brief Runs the tabu search function.
+ *
+ * @param[in] times Number of iteration.
+ */
 void Controller::RunTabuSearch(int times) {
     int initCost = this->vrp->GetTotalCost();
     Utils::Instance().logger("Starting Tabu Search", Utils::VERBOSE);
@@ -61,6 +74,12 @@ void Controller::RunTabuSearch(int times) {
     Utils::Instance().logger("Tabu Search improved: " + std::to_string(initCost - this->vrp->GetTotalCost()), Utils::VERBOSE);
 }
 
+/** @brief Run optimal functions.
+ *
+ * Runs all the optimal functions to achieve a better optimization of the routes.
+ * When the routine do not improve the routes, stops and try to balance the routes.
+ * @param[in] times Number of iteration
+ */
 void Controller::RunOpts(int times) {
     this->vrp->RouteBalancer();
     int i = 0;
@@ -98,6 +117,10 @@ Utils& Controller::GetUtils() const {
     return Utils::Instance();
 }
 
+/** @brief Print all routes.
+ *
+ * Prints all routes with costs and in a more readable way.
+ */
 void Controller::PrintRoutes() {
     Utils &u = this->GetUtils();
     std::list<Route> *e = this->vrp->GetRoutes();
@@ -112,6 +135,11 @@ void Controller::PrintRoutes() {
 	std::cout << std::endl;
 }
 
+/** @brief Save results.
+ *
+ * The results from the program are saved into a JSON file called 'output.json'
+ * in the same folder of the executable file.
+ */
 void Controller::SaveResult() {
     Utils &u = this->GetUtils();
     u.logger("Saving to output.json", u.VERBOSE);

@@ -551,6 +551,9 @@ bool Route::RebuildRoute(std::list<Customer> cust) {
 
 /** @brief Quality assessment of the route.
  *
+ * This function evaluate the 'quality' of the route checking the occupancy
+ * in capacity and time terms.
+ * @return The value of the assessment.
  */
 float Route::Evaluate() {
     float percLoad = (float(this->capacity) / this->initialCapacity) * 100;

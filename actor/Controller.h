@@ -7,7 +7,7 @@
 class Controller {
 private:
     VRP *vrp;
-    Controller() {}
+    Controller() {};
     Controller(Controller const&) = delete;
     void operator=(Controller const&) = delete;
     void RunOpts(int);
