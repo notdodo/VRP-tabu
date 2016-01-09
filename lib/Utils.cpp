@@ -17,14 +17,14 @@
 
 #include "Utils.h"
 
-/** @brief Instantiate all parameters.
+/** @brief ###Instantiate all parameters.
  *
  * Parse the input file in JSON format and instantiates all variables
  * for the algorithm.
  * @param argv Input file (json)
  * @return The pointer to VRP class
  */
-VRP* Utils::InitParameters(char **argv) {
+VRP* Utils::InitParameters(char **argv, const float costTravel, const float alphaParam, const int aspiration) {
     /* error string */
     std::string s;
     VRP *v;
@@ -102,7 +102,9 @@ VRP* Utils::InitParameters(char **argv) {
                       numVertices,
                       this->d["vehicles"].GetInt(),
                       this->d["capacity"].GetInt(),
-                      this->d["worktime"].GetInt(), flagTime);
+                      this->d["worktime"].GetInt(),
+                      flagTime,
+                      costTravel, alphaParam, aspiration);
             }else {
                 throw s;
             }
@@ -111,7 +113,7 @@ VRP* Utils::InitParameters(char **argv) {
     return v;
 }
 
-/** @brief Save the result.
+/** @brief ###Save the result.
  *
  * Saves the routes into the input JSON file.
  * @param routes The routes list to save to the file

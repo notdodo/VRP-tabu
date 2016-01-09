@@ -20,13 +20,16 @@ private:
 	/** @brief Function for ordering the elements inside the std::map */
 	struct tabucomp {
   		bool operator() (const TabuKey& lhs, const TabuKey& rhs) const {
-  			return lhs.first < rhs.first;
+  			if (lhs.first == rhs.first) {
+  				return lhs.second.GetTotalCost() < rhs.second.GetTotalCost();
+  			} else
+  				return lhs.first < rhs.first;
   		};
 	};
 	std::map<TabuKey, float, tabucomp> tabulist; 	/**< List of all tabu moves*/
-	int ASPIRATION_FACTOR = 5000;					/**< Aspiration factor of moves */
+	int ASPIRATION_FACTOR = 5000;					        /**< Aspiration factor of moves */
 public:
-	TabuList() { this->FlushList(); }; 				//! constructor
+	TabuList(const float); 				                //! constructor
 	void AddElement(TabuKey, float);
 	void Aspiration();
 	void FlushList();

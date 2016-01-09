@@ -17,10 +17,10 @@
 
 #include "Vertex.h"
 
-/** @brief Constructor of Vertex */
+/** @brief ###Constructor of Vertex */
 Vertex::Vertex(ConstructionToken &) { }
 
-/** @brief Insert an Edge.
+/** @brief ###Insert an Edge.
  *
  * Insert a weighted edge which end to a customer.
  * @param end_point The destination customer
@@ -32,7 +32,7 @@ void Vertex::InsertEdge(Customer &end_point, int weight) {
     edges.insert(temp);
 }
 
-/** @brief Remove an edge.
+/** @brief ###Remove an edge.
  *
  * @param edge The customer which the edge end
  */
@@ -40,7 +40,7 @@ void Vertex::RemoveEdge(Customer &edge) {
     edges.erase(edge);
 }
 
-/** @brief Get the weight of and edge.
+/** @brief ###Get the weight of and edge.
  *
  * @param c Customer at the end of the edge
  * @return The weight of the customer
@@ -49,7 +49,7 @@ int Vertex::GetWeight(Customer &c) {
     return edges.find(c)->second.weight;
 }
 
-/** @brief Get the map of the edges */
+/** @brief ###Get the map of the edges */
 std::map<Customer, Edge> Vertex::GetEdges() {
     return this->edges;
 }

@@ -17,7 +17,7 @@
 
 #include "Graph.h"
 
-/** @brief Insert a vertex.
+/** @brief ###Insert a vertex.
  *
  * Create and insert a vertex in the graph.
  * @param cust The customer who form the vertex
@@ -28,7 +28,7 @@ void Graph::InsertVertex(Customer &cust) {
     InsertVertex(cust, v);
 }
 
-/** @brief Insert a vertex.
+/** @brief ###Insert a vertex.
  *
  * Insert a vertex in the graph.
  * @param c The customer who form the vertex
@@ -39,7 +39,7 @@ void Graph::InsertVertex(Customer &c, Vertex &v) {
     vertexes.insert(temp);
 }
 
-/** @brief Insert an Edge.
+/** @brief ###Insert an Edge.
  *
  * Insert an edge with weight from a customer to another.
  * @param node The starting customer
@@ -52,7 +52,7 @@ void Graph::InsertEdge(Customer &node, Customer &new_edge, int weight) {
         it->second.InsertEdge(new_edge, weight);
 }
 
-/** @brief Remove an edge.
+/** @brief ###Remove an edge.
  *
  * @param node The customer which the edge start
  * @param edge The customer which the edge finish
@@ -63,7 +63,7 @@ void Graph::RemoveEdge(Customer &node, Customer &edge) {
         it->second.RemoveEdge(edge);
 }
 
-/** @brief Sort the customers by distance.
+/** @brief ###Sort the customers by distance.
  *
  * This function sorts the customer by distance from the depot;
  * the order is crescent.
@@ -82,7 +82,7 @@ std::multimap<int, Customer> Graph::sortV0() {
     return v;
 }
 
-/** @brief Find the neighborhood of a customer.
+/** @brief ###Find the neighborhood of a customer.
  *
  * This function sorts the neighborhood of a customer by distance;
  * the order is crescent.
@@ -97,7 +97,7 @@ std::multimap<int, Customer> Graph::GetNeighborhood(Customer c) {
     return mm;
 }
 
-/** @brief Return the weight of an edge.
+/** @brief ###Return the weight of an edge.
  *
  * This function compute the cost of travelling from a customer to another.
  * @param from The starting customer

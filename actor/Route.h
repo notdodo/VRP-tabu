@@ -28,8 +28,8 @@ private:
     float workTime;                 /**< Work time remaining */
     int totalCost;                  /**< Total cost of the route: sum of the weight */
     float averageCost;              /**< Average of all path costs */
-    float TRAVEL_COST = 0.3f;       /**< Parameter for each travel */
-    float ALPHA = 0.4f;
+    float TRAVEL_COST = 0.3f;       /**< Cost parameter for each travel */
+    float ALPHA = 0.4f;             /**< Alpha parameter for route evaluation */
     int routeNumber;				/**< Identifier of the route */
     Graph graph;                    /**< Graph of the customers */
 protected:
@@ -44,9 +44,11 @@ public:
         this->initialCapacity = r.initialCapacity;
         this->initialWorkTime = r.initialWorkTime;
         this->graph = r.graph;
+        this->TRAVEL_COST = r.TRAVEL_COST;
+        this->ALPHA = r.ALPHA;
         return *this;
     }
-    Route(const int, const float, const Graph, const int);       //!< constructor
+    Route(const int, const float, const Graph, const int, const float, const float);       //!< constructor
     void CloseTravel(const Customer);
     bool CloseTravel(const Customer, const Customer);
     void PrintRoute();

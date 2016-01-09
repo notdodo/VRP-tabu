@@ -21,14 +21,19 @@
 using namespace std;
 using namespace chrono;
 
+#define COST_TRAVEL 0.3f
+#define ALPHA 0.4f
+#define ASPIRATION_FACTOR 5000
+
 int main(int argc, char** argv) {
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
-
+    // create the controller
     Controller &c = Controller::Instance();
     Utils &u = Utils::Instance();
+    // parse arguments
     if (argc == 2 || argc == 3) {
         try {
-            c.Init(argv);
+            c.Init(argv, COST_TRAVEL, ALPHA, ASPIRATION_FACTOR);
         }catch(const char *i) {
             u.logger(i, u.ERROR);
         }
@@ -37,6 +42,7 @@ int main(int argc, char** argv) {
 
     high_resolution_clock::time_point t2 = high_resolution_clock::now();
     int duration = duration_cast<milliseconds>(t2 - t1).count();
+    // print duration
     u.logger(to_string(duration) + " milliseconds", u.INFO);
     return 0;
 }

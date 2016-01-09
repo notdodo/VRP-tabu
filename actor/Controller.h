@@ -21,7 +21,7 @@ public:
         static Controller instance;
         return instance;
     }
-    void Init(char **argv);
+    void Init(char **argv, float, float, int);
     Utils& GetUtils() const;
 };
 

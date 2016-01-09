@@ -21,7 +21,7 @@ Edge::ConstructionToken::ConstructionToken() = default;
 
 Edge::Edge(const Edge &) = default;
 
-/** @brief Constructor of Edge.
+/** @brief ###Constructor of Edge.
  *
  * @param w Weight of the arch
  */

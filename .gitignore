@@ -38,3 +38,4 @@ peda*
 *.swp
 *.py
 *.pyc
+*.log

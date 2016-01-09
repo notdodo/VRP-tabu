@@ -26,7 +26,8 @@
  * @param t The work time of each driver
  * @param flagTime If the service time is a constraint
  */
-VRP::VRP(Graph g, const int n, const int v, const int c, const float t, const bool flagTime) {
+VRP::VRP(Graph g, const int n, const int v, const int c, const float t, const bool flagTime,
+        const float costTravel, const float alphaParam, const int aspiration) {
     this->mtx = new std::mutex();
     this->graph = g;
     this->numVertices = n;
@@ -37,6 +38,9 @@ VRP::VRP(Graph g, const int n, const int v, const int c, const float t, const bo
         this->workTime = t;
     else
         this->workTime = std::numeric_limits<int>::max();
+    this->costTravel = costTravel;
+    this->alphaParam = alphaParam;
+    this->aspiration = aspiration;
 }
 
 /** @brief ###This function creates the routes.
@@ -68,7 +72,7 @@ int VRP::InitSolutions() {
     while(!dist.empty()) {
         bool stop = true;
         // create an empty route
-        Route v(this->capacity, this->workTime, this->graph, (this->routes.size() + 1));
+        Route v(this->capacity, this->workTime, this->graph, (this->routes.size() + 1), this->costTravel, this->alphaParam);
         Customer from, to;
         // start the route with a depot
 		if (!v.Travel(depot, it->second))
@@ -135,30 +139,32 @@ void VRP::OrderByCosts() {
 void VRP::CleanVoid() { this->routes.remove_if([](Route r){ return r.size() < 2; }); }
 
 /** @brief ###Primary function, search for better solution and updates the tabu list
- * TODO: valutazione della soluzione ed aggiunta della mossa nella lista delle mosse consentite oppure tabu.
- *       Equazione per il criterio di aspirazione delle mosse tabù.
- *       Multicore support.
- *       La lista tabu è value : (customer : route in cui inserire il customer)
+ *
+ * This function run an iterated local search for a customer and try to insert neighbor
+ * customer in the route. If the move isn't legal, updates the tabu list.
  */
 void VRP::TabuSearch() {
-    // number of neighbors
+    // number of neighbors to consider
     int N = 5;
+    // route to insert the customer
 	std::list<Route>::iterator itDest = this->routes.begin();
     // The Tabu list of moves
-    TabuList tabulist;
+    TabuList tabulist(this->aspiration);
     // for each route
 	for (; itDest != this->routes.end(); ++itDest) {
         // save the route
 		Route destRoute = *itDest;
+        // save the value of evaluation
         float value = destRoute.Evaluate();
 		RouteList::const_iterator ic = destRoute.GetRoute()->cbegin();
         // choose a customer
 		int ran = (rand() % (destRoute.size()-2)) + 1;
 		std::advance(ic, ran);
-        // find the neighborhood of the customer and clean the result
+        // find the neighborhood of the customer
 		std::multimap<int, Customer> neigh = this->graph.GetNeighborhood(ic->first);
         // i = index of multimap
         auto i = neigh.begin();
+        // for each customer in the neighborhood
 		for (int iter = 0; i != neigh.end() && iter < N; ++i, ++iter) {
             // if the customer is not in the route
 			if (!itDest->FindCustomer(i->second)) {
@@ -167,23 +173,30 @@ void VRP::TabuSearch() {
                 Customer c = i->second;
                 // source route
                 std::list<Route>::iterator itSource = this->routes.begin();
-                // find the route which i->second belongs
+                // find the route which the customer belongs
                 std::advance(itSource, this->FindRouteFromCustomer(c));
                 Route sourceRoute = *itSource;
+                // this a move
                 TabuKey pair = {c, destRoute.CopyRoute()};
-                // find the best position and update (if needed) the best route
-                if (!tabulist.Find(pair)
-                        && destRoute.AddElem(c) && destRoute.Evaluate() < value
-                        && sourceRoute.RemoveCustomer(c)) {
-                    TabuKey pair = {c, destRoute.CopyRoute()};
-                    tabulist.AddElement(pair, destRoute.Evaluate());
-                    // update the original routes
-                    *itDest = destRoute;
-                    *itSource = sourceRoute;
-                    this->CleanVoid();
-                }else {
-                    tabulist.AddElement(pair, value);
+                // if the move is not tabu
+                if (!tabulist.Find(pair)) {
+                    // find the best position and update (if needed) the best route
+                    if (destRoute.AddElem(c) && destRoute.Evaluate() < value && sourceRoute.RemoveCustomer(c)) {
+                        // update the move with the new route
+                        TabuKey pair = {c, destRoute.CopyRoute()};
+                        // add the move to the tabu list
+                        tabulist.AddElement(pair, destRoute.Evaluate() * 2);
+                        // update the original routes
+                        *itDest = destRoute;
+                        *itSource = sourceRoute;
+                        // delete void routes
+                        this->CleanVoid();
+                    }else {
+                        // add the move to the tabu list
+                        tabulist.AddElement(pair, value);
+                    }
                 }
+                // round finished, unblock some moves
                 tabulist.Aspiration();
             }
 		}

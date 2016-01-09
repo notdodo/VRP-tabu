@@ -17,7 +17,12 @@
 
 #include "TabuList.h"
 
-/** @brief Add a tabu move to the list.
+TabuList::TabuList(const float aspiration) {
+    this->ASPIRATION_FACTOR = aspiration;
+    this->FlushList();
+}
+
+/** @brief ###Add a tabu move to the list.
  *
  * This function insert a pair of Customer and Route as key of the map and the
  * evaluation value of the router as value.
@@ -28,7 +33,7 @@ void TabuList::AddElement(TabuKey p, float v) {
     this->tabulist.insert({p, v});
 }
 
-/** @brief Aspiration criteria
+/** @brief ###Aspiration criteria
  *
  * The aspiration criteria decrease the score of tabu moves until their are not
  * tabu anymore.
@@ -44,12 +49,12 @@ void TabuList::Aspiration() {
     }
 }
 
-/** @brief Clear the list */
+/** @brief ###Clear the list */
 void TabuList::FlushList() {
     this->tabulist.clear();
 }
 
-/** @brief Find a move in the list
+/** @brief ###Find a move in the list
  *
  * This function find a move, as pair of Customer-Route, in the tabu list.
  * @param p The move to find

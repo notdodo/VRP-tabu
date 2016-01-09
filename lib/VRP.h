@@ -22,6 +22,9 @@ private:
     int vehicles;               /**< Number of vehicles */
     int capacity;               /**< Capacity of each vehicle */
     float workTime;             /**< Work time for each driver */
+    float costTravel;           /**< Cost parameter for each travel */
+    float alphaParam;           /**< Alpha parameter for route evaluation */
+    int aspiration;             /**< Aspiration factor of moves */
     bool SwapFromTo(Route &, Route &);
     bool Move1FromTo(Route &, Route &, bool);
     bool AddRemoveFromTo(Route &, Route &, int, int);
@@ -30,7 +33,7 @@ private:
     Route Opt3Swap(Route, std::list<Customer>::iterator, std::list<Customer>::iterator, std::list<Customer>::iterator, std::list<Customer>::iterator);
 public:
     VRP() {}					//!< constructor
-    VRP(Graph, const int, const int, const int, const float, const bool); //!< constructor
+    VRP(Graph, const int, const int, const int, const float, const bool, const float, const float, const int); //!< constructor
     int InitSolutions();
     std::list<Route>* GetRoutes();
     void OrderByCosts();

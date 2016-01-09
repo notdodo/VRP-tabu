@@ -17,7 +17,7 @@
 
 #include "Customer.h"
 
-/** @brief Constructor of the Customer
+/** @brief ###Constructor of the Customer
  *
  * @param n Name of the customer
  * @param x Abscissa of the customer
@@ -33,7 +33,7 @@ Customer::Customer(std::string n, int x, int y, int r, int t) {
     this->serviceTime = t;
 }
 
-/** @brief Constructor of the depot
+/** @brief ###Constructor of the depot
  *
  * @param n Name of the customer
  * @param x Abscissa of the customer

@@ -17,14 +17,14 @@
 
 #include "Route.h"
 
-/** @brief Constructor of Route.
+/** @brief ###Constructor of Route.
  *
  * @param c Initial capacity of the vehicle
  * @param wt Initial work time of the driver
  * @param g Graph of the customers
  * @param n Identification number of the route
  */
-Route::Route(int c, float wt, const Graph g, int n) {
+Route::Route(int c, float wt, const Graph g, int n, const float costTravel, const float alphaParam) {
     this->initialCapacity = this->capacity = c;
     this->initialWorkTime = this->workTime = wt;
     this->graph = g;
@@ -33,10 +33,13 @@ Route::Route(int c, float wt, const Graph g, int n) {
     // if the service time is not a constraint reset the cost of travelling
     if (wt == std::numeric_limits<int>::max())
         this->TRAVEL_COST = (float)0;
+    else
+        this->TRAVEL_COST = costTravel;
+    this->ALPHA = alphaParam;
     this->SetAverageCost();
 }
 
-/** @brief Close a route.
+/** @brief ###Close a route.
  *
  * Whenever the capacity or the work time are inadequate
  * close the route: return to depot.
@@ -51,7 +54,7 @@ void Route::CloseTravel(const Customer c) {
     this->route.push_back({depot, 0});
 }
 
-/** @brief Close a route with the last customer.
+/** @brief ###Close a route with the last customer.
  *
  * When remaining only one customer to visit, visit it then return to depot.
  * @param from The last customer to visit
@@ -79,7 +82,7 @@ bool Route::CloseTravel(const Customer from, const Customer depot) {
     return ret;
 }
 
-/** @brief Travel from one customer to another
+/** @brief ###Travel from one customer to another
  *
  *  Check if is possibile to travel from a customer to another
  *  observing the constraint of capacity and time, if possibile add the
@@ -123,13 +126,13 @@ bool Route::Travel(Customer from, const Customer to) {
     return ret;
 }
 
-/** @brief Clear a route. */
+/** @brief ###Clear a route. */
 void Route::EmptyRoute(const Customer depot) {
     this->route.clear();
     this->route.push_back({depot, 0});
 }
 
-/** @brief Print this route. */
+/** @brief ###Print this route. */
 void Route::PrintRoute() {
     std::flush(std::cout);
     if (this->route.size() > 1) {
@@ -146,7 +149,7 @@ void Route::PrintRoute() {
     std::flush(std::cout);
 }
 
-/** @brief Print a route.
+/** @brief ###Print a route.
  *
  * @param r The route to print
  */
@@ -166,22 +169,22 @@ void Route::PrintRoute(std::list<StepType> r) {
     std::flush(std::cout);
 }
 
-/** @brief Return the size (number of customers) of a route. */
+/** @brief ###Return the size (number of customers) of a route. */
 int Route::size() const {
     return this->route.size();
 }
 
-/** @brief Get the pointer to the route list. */
+/** @brief ###Get the pointer to the route list. */
 std::list<StepType>* Route::GetRoute() {
     return &this->route;
 }
 
-/** @brief Get a copy of the route class. */
+/** @brief ###Get a copy of the route class. */
 Route Route::CopyRoute() const {
     return *this;
 }
 
-/** @brief Add a customer to this route.
+/** @brief ###Add a customer to this route.
  *
  * This function add a customer in the best position of a route respecting
  * the constraints: add the customer in each possible position, then execute
@@ -241,7 +244,7 @@ bool Route::AddElem(const Customer c) {
     return ret;
 }
 
-/** @brief Add a customer to this route.
+/** @brief ###Add a customer to this route.
  *
  * This function add a list of consecutive customers in the best position of a route respecting
  * the constraints: add the customer in each possible position, then execute
@@ -332,7 +335,7 @@ bool Route::AddElem(const std::list<Customer> &custs) {
     return ret;
 }
 
-/** @brief Remove a customer from a route.
+/** @brief ###Remove a customer from a route.
  *
  * Remove a customer in a position in the route.
  * @param it The position of the customer to remove
@@ -369,7 +372,7 @@ void Route::RemoveCustomer(std::list<StepType>::iterator &it) {
         this->EmptyRoute(this->route.front().first);
 }
 
-/** @brief Remove a customer.
+/** @brief ###Remove a customer.
  *
  * Find and remove a customer from the route.
  * @param c The customer to remove
@@ -387,7 +390,7 @@ bool Route::RemoveCustomer(const Customer c) {
     return false;
 }
 
-/** @brief Add a customer and remove another.
+/** @brief ###Add a customer and remove another.
  *
  *  Same as  Route::AddElem(const Customer c) but this function
  *  remove a customer before trying to add the customer.
@@ -453,7 +456,7 @@ bool Route::AddElem(const Customer c, const Customer rem) {
     return ret;
 }
 
-/** @brief Return the cost of the route
+/** @brief ###Return the cost of the route
  *
  *  @return Cost of the route
  */
@@ -461,12 +464,12 @@ int Route::GetTotalCost() const {
     return this->totalCost;
 }
 
-/** @brief Compute the average cost of all paths */
+/** @brief ###Compute the average cost of all paths */
 void Route::SetAverageCost() {
     this->averageCost = (float)this->totalCost / (this->route.size() - 1);
 }
 
-/** @brief List all customers with cost path lower the average.
+/** @brief ###List all customers with cost path lower the average.
  *
  * Create a list of customers which have a cost path lower than the average cost
  * of the route.
@@ -490,7 +493,7 @@ void Route::GetUnderAverageCustomers(std::list<Customer> &customers) {
     }
 }
 
-/** @brief Find a customer in the route
+/** @brief ###Find a customer in the route
  *
  * Search for a customer in the route, if it is present return True,
  * otherwise False.
@@ -505,7 +508,7 @@ bool Route::FindCustomer(const Customer &c) {
     return findIter != this->route.end();
 }
 
-/** @brief Rebuild the route starting from a list of customers
+/** @brief ###Rebuild the route starting from a list of customers
  *
  * From a list of customers this function rebuild the route (checking all constraint).
  * @return True if the new route is valid
@@ -549,7 +552,7 @@ bool Route::RebuildRoute(std::list<Customer> cust) {
     return true;
 }
 
-/** @brief Quality assessment of the route.
+/** @brief ###Quality assessment of the route.
  *
  * This function evaluate the 'quality' of the route checking the occupancy
  * in capacity and time terms.

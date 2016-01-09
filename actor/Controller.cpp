@@ -17,16 +17,16 @@
 
 #include "Controller.h"
 
-/** @brief Configure variable and routes
+/** @brief ###Configure variable and routes
  *
  * The controller start the program settings all the variable and calling
  * the functions to configure the routes.
  * @param[in] argv The arguments passed through command line.
  */
-void Controller::Init(char **argv) {
+void Controller::Init(char **argv, float costTravel, float alphaParam, int aspiration) {
     Utils &u = this->GetUtils();
     u.logger("Initializing...", u.INFO);
-    this->vrp = Utils::Instance().InitParameters(argv);
+    this->vrp = Utils::Instance().InitParameters(argv, costTravel, alphaParam, aspiration);
     int res = this->vrp->InitSolutions();
     switch (res) {
         case -1:
@@ -49,7 +49,7 @@ void Controller::Init(char **argv) {
     this->SaveResult();
 }
 
-/** @brief Runs all the main functions
+/** @brief ###Runs all the main functions
  *
  * This function sets and call the tabu search and optimal functions.
  */
@@ -61,7 +61,7 @@ void Controller::RunVRP() {
         this->RunOpts(customers);
     }
 }
-/** @brief Runs the tabu search function.
+/** @brief ###Runs the tabu search function.
  *
  * @param[in] times Number of iteration.
  */
@@ -74,7 +74,7 @@ void Controller::RunTabuSearch(int times) {
     Utils::Instance().logger("Tabu Search improved: " + std::to_string(initCost - this->vrp->GetTotalCost()), Utils::VERBOSE);
 }
 
-/** @brief Run optimal functions.
+/** @brief ###Run optimal functions.
  *
  * Runs all the optimal functions to achieve a better optimization of the routes.
  * When the routine do not improve the routes, stops and try to balance the routes.
@@ -117,7 +117,7 @@ Utils& Controller::GetUtils() const {
     return Utils::Instance();
 }
 
-/** @brief Print all routes.
+/** @brief ###Print all routes.
  *
  * Prints all routes with costs and in a more readable way.
  */
@@ -135,7 +135,7 @@ void Controller::PrintRoutes() {
 	std::cout << std::endl;
 }
 
-/** @brief Save results.
+/** @brief ###Save results.
  *
  * The results from the program are saved into a JSON file called 'output.json'
  * in the same folder of the executable file.
