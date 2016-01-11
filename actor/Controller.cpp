@@ -22,6 +22,10 @@
  * The controller start the program settings all the variable and calling
  * the functions to configure the routes.
  * @param[in] argv The arguments passed through command line.
+ * @param[in] costTravel The cost of travelling.
+ * @param[in] alphaParam Alpha parameter for route evaluation.
+ * @param[in] aspiration Aspiration factor.
+ * @param[in] max_time Maximum execution time in minutes.
  */
 void Controller::Init(char **argv, float costTravel, float alphaParam, int aspiration, int max_time) {
     this->MAX_TIME_MIN = max_time;

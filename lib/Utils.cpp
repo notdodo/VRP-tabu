@@ -21,7 +21,10 @@
  *
  * Parse the input file in JSON format and instantiates all variables
  * for the algorithm.
- * @param argv Input file (json)
+ * @param argv Input file (json).
+ * @param costTravel Cost parameter for each travel.
+ * @param alphaParam Alpha parameter for router evaluation.
+ * @param aspiration Aspiration factor.
  * @return The pointer to VRP class
  */
 VRP* Utils::InitParameters(char **argv, const float costTravel, const float alphaParam, const int aspiration) {

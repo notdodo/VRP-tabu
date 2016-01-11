@@ -19,10 +19,12 @@
 
 /** @brief ###Constructor of Route.
  *
- * @param c Initial capacity of the vehicle
- * @param wt Initial work time of the driver
- * @param g Graph of the customers
- * @param n Identification number of the route
+ * @param c Initial capacity of the vehicle.
+ * @param wt Initial work time of the driver.
+ * @param g Graph of the customers.
+ * @param n Identification number of the route.
+ * @param costTravel Cost parameter for each travel.
+ * @param alphaParam Alpha parameter for router evalutation.
  */
 Route::Route(int c, float wt, const Graph g, int n, const float costTravel, const float alphaParam) {
     this->initialCapacity = this->capacity = c;

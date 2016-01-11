@@ -19,12 +19,15 @@
 
 /** @brief ###Constructor of VRP.
  *
- * @param g The graph generate from the input
- * @param n The number of Customers
- * @param v The number of vehicles
- * @param c The capacity of each vehicle
- * @param t The work time of each driver
- * @param flagTime If the service time is a constraint
+ * @param g The graph generate from the input.
+ * @param n The number of Customers.
+ * @param v The number of vehicles.
+ * @param c The capacity of each vehicle.
+ * @param t The work time of each driver.
+ * @param flagTime If the service time is a constraint.
+ * @param costTravel Cost parameter for each travel.
+ * @param alphaParam Alpha parameter for router evaluation.
+ * @param aspiration Aspiration factor.
  */
 VRP::VRP(Graph g, const int n, const int v, const int c, const float t, const bool flagTime,
         const float costTravel, const float alphaParam, const int aspiration) {
