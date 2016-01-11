@@ -3,6 +3,7 @@
 
 #include "Utils.h"
 #include "VRP.h"
+#include <chrono>
 
 class Controller {
 private:
@@ -10,10 +11,11 @@ private:
     Controller() {};
     Controller(Controller const&) = delete;
     void operator=(Controller const&) = delete;
-    void RunOpts(int);
+    bool RunOpts(int);
     void RunVRP();
-    void RunTabuSearch(int);
+    bool RunTabuSearch(int);
     void SaveResult();
+    int MAX_TIME_MIN;
 protected:
     void PrintRoutes();
 public:
@@ -21,7 +23,7 @@ public:
         static Controller instance;
         return instance;
     }
-    void Init(char **argv, float, float, int);
+    void Init(char **argv, float, float, int, int);
     Utils& GetUtils() const;
 };
 

@@ -24,7 +24,7 @@ private:
     float workTime;             /**< Work time for each driver */
     float costTravel;           /**< Cost parameter for each travel */
     float alphaParam;           /**< Alpha parameter for route evaluation */
-    int aspiration;             /**< Aspiration factor of moves */
+    TabuList tabulist;          /**<List of all tabu moves */
     bool SwapFromTo(Route &, Route &);
     bool Move1FromTo(Route &, Route &, bool);
     bool AddRemoveFromTo(Route &, Route &, int, int);

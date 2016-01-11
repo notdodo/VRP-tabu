@@ -22,6 +22,10 @@ TabuList::TabuList(const float aspiration) {
     this->FlushList();
 }
 
+int TabuList::size() const {
+    return this->tabulist.size();
+}
+
 /** @brief ###Add a tabu move to the list.
  *
  * This function insert a pair of Customer and Route as key of the map and the
@@ -38,7 +42,7 @@ void TabuList::AddElement(TabuKey p, float v) {
  * The aspiration criteria decrease the score of tabu moves until their are not
  * tabu anymore.
  */
-void TabuList::Aspiration() {
+void TabuList::Clean() {
     std::map<TabuKey, float>::iterator it = this->tabulist.begin();
     for (; it != this->tabulist.end();) {
         it->second -= this->ASPIRATION_FACTOR;
@@ -47,6 +51,9 @@ void TabuList::Aspiration() {
         else
             ++it;
     }
+    it = this->tabulist.begin();
+    std::advance(it, 7);
+    this->tabulist.erase(it, this->tabulist.end());
 }
 
 /** @brief ###Clear the list */

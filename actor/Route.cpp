@@ -469,6 +469,11 @@ void Route::SetAverageCost() {
     this->averageCost = (float)this->totalCost / (this->route.size() - 1);
 }
 
+/** @brief ###Get the average cost of all paths */
+float Route::GetAverageCost() const {
+    return this->averageCost;
+}
+
 /** @brief ###List all customers with cost path lower the average.
  *
  * Create a list of customers which have a cost path lower than the average cost
@@ -556,9 +561,10 @@ bool Route::RebuildRoute(std::list<Customer> cust) {
  *
  * This function evaluate the 'quality' of the route checking the occupancy
  * in capacity and time terms.
+ * Less is better.
  * @return The value of the assessment.
  */
-float Route::Evaluate() {
+float Route::Evaluate() const {
     float percLoad = (float(this->capacity) / this->initialCapacity) * 100;
     float percTime = (float(this->workTime) / this->initialWorkTime) * 100;
     float g = this->totalCost *
@@ -566,4 +572,8 @@ float Route::Evaluate() {
                     std::pow(percLoad, 2) * std::pow(percTime, 2)
                 );
     return g * this->ALPHA;
+}
+
+bool Route::Diff(Route r) const {
+	return this->averageCost > r.GetAverageCost();
 }

@@ -40,7 +40,8 @@ VRP::VRP(Graph g, const int n, const int v, const int c, const float t, const bo
         this->workTime = std::numeric_limits<int>::max();
     this->costTravel = costTravel;
     this->alphaParam = alphaParam;
-    this->aspiration = aspiration;
+    // The Tabu list of moves
+    TabuList tabulist(aspiration);
 }
 
 /** @brief ###This function creates the routes.
@@ -148,12 +149,11 @@ void VRP::TabuSearch() {
     int N = 5;
     // route to insert the customer
 	std::list<Route>::iterator itDest = this->routes.begin();
-    // The Tabu list of moves
-    TabuList tabulist(this->aspiration);
     // for each route
 	for (; itDest != this->routes.end(); ++itDest) {
         // save the route
 		Route destRoute = *itDest;
+        Route originalRoute = *itDest;
         // save the value of evaluation
         float value = destRoute.Evaluate();
 		RouteList::const_iterator ic = destRoute.GetRoute()->cbegin();
@@ -178,14 +178,14 @@ void VRP::TabuSearch() {
                 Route sourceRoute = *itSource;
                 // this a move
                 TabuKey pair = {c, destRoute.CopyRoute()};
-                // if the move is not tabu
-                if (!tabulist.Find(pair)) {
-                    // find the best position and update (if needed) the best route
-                    if (destRoute.AddElem(c) && destRoute.Evaluate() < value && sourceRoute.RemoveCustomer(c)) {
+                // aspiration criteria:
+                // if the move is not tabu or the evaluation is better or the solution is very different
+                if (destRoute.AddElem(c) && sourceRoute.RemoveCustomer(c)) {
+                    if (!this->tabulist.Find(pair) || destRoute.Evaluate() < value  || destRoute.Diff(originalRoute)) {
                         // update the move with the new route
                         TabuKey pair = {c, destRoute.CopyRoute()};
                         // add the move to the tabu list
-                        tabulist.AddElement(pair, destRoute.Evaluate() * 2);
+                        this->tabulist.AddElement(pair, destRoute.Evaluate());
                         // update the original routes
                         *itDest = destRoute;
                         *itSource = sourceRoute;
@@ -193,18 +193,14 @@ void VRP::TabuSearch() {
                         this->CleanVoid();
                     }else {
                         // add the move to the tabu list
-                        tabulist.AddElement(pair, value);
+                        this->tabulist.AddElement(pair, value);
                     }
                 }
-                // round finished, unblock some moves
-                tabulist.Aspiration();
             }
 		}
 	}
-    if (!this->CheckIntegrity()) {
-        throw "OPS! Something went wrong! :(";
-    }
-    tabulist.FlushList();
+    // round finished, unblock some moves
+    this->tabulist.Clean();
 }
 
 /** @brief ###Find the route to which a customer belongs
@@ -440,7 +436,8 @@ bool VRP::Opt11() {
                     int costTo = tTo.GetTotalCost();
                     if (SwapFromTo(tFrom, tTo) && tFrom.GetTotalCost() < costFrom && tTo.GetTotalCost() < costTo) {
                         std::lock_guard<std::mutex> lock(*this->mtx);
-                        if ((tFrom.GetTotalCost() < l.front().second.first.GetTotalCost() && tTo.GetTotalCost() < l.front().second.second.GetTotalCost()) || l.size() == 0)
+                        if ((tFrom.GetTotalCost() < l.front().second.first.GetTotalCost()
+                                && tTo.GetTotalCost() < l.front().second.second.GetTotalCost()) || l.size() == 0)
                             l.push_front(std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo)));
                     }
                 }));

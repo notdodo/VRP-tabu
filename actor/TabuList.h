@@ -27,11 +27,13 @@ private:
   		};
 	};
 	std::map<TabuKey, float, tabucomp> tabulist; 	/**< List of all tabu moves*/
-	int ASPIRATION_FACTOR = 5000;					        /**< Aspiration factor of moves */
+	int ASPIRATION_FACTOR;					              /**< Aspiration factor of moves */
 public:
-	TabuList(const float); 				                //! constructor
+  TabuList() {};
+	TabuList(const float);   			                //! constructor
+  int size() const;
 	void AddElement(TabuKey, float);
-	void Aspiration();
+	void Clean();
 	void FlushList();
 	bool Find(TabuKey) const;
 };

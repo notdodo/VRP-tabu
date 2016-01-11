@@ -23,7 +23,8 @@
  * the functions to configure the routes.
  * @param[in] argv The arguments passed through command line.
  */
-void Controller::Init(char **argv, float costTravel, float alphaParam, int aspiration) {
+void Controller::Init(char **argv, float costTravel, float alphaParam, int aspiration, int max_time) {
+    this->MAX_TIME_MIN = max_time;
     Utils &u = this->GetUtils();
     u.logger("Initializing...", u.INFO);
     this->vrp = Utils::Instance().InitParameters(argv, costTravel, alphaParam, aspiration);
@@ -52,26 +53,49 @@ void Controller::Init(char **argv, float costTravel, float alphaParam, int aspir
 /** @brief ###Runs all the main functions
  *
  * This function sets and call the tabu search and optimal functions.
+ * If the routines do not improves the solutions set stop.
  */
 void Controller::RunVRP() {
+    // if numeber of customer is high, reduce (for execution time)
     int customers = this->vrp->GetNumberOfCustomers();
-    for (int i = 0; i < customers; i++) {
-        this->RunTabuSearch(customers);
+    int timeOpts = customers / 10;
+    if (customers >= 60) {
+        customers = customers * 0.8;
+    }
+    bool ts, opt;
+    int noimprov = 0, duration = 0;
+    // start time
+    std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
+    // run the routines for 'customers' times or stop if no improvement or duration is more than ~2h
+    for (int i = 0; i < customers && noimprov < 5 && duration <= 200; i++) {
+        ts = this->RunTabuSearch(customers);
         Utils::Instance().logger("Starting opt", Utils::VERBOSE);
-        this->RunOpts(customers);
+        opt = this->RunOpts(timeOpts);
+        if (!ts && !opt)
+            noimprov++;
+        std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
+        duration = std::chrono::duration_cast<std::chrono::minutes>(t2 - t1).count();
     }
 }
 /** @brief ###Runs the tabu search function.
  *
  * @param[in] times Number of iteration.
+ * @return          If the routine made some improvements.
  */
-void Controller::RunTabuSearch(int times) {
+bool Controller::RunTabuSearch(int times) {
     int initCost = this->vrp->GetTotalCost();
     Utils::Instance().logger("Starting Tabu Search", Utils::VERBOSE);
     for (int k = 0; k < times; ++k) {
         this->vrp->TabuSearch();
     }
-    Utils::Instance().logger("Tabu Search improved: " + std::to_string(initCost - this->vrp->GetTotalCost()), Utils::VERBOSE);
+    int diffCost = initCost - this->vrp->GetTotalCost();
+    if (diffCost > 0) {
+        Utils::Instance().logger("Tabu Search improved: " + std::to_string(diffCost), Utils::VERBOSE);
+        return true;
+    }else {
+        Utils::Instance().logger("Tabu Search no improvement", Utils::VERBOSE);
+        return false;
+    }
 }
 
 /** @brief ###Run optimal functions.
@@ -79,8 +103,9 @@ void Controller::RunTabuSearch(int times) {
  * Runs all the optimal functions to achieve a better optimization of the routes.
  * When the routine do not improve the routes, stops and try to balance the routes.
  * @param[in] times Number of iteration
+ * @return          If the routine made some improvements.
  */
-void Controller::RunOpts(int times) {
+bool Controller::RunOpts(int times) {
     this->vrp->RouteBalancer();
     int i = 0;
     bool result, optxx = true;
@@ -111,6 +136,8 @@ void Controller::RunOpts(int times) {
         i++;
     }
     this->vrp->RouteBalancer();
+    // if no improvements return false;
+    return !(!result && !optxx);
 }
 
 Utils& Controller::GetUtils() const {

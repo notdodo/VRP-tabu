@@ -21,9 +21,10 @@
 using namespace std;
 using namespace chrono;
 
-#define COST_TRAVEL 0.3f
+#define TRAVEL_COST 0.3f
 #define ALPHA 0.4f
-#define ASPIRATION_FACTOR 5000
+#define ASPIRATION_FACTOR 3000
+#define MAX_TIME_MIN 200
 
 int main(int argc, char** argv) {
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
@@ -33,7 +34,7 @@ int main(int argc, char** argv) {
     // parse arguments
     if (argc == 2 || argc == 3) {
         try {
-            c.Init(argv, COST_TRAVEL, ALPHA, ASPIRATION_FACTOR);
+            c.Init(argv, TRAVEL_COST, ALPHA, ASPIRATION_FACTOR, MAX_TIME_MIN);
         }catch(const char *i) {
             u.logger(i, u.ERROR);
         }

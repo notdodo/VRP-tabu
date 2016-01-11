@@ -28,8 +28,8 @@ private:
     float workTime;                 /**< Work time remaining */
     int totalCost;                  /**< Total cost of the route: sum of the weight */
     float averageCost;              /**< Average of all path costs */
-    float TRAVEL_COST = 0.3f;       /**< Cost parameter for each travel */
-    float ALPHA = 0.4f;             /**< Alpha parameter for route evaluation */
+    float TRAVEL_COST;              /**< Cost parameter for each travel */
+    float ALPHA;                    /**< Alpha parameter for route evaluation */
     int routeNumber;				/**< Identifier of the route */
     Graph graph;                    /**< Graph of the customers */
 protected:
@@ -65,11 +65,13 @@ public:
     bool RemoveCustomer(const Customer);
     int GetTotalCost() const;
     void SetAverageCost();
+    float GetAverageCost() const;
     void GetUnderAverageCustomers(std::list<Customer> &);
 	int GetNumber() { return this->routeNumber; }
 	bool FindCustomer(const Customer &);
     bool RebuildRoute(std::list<Customer>);
-    float Evaluate();
+    float Evaluate() const;
+	bool Diff(Route) const;
 };
 
 #endif /* Route_H */
