@@ -372,12 +372,14 @@ function printRoutes() {
     var contEnd = "</sub>" + "</span> ";
     var arrow = " <span class='arrow'>→</span> ";
     var oSpan;
+	var totalCost = 0;
     for (var route in routes) {
         oSpan = document.createElement("div");
         oSpan.setAttribute("id", routes[route].index);
         oSpan.style.borderLeft = "10px solid " + colorToHex(routes[route].color);
         oSpan.style.paddingLeft = "10px";
         oSpan.innerHTML = "<span class='cost'>" + $.strPad(costs[route], 4) + " </span>";
+		totalCost += parseInt(costs[route]);
         for (var v in routes[route].text) {
             oSpan.innerHTML += contInit + routes[route].text[v] + contEnd;
             if (v < (routes[route].text.length - 1))
@@ -388,6 +390,10 @@ function printRoutes() {
         };
         routeDiv.appendChild(oSpan);
     }
+	oSpan = document.createElement("div");
+	oSpan.style.color = "#2C3E50";
+	oSpan.innerHTML = "Total cost: " + totalCost;
+	routeDiv.appendChild(oSpan);
 }
 
 function colorToHex(color) {
