@@ -69,7 +69,7 @@ void Controller::RunVRP() {
     // start time
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
     // run the routines for 'customers' times or stop if no improvement or duration is more than ~3h
-    for (int i = 0; i < customers && noimprov < 5 && duration <= 200; i++) {
+    for (int i = 0; i < customers && noimprov < 5 && duration <= this->MAX_TIME_MIN; i++) {
         ts = this->RunTabuSearch(customers * 0.9);
         Utils::Instance().logger("Starting opt", Utils::VERBOSE);
         opt = this->RunOpts(timeOpts);
@@ -117,7 +117,7 @@ bool Controller::RunOpts(int times) {
     // start time
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
     // do at least 4 iteration in less than 30 minutes
-    while (i < times && !(i > 3 && duration >= 30)) {
+    while (i < times && !(i > 3 && duration >= 25)) {
         Utils::Instance().logger("Round " + std::to_string(i), Utils::VERBOSE);
         if (optxx) {
             result = this->vrp->Opt10();
@@ -127,10 +127,10 @@ bool Controller::RunOpts(int times) {
                 result = this->vrp->Opt11();
             if (!result)
                 result = this->vrp->Opt12();
-            /*if (!result)
+            if (!result)
                 result = this->vrp->Opt21();
             if (!result)
-                result = this->vrp->Opt22();*/
+                result = this->vrp->Opt22();
         }
         // if no more improvements run only 2-opt and 3-opt
         if (!result)
