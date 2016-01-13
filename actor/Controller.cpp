@@ -60,23 +60,22 @@ void Controller::Init(char **argv, float costTravel, float alphaParam, int aspir
  * If the routines do not improves the solutions set stop.
  */
 void Controller::RunVRP() {
-    // if numeber of customer is high, reduce (for execution time)
+    // if number of customers is high, reduce (for execution time)
     int customers = this->vrp->GetNumberOfCustomers();
-    int timeOpts = customers / 10;
-    if (customers >= 60) {
-        customers = customers * 0.8;
-    }
+    // number of opt functions executions
+    int timeOpts = customers / 7;
     bool ts, opt;
     int noimprov = 0, duration = 0;
     // start time
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
-    // run the routines for 'customers' times or stop if no improvement or duration is more than ~2h
+    // run the routines for 'customers' times or stop if no improvement or duration is more than ~3h
     for (int i = 0; i < customers && noimprov < 5 && duration <= 200; i++) {
-        ts = this->RunTabuSearch(customers);
+        ts = this->RunTabuSearch(customers * 0.9);
         Utils::Instance().logger("Starting opt", Utils::VERBOSE);
         opt = this->RunOpts(timeOpts);
         if (!ts && !opt)
             noimprov++;
+        // partial time
         std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
         duration = std::chrono::duration_cast<std::chrono::minutes>(t2 - t1).count();
     }
@@ -113,7 +112,12 @@ bool Controller::RunOpts(int times) {
     this->vrp->RouteBalancer();
     int i = 0;
     bool result, optxx = true;
-    while (i < times) {
+    // against starvation
+    int duration = 0;
+    // start time
+    std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
+    // do at least 4 iteration in less than 30 minutes
+    while (i < times && !(i > 3 && duration >= 30)) {
         Utils::Instance().logger("Round " + std::to_string(i), Utils::VERBOSE);
         if (optxx) {
             result = this->vrp->Opt10();
@@ -123,10 +127,10 @@ bool Controller::RunOpts(int times) {
                 result = this->vrp->Opt11();
             if (!result)
                 result = this->vrp->Opt12();
-            if (!result)
+            /*if (!result)
                 result = this->vrp->Opt21();
             if (!result)
-                result = this->vrp->Opt22();
+                result = this->vrp->Opt22();*/
         }
         // if no more improvements run only 2-opt and 3-opt
         if (!result)
@@ -138,6 +142,9 @@ bool Controller::RunOpts(int times) {
         if (!result && !optxx)
             break;
         i++;
+        // partial time
+        std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
+        duration = std::chrono::duration_cast<std::chrono::minutes>(t2 - t1).count();
     }
     this->vrp->RouteBalancer();
     // if no improvements return false;

@@ -45,6 +45,7 @@ VRP::VRP(Graph g, const int n, const int v, const int c, const float t, const bo
     this->alphaParam = alphaParam;
     // The Tabu list of moves
     TabuList tabulist(aspiration);
+    this->numberOfCores = std::thread::hardware_concurrency() + 1;
 }
 
 /** @brief ###This function creates the routes.
@@ -149,7 +150,7 @@ void VRP::CleanVoid() { this->routes.remove_if([](Route r){ return r.size() < 2;
  */
 void VRP::TabuSearch() {
     // number of neighbors to consider
-    int N = 5;
+    int N = 4;
     // route to insert the customer
 	std::list<Route>::iterator itDest = this->routes.begin();
     // for each route
@@ -264,14 +265,14 @@ bool VRP::Opt10() {
     std::list<Route>::const_iterator it = this->routes.cbegin();
     // list of best results from threads
     ResultList l;
-    // list of threads
-    std::list<std::thread> th;
+    // pool of threads
+    ThreadPool* pool = new ThreadPool((int)this->numberOfCores);
     for (int i = 0; it != this->routes.cend(); std::advance(it, 1), ++i) {
         std::list<Route>::const_iterator jt = this->routes.cbegin();
         for (int j = 0; jt != this->routes.cend(); std::advance(jt, 1), ++j) {
             if (jt != it) {
                 // create a thread to run Move1FromTo function and save the result in l list
-                th.push_back(std::thread([it, jt, i, j, &l, this]() {
+                pool->enqueue([it, jt, i, j, &l, this]() {
                     Route tFrom = *it;
                     Route tTo = *jt;
                     int costFrom = tFrom.GetTotalCost();
@@ -284,13 +285,12 @@ bool VRP::Opt10() {
                         if ((tFrom.GetTotalCost() < l.front().second.first.GetTotalCost() && tTo.GetTotalCost() < l.front().second.second.GetTotalCost()) || l.size() == 0)
                             l.push_front(std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo)));
                     }
-                }));
+                });
             }
         }
     }
     // wait to finish all threads
-    for (std::list<std::thread>::iterator tl = th.begin(); tl != th.end(); ++tl)
-        tl->join();
+    delete pool;
     // if some improvement are made update the routes
     if (l.size() > 0) {
         std::list<Route>::iterator itFinal = this->routes.begin();
@@ -323,12 +323,12 @@ bool VRP::Opt01() {
     bool flag = false;
     std::list<Route>::const_iterator it = this->routes.cbegin();
     ResultList l;
-    std::list<std::thread> th;
+    ThreadPool* pool = new ThreadPool((int)this->numberOfCores);
     for (int i = 0; it != this->routes.cend(); std::advance(it, 1), ++i) {
         std::list<Route>::const_iterator jt = this->routes.cbegin();
         for (int j = 0; jt != this->routes.cend(); std::advance(jt, 1), ++j) {
             if (jt != it) {
-                th.push_back(std::thread([it, jt, i, j, &l, this]() {
+                pool->enqueue([it, jt, i, j, &l, this]() {
                     Route tFrom = *it;
                     Route tTo = *jt;
                     int costFrom = tFrom.GetTotalCost();
@@ -338,12 +338,11 @@ bool VRP::Opt01() {
                         if ((tFrom.GetTotalCost() < l.front().second.first.GetTotalCost() && tTo.GetTotalCost() < l.front().second.second.GetTotalCost()) || l.size() == 0)
                             l.push_front(std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo)));
                     }
-                }));
+                });
             }
         }
     }
-    for (std::list<std::thread>::iterator tl = th.begin(); tl != th.end(); ++tl)
-        tl->join();
+    delete pool;
     if (l.size() > 0) {
         std::list<Route>::iterator itFinal = this->routes.begin();
         int indexFrom = l.front().first.first;
@@ -427,12 +426,12 @@ bool VRP::Opt11() {
     bool flag = false;
     std::list<Route>::const_iterator it = this->routes.cbegin();
     ResultList l;
-    std::list<std::thread> th;
+    ThreadPool* pool = new ThreadPool((int)this->numberOfCores * 1.3);
     for (int i = 0; it != this->routes.cend(); std::advance(it, 1), ++i) {
         std::list<Route>::const_iterator jt = this->routes.cbegin();
         for (int j = 0; jt != this->routes.cend(); std::advance(jt, 1), ++j) {
             if (jt != it) {
-                th.push_back(std::thread([it, jt, i, j, &l, this]() {
+                pool->enqueue([it, jt, i, j, &l, this]() {
                     Route tFrom = *it;
                     Route tTo = *jt;
                     int costFrom = tFrom.GetTotalCost();
@@ -443,12 +442,11 @@ bool VRP::Opt11() {
                                 && tTo.GetTotalCost() < l.front().second.second.GetTotalCost()) || l.size() == 0)
                             l.push_front(std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo)));
                     }
-                }));
+                });
             }
         }
     }
-    for (std::list<std::thread>::iterator tl = th.begin(); tl != th.end(); ++tl)
-        tl->join();
+    delete pool;
     if (l.size() > 0) {
         std::list<Route>::iterator itFinal = this->routes.begin();
         int indexFrom = l.front().first.first;
@@ -566,12 +564,12 @@ bool VRP::Opt12() {
     bool flag = false;
     std::list<Route>::const_iterator it = this->routes.cbegin();
     ResultList l;
-    std::list<std::thread> th;
+    ThreadPool* pool = new ThreadPool((int)this->numberOfCores * 2);
     for (int i = 0; it != this->routes.cend(); std::advance(it, 1), ++i) {
         std::list<Route>::const_iterator jt = this->routes.cbegin();
         for (int j = 0; jt != this->routes.cend(); std::advance(jt, 1), ++j) {
             if (jt != it) {
-                th.push_back(std::thread([it, jt, i, j, &l, this]() {
+                pool->enqueue([it, jt, i, j, &l, this]() {
                     Route tFrom = *it;
                     Route tTo = *jt;
                     int costFrom = tFrom.GetTotalCost();
@@ -581,12 +579,11 @@ bool VRP::Opt12() {
                         if ((tFrom.GetTotalCost() < l.front().second.first.GetTotalCost() && tTo.GetTotalCost() < l.front().second.second.GetTotalCost()) || l.size() == 0)
                             l.push_front(std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo)));
                     }
-                }));
+                });
             }
         }
     }
-    for (std::list<std::thread>::iterator tl = th.begin(); tl != th.end(); ++tl)
-        tl->join();
+    delete pool;
     if (l.size() > 0) {
         std::list<Route>::iterator itFinal = this->routes.begin();
         int indexFrom = l.front().first.first;
@@ -611,7 +608,7 @@ bool VRP::Opt12() {
 /** @brief ###Move some customers from the routes.
  *
  * This function moves a number of customers from two routes and find the best
- * moves checking all possible route configurations.
+ * move checking all possible route configurations.
  * @param source Route where to choose a random customer
  * @param dest Route destination
  * @param nInsert Number of customer to move from 'source' to 'dest'
@@ -636,7 +633,7 @@ bool VRP::AddRemoveFromTo(Route &source, Route &dest, int nInsert, int nRemove) 
             auto copyit = itSource;
             for (int i = 0; i < nInsert; i++) {
                 custsInsert.push_back(copyit->first);
-                // remove nInsert customers from 'source'
+                // remove nInsert consecutive customers from 'source'
                 copyFrom.RemoveCustomer(copyit->first);
                 std::advance(copyit, 1);
                 if (copyit == source.GetRoute()->cend()) break;
@@ -687,12 +684,12 @@ bool VRP::Opt21() {
     bool flag = false;
     std::list<Route>::const_iterator it = this->routes.cbegin();
     ResultList l;
-    std::list<std::thread> th;
+    ThreadPool* pool = new ThreadPool((int)this->numberOfCores * 1.7);
     for (int i = 0; it != this->routes.cend(); std::advance(it, 1), ++i) {
         std::list<Route>::const_iterator jt = this->routes.cbegin();
         for (int j = 0; jt != this->routes.cend(); std::advance(jt, 1), ++j) {
             if (jt != it) {
-                th.push_back(std::thread([it, jt, i, j, &l, this]() {
+                pool->enqueue([it, jt, i, j, &l, this]() {
                     Route tFrom = *it;
                     Route tTo = *jt;
                     int costFrom = tFrom.GetTotalCost();
@@ -702,12 +699,11 @@ bool VRP::Opt21() {
                         if ((tFrom.GetTotalCost() < l.front().second.first.GetTotalCost() && tTo.GetTotalCost() < l.front().second.second.GetTotalCost()) || l.size() == 0)
                             l.push_front(std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo)));
                     }
-                }));
+                });
             }
         }
     }
-    for (std::list<std::thread>::iterator tl = th.begin(); tl != th.end(); ++tl)
-        tl->join();
+    delete pool;
     if (l.size() > 0) {
         std::list<Route>::iterator itFinal = this->routes.begin();
         int indexFrom = l.front().first.first;
@@ -739,12 +735,12 @@ bool VRP::Opt22() {
     bool flag = false;
     std::list<Route>::const_iterator it = this->routes.cbegin();
     ResultList l;
-    std::list<std::thread> th;
+    ThreadPool* pool = new ThreadPool((int)this->numberOfCores * 1.7);
     for (int i = 0; it != this->routes.cend(); std::advance(it, 1), ++i) {
         std::list<Route>::const_iterator jt = this->routes.cbegin();
         for (int j = 0; jt != this->routes.cend(); std::advance(jt, 1), ++j) {
             if (jt != it) {
-                th.push_back(std::thread([it, jt, i, j, &l, this]() {
+                pool->enqueue([it, jt, i, j, &l, this]() {
                     Route tFrom = *it;
                     Route tTo = *jt;
                     int costFrom = tFrom.GetTotalCost();
@@ -754,12 +750,11 @@ bool VRP::Opt22() {
                         if ((tFrom.GetTotalCost() < l.front().second.first.GetTotalCost() && tTo.GetTotalCost() < l.front().second.second.GetTotalCost()) || l.size() == 0)
                             l.push_front(std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo)));
                     }
-                }));
+                });
             }
         }
     }
-    for (std::list<std::thread>::iterator tl = th.begin(); tl != th.end(); ++tl)
-        tl->join();
+    delete pool;
     if (l.size() > 0) {
         std::list<Route>::iterator itFinal = this->routes.begin();
         int indexFrom = l.front().first.first;
@@ -795,25 +790,20 @@ int VRP::GetTotalCost() const {
     return tCost;
 }
 
-/** @brief ###Compute the total cost of routes.
- *
- * Compute the amount of costs for each route.
- * The cost is used to check improvement on paths.
- * @return The total cost
- */
+/** @brief ###Number of customers. */
 int VRP::GetNumberOfCustomers() const { return numVertices; }
 
 /** @brief ###Try to balance the routes.
  *
- * Find route with one customer and move it to another route:
- * execute an Opt10.
+ * Find route with one or two customers and move it/them to another route:
+ * execute an Opt10 to balance the route and get more occupancy.
  */
 void VRP::RouteBalancer() {
     std::list<Route>::const_iterator it = this->routes.cbegin();
     ResultList l;
     std::list<std::thread> th;
     for (int i = 0; it != this->routes.cend(); std::advance(it, 1), ++i) {
-        if (it->size() == 3) {
+        if (it->size() == 3 || it->size() == 4) {
             std::list<Route>::const_iterator jt = this->routes.cbegin();
             for (int j = 0; jt != this->routes.cend(); std::advance(jt, 1), ++j) {
                 if (jt != it && jt->size() > 3) {

@@ -5,6 +5,7 @@
 #include "Route.h"
 #include "Utils.h"
 #include "TabuList.h"
+#include "../lib/ThreadPool.h"
 #include <thread>
 #include <mutex>
 
@@ -25,6 +26,7 @@ private:
     float costTravel;           /**< Cost parameter for each travel */
     float alphaParam;           /**< Alpha parameter for route evaluation */
     TabuList tabulist;          /**<List of all tabu moves */
+    unsigned numberOfCores;     /**< Number of cores */
     bool SwapFromTo(Route &, Route &);
     bool Move1FromTo(Route &, Route &, bool);
     bool AddRemoveFromTo(Route &, Route &, int, int);
