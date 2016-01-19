@@ -12,8 +12,8 @@ public:
     void RemoveEdge(Customer &, Customer &);
     /* multimap allow same keys */
     std::multimap<int, Customer> sortV0();
-    std::multimap<int, Customer> GetNeighborhood(Customer);
-    std::pair<Customer, int> GetCosts(const Customer&, const Customer&);
+    std::multimap<int, Customer> GetNeighborhood(const Customer) const;
+    std::pair<Customer, int> GetCosts(const Customer&, const Customer&) const;
 protected:
     void InsertVertex(Customer &, Vertex &);
 

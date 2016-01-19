@@ -20,7 +20,7 @@
 /** @brief ###Insert a vertex.
  *
  * Create and insert a vertex in the graph.
- * @param cust The customer who form the vertex
+ * @param[in] cust The customer who form the vertex
  */
 void Graph::InsertVertex(Customer &cust) {
     Vertex::ConstructionToken c;
@@ -31,8 +31,8 @@ void Graph::InsertVertex(Customer &cust) {
 /** @brief ###Insert a vertex.
  *
  * Insert a vertex in the graph.
- * @param c The customer who form the vertex
- * @param v The vertex created
+ * @param[in] c The customer who form the vertex
+ * @param[in] v The vertex created
  */
 void Graph::InsertVertex(Customer &c, Vertex &v) {
     std::pair<Customer, Vertex> temp (c, v);
@@ -42,9 +42,9 @@ void Graph::InsertVertex(Customer &c, Vertex &v) {
 /** @brief ###Insert an Edge.
  *
  * Insert an edge with weight from a customer to another.
- * @param node The starting customer
- * @param new_edge The destination customer
- * @param weight The weight of the edge
+ * @param[in] node The starting customer
+ * @param[in] new_edge The destination customer
+ * @param[in] weight The weight of the edge
  */
 void Graph::InsertEdge(Customer &node, Customer &new_edge, int weight) {
     auto it = vertexes.find(node);
@@ -54,8 +54,8 @@ void Graph::InsertEdge(Customer &node, Customer &new_edge, int weight) {
 
 /** @brief ###Remove an edge.
  *
- * @param node The customer which the edge start
- * @param edge The customer which the edge finish
+ * @param[in] node The customer which the edge start
+ * @param[in] edge The customer which the edge finish
  */
 void Graph::RemoveEdge(Customer &node, Customer &edge) {
     auto it = vertexes.find(node);
@@ -88,7 +88,7 @@ std::multimap<int, Customer> Graph::sortV0() {
  * the order is crescent.
  * @return The map of customer sorted
  */
-std::multimap<int, Customer> Graph::GetNeighborhood(Customer c) {
+std::multimap<int, Customer> Graph::GetNeighborhood(Customer c) const {
     std::multimap<int, Customer> mm;
     Vertex it = vertexes.find(c)->second;
     for (std::pair<Customer, Edge> edge : it.GetEdges()) {
@@ -100,11 +100,11 @@ std::multimap<int, Customer> Graph::GetNeighborhood(Customer c) {
 /** @brief ###Return the weight of an edge.
  *
  * This function compute the cost of travelling from a customer to another.
- * @param from The starting customer
- * @param to The ending customer.
+ * @param[in] from The starting customer
+ * @param[in] to The ending customer.
  * @return The cost of the travel
  */
-std::pair<Customer, int> Graph::GetCosts(const Customer &from, const Customer &to) {
+std::pair<Customer, int> Graph::GetCosts(const Customer &from, const Customer &to) const {
     /* get all edges from &from */
     Vertex it = vertexes.find(from)->second;
     return {from, it.GetEdges().find(to)->second.weight};

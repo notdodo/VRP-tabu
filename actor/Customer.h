@@ -5,11 +5,11 @@
 
 class Customer {
 private:
-    /** @brief Overriding '<' operator to evaluate two customers */
+    /** @brief ###Overriding '<' operator to evaluate two customers */
     friend bool operator< (const Customer &c1, const Customer &c2) {
         return c1.name < c2.name;
     }
-    /** @brief Overriding '<<' operator for printing the customer */
+    /** @brief ###Overriding '<<' operator for printing the customer */
     friend std::ostream &operator<<(std::ostream &out, Customer c) {
         out.flush();
         out << c.name;
@@ -17,11 +17,11 @@ private:
         return out;
     }
 public:
-    /** @brief Overriding '==' operator to evaluate two customers */
+    /** @brief ###Overriding '==' operator to evaluate two customers */
     bool operator==(const Customer &c) const {
         return name == c.name;
     }
-    /** @brief Overriding '!=' operator to evaluate two customers */
+    /** @brief ###Overriding '!=' operator to evaluate two customers */
     bool operator!=(const Customer&c) const {
         return name != c.name;
     }
@@ -30,10 +30,10 @@ public:
     int y;                  /**< Coordinate Y of the customer */
     int request;            /**< Quantity request from the customer */
     int serviceTime;        /**< Time for serving the customer */
-    Customer() {}                                  //!< Constructor
-    Customer(std::string, int, int, int, int);     //!< Constructor
-    Customer(std::string, int, int);               //!< Constructor
-    ~Customer();                                   //!< Destructor
+    Customer() {}           //!< Constructor
+    Customer(std::string n, int x , int y , int r, int t): name(n), x(x), y(y), request(r), serviceTime(t) {}    //!< Constructor
+    Customer(std::string n, int x, int y): name(n), x(x), y(y), request(0), serviceTime(0) {}                    //!< Constructor
+    ~Customer();            //!< Destructor
 };
 
 #endif /* Vehicle_H */

@@ -14,13 +14,13 @@ public:
         friend class Graph;
     };
 
-    Vertex(ConstructionToken &);          //!< constructor
+    Vertex(ConstructionToken &);            //!< constructor
     void InsertEdge(Customer &, int);
     void RemoveEdge(Customer &);
     int GetWeight(Customer &);
-    std::map<Customer, Edge> GetEdges();
+    std::map<Customer, Edge> GetEdges() const;
 private:
-    std::map<Customer, Edge> edges;             /**< List of all the edges from customer */
+    std::map<Customer, Edge> edges;         /**< List of all the edges from customer */
 };
 
 #endif /* Vertex_H */
