@@ -73,7 +73,7 @@ h3 {
     padding-right: 20px;
 }
 
-#parameters button, #parameters label:last-child {
+#parameters button, #parameters label:nth-last-child(2) {
 	font-family: Lato;
     overflow: hidden !important;
     font-size: 19px;
@@ -87,15 +87,15 @@ h3 {
 	transition: all 0.35s ease 0s;
 }
 
-#parameters label:last-child a {
+#parameters label:nth-last-child(2) a {
 	color: #FFFFFF;
 }
 
-#parameters label:last-child {
+#parameters label:nth-last-child(2) {
     font-size: 1.3em;
 }
 
-#parameters button:hover, #parameters label:last-child:hover {
+#parameters button:hover, #parameters label:nth-last-child(2):hover {
     cursor: pointer;
 	filter: brightness(1.1);
 	background-color: #D91E18;

@@ -4,6 +4,7 @@ var rect = canvasHTML.getBoundingClientRect();
 var clicks = document.getElementById('clicks');
 var currentPos = document.getElementById('coord_msg');
 var fileupload = document.getElementById('fileupload');
+var loadedPrinted = false;
 var routeDiv = document.getElementById('routes');
 var pars = $("input[type='number'");
 // vertex and routes array
@@ -15,6 +16,8 @@ var flagVRP = false;
 
 /* display the center of the canvas */
 $(function() {
+    document.getElementById("play").checked = false;
+    document.getElementById("play").value = 0;
     clicks.innerHTML = "<h2>Customers</h2>";
     // Depot
     canvas.add(new fabric.Text('☐', {
@@ -84,6 +87,33 @@ $(function() {
         }, false);
     }, false);
 });
+
+function playStop(c) {
+    if(c.value == 1) {
+        loadedPrinted = false;
+        c.value = 0;
+    }else if(c.value == 0) {
+        loadedPrinted = true;
+        c.value = 1;
+    }
+}
+
+function loadJSON() {
+    console.log(loadedPrinted);
+    if (loadedPrinted) {
+        var xobj = new XMLHttpRequest();
+        xobj.overrideMimeType("application/json");
+        xobj.open('GET', 'output.json', true); // Replace 'my_data' with the path to your file
+        xobj.onreadystatechange = function () {
+            if (xobj.readyState == 4 && xobj.status == "200") {
+                parseCustomer(JSON.parse(xobj.responseText));
+            }
+        };
+        xobj.send(null);
+    }
+ }
+
+window.setInterval(loadJSON, 20000);
 
 /* get the mouse position on the canvas */
 function getMousePos(evt) {
@@ -201,6 +231,7 @@ function readSingleFile(evt) {
 	routeDiv.innerHTML = "";
     //Retrieve the first (and only!) File from the FileList object
     var f = evt.target.files[0];
+    var time = f.lastModifiedDate;
 
     if (f) {
         var r = new FileReader();
@@ -223,9 +254,14 @@ function readSingleFile(evt) {
     }
 }
 
+
 /* parse the json and display the results */
 /* ~130 microseconds */
 function parseCustomer(cs) {
+    canvas.__eventListeners["mouse:down"] = [];
+    canvas.__eventListeners["mouse:over"] = [];
+    canvas.__eventListeners["mouse:out"] = [];
+    routeDiv.innerHTML = "";
     var start = performance.now();
     if (cs.type === "VRP")
         flagVRP = true;
