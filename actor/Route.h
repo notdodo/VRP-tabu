@@ -10,7 +10,7 @@ typedef std::pair<Customer, int> StepType;
 
 class Route {
 private:
-    /** @brief overriding of the "<<" operator to print the route */
+    /** @brief ###Overriding of the "<<" operator to print the route */
     friend std::ostream& operator<<(std::ostream& out, const Route &r) {
         if (r.route.size() > 1) {
             out << "Cost:" << std::setw(5) << std::to_string(r.totalCost) << " ";
@@ -22,20 +22,20 @@ private:
         };
         return out;
     }
-    int initialCapacity;            /**< Initial capacity of the route, equals to VRP.capacity */
-    float initialWorkTime;          /**< Total work time for driver, equals to VRP.workTime */
-    int capacity;                   /**< Capacity remaining */
-    float workTime;                 /**< Work time remaining */
-    int totalCost;                  /**< Total cost of the route: sum of the weight */
-    float averageCost;              /**< Average of all path costs */
-    float TRAVEL_COST;              /**< Cost parameter for each travel */
-    float ALPHA;                    /**< Alpha parameter for route evaluation */
-    int routeNumber;				/**< Identifier of the route */
-    Graph graph;                    /**< Graph of the customers */
+    int initialCapacity;                            /**< Initial capacity of the route, equals to VRP.capacity */
+    float initialWorkTime;                          /**< Total work time for driver, equals to VRP.workTime */
+    int capacity;                                   /**< Capacity remaining */
+    float workTime;                                 /**< Work time remaining */
+    int totalCost;                                  /**< Total cost of the route: sum of the weight */
+    float averageCost;                              /**< Average of all path costs */
+    float TRAVEL_COST;                              /**< Cost parameter for each travel */
+    float ALPHA;                                    /**< Alpha parameter for route evaluation */
+    Graph graph;                                    /**< Graph of the customers */
 protected:
-    std::list<StepType> route;      /**< This list represent the route */
+    std::list<StepType> route;                      /**< This list represent the route */
+    void EmptyRoute(const Customer);
 public:
-    /** @brief overriding of the "=" operator for assign a route to another */
+    /** @brief ###Overriding of the "=" operator for assign a route to another */
     Route& operator=(const Route &r) {
         this->capacity = r.capacity;
         this->workTime = r.workTime;
@@ -48,13 +48,43 @@ public:
         this->ALPHA = r.ALPHA;
         return *this;
     }
-    Route(const int, const float, const Graph, const int, const float, const float);       //!< constructor
+	/** @brief ###Overriding '!=' operator to evaluate two routes */
+    bool operator!=(const Route &r) const {
+        auto i = route.cbegin();
+        auto j = r.route.cbegin();
+        for (; i != route.cend(); ++i) {
+            if (i->first != j->first)
+                return true;
+            ++j;
+        }
+        return false;
+    }
+
+    /** @brief ###Overriding '==' operator to evaluate two routes */
+    bool operator==(const Route &r) const {
+        auto i = route.cbegin();
+        auto j = r.route.cbegin();
+        for (; i != route.cend(); ++i) {
+            if (i->first != j->first)
+                return false;
+            ++j;
+        }
+        return true;
+    }
+    /** @brief ###Overriding '<' operator to evaluate two routes */
+    bool operator < (const Route &r) const {
+        return GetTotalCost() < r.GetTotalCost();
+    }
+    /** @brief ###Overriding '>=' operator to evaluate two routes */
+    bool operator <= (const Route &r) const {
+        return GetTotalCost() >= r.GetTotalCost();
+    }
+
+    Route(const int, const float, const Graph, const float, const float);       //!< constructor
     void CloseTravel(const Customer);
     bool CloseTravel(const Customer, const Customer);
-    void PrintRoute();
-    void PrintRoute(std::list<StepType>);
-    bool Travel(Customer, const Customer);
-    void EmptyRoute(const Customer);
+    void PrintRoute() const;
+    bool Travel(const Customer, const Customer);
     int size() const;
     std::list<StepType>* GetRoute();
     Route CopyRoute() const;
@@ -67,11 +97,10 @@ public:
     void SetAverageCost();
     float GetAverageCost() const;
     void GetUnderAverageCustomers(std::list<Customer> &);
-	int GetNumber() { return this->routeNumber; }
+    float GetDistanceFrom(Route);
 	bool FindCustomer(const Customer &);
     bool RebuildRoute(std::list<Customer>);
     float Evaluate() const;
-	bool Diff(Route) const;
 };
 
 #endif /* Route_H */

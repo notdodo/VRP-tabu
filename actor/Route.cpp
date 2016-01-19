@@ -19,19 +19,17 @@
 
 /** @brief ###Constructor of Route.
  *
- * @param c Initial capacity of the vehicle.
- * @param wt Initial work time of the driver.
- * @param g Graph of the customers.
- * @param n Identification number of the route.
- * @param costTravel Cost parameter for each travel.
- * @param alphaParam Alpha parameter for router evalutation.
+ * @param[in] c Initial capacity of the vehicle.
+ * @param[in] wt Initial work time of the driver.
+ * @param[in] g Graph of the customers.
+ * @param[in] costTravel Cost parameter for each travel.
+ * @param[in] alphaParam Alpha parameter for router evalutation.
  */
-Route::Route(int c, float wt, const Graph g, int n, const float costTravel, const float alphaParam) {
+Route::Route(int c, float wt, const Graph g, const float costTravel, const float alphaParam) {
     this->initialCapacity = this->capacity = c;
     this->initialWorkTime = this->workTime = wt;
     this->graph = g;
     this->totalCost = 0;
-    this->routeNumber = n;
     // if the service time is not a constraint reset the cost of travelling
     if (wt == std::numeric_limits<int>::max())
         this->TRAVEL_COST = (float)0;
@@ -45,7 +43,7 @@ Route::Route(int c, float wt, const Graph g, int n, const float costTravel, cons
  *
  * Whenever the capacity or the work time are inadequate
  * close the route: return to depot.
- * @param c Last customer to visit
+ * @param[in] c Last customer to visit
  */
 void Route::CloseTravel(const Customer c) {
     Customer depot = this->route.cbegin()->first;
@@ -59,8 +57,8 @@ void Route::CloseTravel(const Customer c) {
 /** @brief ###Close a route with the last customer.
  *
  * When remaining only one customer to visit, visit it then return to depot.
- * @param from The last customer to visit
- * @param depot The depot
+ * @param[in] from The last customer to visit
+ * @param[in] depot The depot
  * @return True if the customer is visitable
  */
 bool Route::CloseTravel(const Customer from, const Customer depot) {
@@ -89,11 +87,11 @@ bool Route::CloseTravel(const Customer from, const Customer depot) {
  *  Check if is possibile to travel from a customer to another
  *  observing the constraint of capacity and time, if possibile add the
  *  travel to the route
- *  @param from The source customer
- *  @param to The destination customer
+ *  @param[in] from The source customer
+ *  @param[in] to The destination customer
  *  @return True if the travel is added to the route
  */
-bool Route::Travel(Customer from, const Customer to) {
+bool Route::Travel(const Customer from, const Customer to) {
     Customer depot;
     bool ret = true;
     int returnTime;
@@ -135,30 +133,10 @@ void Route::EmptyRoute(const Customer depot) {
 }
 
 /** @brief ###Print this route. */
-void Route::PrintRoute() {
+void Route::PrintRoute() const {
     std::flush(std::cout);
     if (this->route.size() > 1) {
         for (StepType i : this->route) {
-            if (i.second > 0)
-                std::cout << i.first << " -(" << i.second << ")-> ";
-            else
-                std::cout << i.first;
-        }
-        std::cout << std::endl;
-    }else {
-        std::cout << "Void Route!" << std::endl;
-    }
-    std::flush(std::cout);
-}
-
-/** @brief ###Print a route.
- *
- * @param r The route to print
- */
-void Route::PrintRoute(std::list<StepType> r) {
-    std::flush(std::cout);
-    if (r.size() > 1) {
-        for (StepType i : r) {
             if (i.second > 0)
                 std::cout << i.first << " -(" << i.second << ")-> ";
             else
@@ -191,7 +169,7 @@ Route Route::CopyRoute() const {
  * This function add a customer in the best position of a route respecting
  * the constraints: add the customer in each possible position, then execute
  * the best insertion.
- * @param c The customer to insert
+ * @param[in] c The customer to insert
  */
 bool Route::AddElem(const Customer c) {
     // in this case 'this' need to be updated
@@ -199,7 +177,7 @@ bool Route::AddElem(const Customer c) {
     // the map is sorted by costs
     std::map<int, Route> best;
     Customer depot = this->GetRoute()->front().first;
-    std::list<std::pair<Customer, int>>::iterator it;
+    std::list<std::pair<Customer, int>>::iterator it = this->route.begin();
     int iter = 0;
     do {
         int travelCost, costNext, tCost, capac, fallbackCost;
@@ -238,7 +216,7 @@ bool Route::AddElem(const Customer c) {
         }
     }while (it != this->route.cend() && (unsigned)iter < this->route.size());
     // if the route is changed return the best match
-    if (best.size() > 0 && this->totalCost < (*best.cbegin()).second.totalCost) {
+    if (best.size() > 0) {
         *this = (*best.cbegin()).second;
         ret = true;
     }else
@@ -251,14 +229,14 @@ bool Route::AddElem(const Customer c) {
  * This function add a list of consecutive customers in the best position of a route respecting
  * the constraints: add the customer in each possible position, then execute
  * the best insertion.
- * @param custs List of customers to insert
+ * @param[in] custs List of customers to insert
  */
 bool Route::AddElem(const std::list<Customer> &custs) {
     // in this case 'this' need to be updated
     bool ret = false;
     // the map is sorted by costs
     std::map<int, Route> best;
-    std::list<std::pair<Customer, int>>::iterator it;
+    std::list<std::pair<Customer, int>>::iterator it = this->route.begin();
     int iter = 0;
     do {
         int travelCost, costNext, tCost, capac, fallbackCost;
@@ -329,7 +307,7 @@ bool Route::AddElem(const std::list<Customer> &custs) {
         }
     }while (it != this->route.cend() && (unsigned)iter < this->route.size());
     // if the route is changed return the best match
-    if (best.size() > 0 && this->totalCost < (*best.cbegin()).second.totalCost) {
+    if (best.size() > 0) {
         *this = (*best.cbegin()).second;
         ret = true;
     }else
@@ -340,7 +318,7 @@ bool Route::AddElem(const std::list<Customer> &custs) {
 /** @brief ###Remove a customer from a route.
  *
  * Remove a customer in a position in the route.
- * @param it The position of the customer to remove
+ * @param[in] it The position of the customer to remove
  * @return The state of the operation
  */
 void Route::RemoveCustomer(std::list<StepType>::iterator &it) {
@@ -377,11 +355,11 @@ void Route::RemoveCustomer(std::list<StepType>::iterator &it) {
 /** @brief ###Remove a customer.
  *
  * Find and remove a customer from the route.
- * @param c The customer to remove
+ * @param[in] c The customer to remove
  */
 bool Route::RemoveCustomer(const Customer c) {
     std::list<StepType>::iterator it;
-    if (c != this->route.front().first || c != this->route.back().first) {
+    if (c != this->route.front().first && c != this->route.back().first) {
         for (it = this->route.begin(); it != this->route.cend(); ++it) {
             if (it->first == c) {
                 this->RemoveCustomer(it);
@@ -396,8 +374,8 @@ bool Route::RemoveCustomer(const Customer c) {
  *
  *  Same as  Route::AddElem(const Customer c) but this function
  *  remove a customer before trying to add the customer.
- *  @param c Customer to add
- *  @param rem Customer to remove
+ *  @param[in] c Customer to add
+ *  @param[in] rem Customer to remove
  */
 bool Route::AddElem(const Customer c, const Customer rem) {
     // in this case 'this' need to be updated
@@ -406,7 +384,7 @@ bool Route::AddElem(const Customer c, const Customer rem) {
     // the map is sorted by totalcost
     std::map<int, Route> best;
     Customer depot = this->GetRoute()->front().first;
-    std::list<std::pair<Customer, int>>::iterator it;
+    std::list<std::pair<Customer, int>>::iterator it = this->route.begin();
     int iter = 0;
     do {
         int travelCost, costNext, tCost, capac, fallbackCost;
@@ -450,7 +428,7 @@ bool Route::AddElem(const Customer c, const Customer rem) {
         }
     }while (it != this->route.cend() && (unsigned)iter < this->route.size());
     // if the route is changed return the best match
-    if (best.size() > 0 && this->totalCost <= (*best.cbegin()).second.totalCost) {
+    if (best.size() > 0) {
         *this = (*best.cbegin()).second;
         ret = true;
     }else
@@ -480,7 +458,7 @@ float Route::GetAverageCost() const {
  *
  * Create a list of customers which have a cost path lower than the average cost
  * of the route.
- * @param customers Initial list of customers
+ * @param[in] customers Initial list of customers
  */
 void Route::GetUnderAverageCustomers(std::list<Customer> &customers) {
     this->SetAverageCost();
@@ -500,11 +478,39 @@ void Route::GetUnderAverageCustomers(std::list<Customer> &customers) {
     }
 }
 
+/** @brief ###Get the distance from two routes
+ *
+ * The distance from two routes is defined as the minimum distance from
+ * each customers of the routes.
+ * @param[in] r The route to compare with
+ * @return      The distance from the two routes.
+ */
+float Route::GetDistanceFrom(Route r) {
+    Customer depot = this->route.front().first;
+    std::list<StepType>::const_iterator it = this->route.cbegin();
+    float min = std::numeric_limits<float>::max();
+    // for each customers of each route (except the depot)
+    for (++it; it != this->route.cend(); ++it) {
+        if (it->first != depot) {
+            std::list<StepType>::iterator ir = r.GetRoute()->begin();
+            for (++ir; ir != r.GetRoute()->end(); ++ir) {
+                if (ir->first != depot) {
+                    // compute the distance and update the min
+                    float v = std::sqrt(std::pow(it->first.x - ir->first.x,2) + std::pow(it->first.y - ir->first.y,2));
+                    if (v < min && v > 0)
+                        min = v;
+                }
+            }
+        }
+    }
+    return min;
+}
+
 /** @brief ###Find a customer in the route
  *
  * Search for a customer in the route, if it is present return True,
  * otherwise False.
- * @param c The customer to search for
+ * @param[in] c The customer to search for
  * @return The result
  */
 bool Route::FindCustomer(const Customer &c) {
@@ -574,8 +580,4 @@ float Route::Evaluate() const {
                     std::pow(percLoad, 2) * std::pow(percTime, 2)
                 );
     return g * this->ALPHA;
-}
-
-bool Route::Diff(Route r) const {
-	return this->averageCost > r.GetAverageCost();
 }
