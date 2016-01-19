@@ -21,27 +21,34 @@
  *
  * Parse the input file in JSON format and instantiates all variables
  * for the algorithm.
- * @param argv Input file (json).
- * @param costTravel Cost parameter for each travel.
- * @param alphaParam Alpha parameter for router evaluation.
- * @param aspiration Aspiration factor.
+ * @param[in] argc Number of arguments passed through command line.
+ * @param[in] argv Input file (json).
+ * @param[in] costTravel Cost parameter for each travel.
+ * @param[in] alphaParam Alpha parameter for router evaluation.
+ * @param[in] aspiration Aspiration factor.
  * @return The pointer to VRP class
  */
-VRP* Utils::InitParameters(char **argv, const float costTravel, const float alphaParam, const int aspiration) {
+VRP* Utils::InitParameters(int argc, char **argv, const float costTravel, const float alphaParam, const int aspiration) {
     /* error string */
     std::string s;
     VRP *v;
     Graph g;
     int fileIndex = 1;
-    /* open the file */
+    if (argc != 2 && argc != 3) {
+        throw std::runtime_error("Usage: ./VRP [-v] data.json");
+    }
+
     if (strcmp(argv[1], "-v") == 0) {
         this->verbose = true;
         fileIndex = 2;
     }
+    /* open the file */
     FILE *fp = fopen(argv[fileIndex], "r");
     if (fp == NULL) {
-        s = "The file " + std::string(argv[fileIndex]) +  " doesn't exist.";
-        throw s;
+        if (argc == 3)
+            throw std::runtime_error("The file " + std::string(argv[fileIndex]) +  " doesn't exist.");
+        else
+            throw std::runtime_error("No input file.");
     }else {
         /* little buffer more fread, big buffer less fread() big access time */
         char readBuffer[65536];
@@ -50,9 +57,8 @@ VRP* Utils::InitParameters(char **argv, const float costTravel, const float alph
         fclose(fp);
         /* check error */
         if (this->d.HasParseError()) {
-            s = "Error(offset" + std::string((char*)this->d.GetErrorOffset()) +
-                "): " + GetParseError_En(this->d.GetParseError());
-            throw s;
+            throw std::runtime_error("Error(offset" + std::string((char*)this->d.GetErrorOffset()) +
+                "): " + GetParseError_En(this->d.GetParseError()));
         }else {
             s = "Invalid file format!";
             int numVertices = this->d["vertices"].Size();
@@ -82,7 +88,7 @@ VRP* Utils::InitParameters(char **argv, const float costTravel, const float alph
                             flagTime = true;
                         g.InsertVertex(customers[i]);
                 }else {
-                    throw s;
+                    throw std::runtime_error(s);
                 }
             }
             /* parsing all costs, graph edge */
@@ -109,7 +115,7 @@ VRP* Utils::InitParameters(char **argv, const float costTravel, const float alph
                       flagTime,
                       costTravel, alphaParam, aspiration);
             }else {
-                throw s;
+                throw std::runtime_error(s);
             }
         }
     }
@@ -119,10 +125,10 @@ VRP* Utils::InitParameters(char **argv, const float costTravel, const float alph
 /** @brief ###Save the result.
  *
  * Saves the routes into the input JSON file.
- * @param routes The routes list to save to the file
+ * @param[in] routes The routes list to save to the file
  */
-void Utils::SaveResult(std::list<Route> routes) {
-    FILE *fp = fopen("output.json", "w");
+void Utils::SaveResult(const std::list<Route> routes) {
+    FILE *fp = fopen("vrp-init/output.json", "w");
     if (fp != NULL) {
         char writeBuffer[65536];
         rapidjson::FileWriteStream os(fp, writeBuffer, sizeof(writeBuffer));
@@ -147,6 +153,6 @@ void Utils::SaveResult(std::list<Route> routes) {
         d.Accept(writer);
         fclose(fp);
     }else {
-        throw "Error writing file! (Bad permissions)\n";
+        throw std::runtime_error("Error writing file! (Bad permissions)");
     }
 }

@@ -33,13 +33,13 @@ private:
     static const int INFO = 3;                  /**< Simple logging code */
     static const int VERBOSE = 4;               /**< Verbose code */
     bool verbose = false;
-    VRP* InitParameters (char **, const float, const float, const int);
-    void SaveResult(std::list<Route>);
+    VRP* InitParameters (int, char **, const float, const float, const int);
+    void SaveResult(const std::list<Route>);
 
     /** @brief Print a log string
      *
-     * @param s The string to print
-     * @param c The code for log level
+     * @param[in] s The string to print
+     * @param[in] c The code for log level
      */
     template <typename T>
     void logger(T s, int c = 5) const {
