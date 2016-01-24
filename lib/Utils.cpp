@@ -25,10 +25,9 @@
  * @param[in] argv Input file (json).
  * @param[in] costTravel Cost parameter for each travel.
  * @param[in] alphaParam Alpha parameter for router evaluation.
- * @param[in] aspiration Aspiration factor.
  * @return The pointer to VRP class
  */
-VRP* Utils::InitParameters(int argc, char **argv, const float costTravel, const float alphaParam, const int aspiration) {
+VRP* Utils::InitParameters(int argc, char **argv, const float costTravel, const float alphaParam) {
     /* error string */
     std::string s;
     VRP *v;
@@ -113,7 +112,7 @@ VRP* Utils::InitParameters(int argc, char **argv, const float costTravel, const 
                       this->d["capacity"].GetInt(),
                       this->d["worktime"].GetInt(),
                       flagTime,
-                      costTravel, alphaParam, aspiration);
+                      costTravel, alphaParam);
             }else {
                 throw std::runtime_error(s);
             }

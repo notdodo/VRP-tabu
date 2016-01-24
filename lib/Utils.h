@@ -33,7 +33,7 @@ private:
     static const int INFO = 3;                  /**< Simple logging code */
     static const int VERBOSE = 4;               /**< Verbose code */
     bool verbose = false;
-    VRP* InitParameters (int, char **, const float, const float, const int);
+    VRP* InitParameters (int, char **, const float, const float);
     void SaveResult(const std::list<Route>);
 
     /** @brief Print a log string
