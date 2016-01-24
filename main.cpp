@@ -23,7 +23,6 @@ using namespace chrono;
 
 #define TRAVEL_COST 0.3f
 #define ALPHA 0.4f
-#define ASPIRATION_FACTOR 3000
 #define MAX_TIME_MIN 200
 
 int main(int argc, char** argv) {
@@ -31,16 +30,15 @@ int main(int argc, char** argv) {
     // create the controller
     Controller &c = Controller::Instance();
     Utils &u = Utils::Instance();
-    // parse arguments
-    if (argc == 2 || argc == 3) {
-        try {
-            c.Init(argv, TRAVEL_COST, ALPHA, ASPIRATION_FACTOR, MAX_TIME_MIN);
-        }catch(const char *i) {
-            u.logger(i, u.ERROR);
-        }
-    }else
-        u.logger("Usage: ./VRP [-v] data.json", u.ERROR);
-
+    try {
+        c.Init(argc, argv, TRAVEL_COST, ALPHA, MAX_TIME_MIN);
+        c.PrintRoutes();
+        c.RunVRP();
+        c.SaveResult();
+		c.PrintBestRoutes();
+    }catch(std::exception &e) {
+        u.logger(e.what(), u.ERROR);
+    }
     high_resolution_clock::time_point t2 = high_resolution_clock::now();
     int duration = duration_cast<milliseconds>(t2 - t1).count();
     // print duration

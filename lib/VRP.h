@@ -25,34 +25,42 @@ private:
     float workTime;             /**< Work time for each driver */
     float costTravel;           /**< Cost parameter for each travel */
     float alphaParam;           /**< Alpha parameter for route evaluation */
-    TabuList tabulist;          /**<List of all tabu moves */
+    float averageDistance;      /**< Average distance of all routes */
+    TabuList tabulist;          /**< List of all tabu moves */
     unsigned numberOfCores;     /**< Number of cores */
-    bool SwapFromTo(Route &, Route &);
+	std::list<Route> bestRoutes;/**< The best configuration of routes founded */
+    int totalCost;              /**< Total cost of routes */
+    float fitness;
+	bool SwapFromTo(Route &, Route &);
     bool Move1FromTo(Route &, Route &, bool);
     bool AddRemoveFromTo(Route &, Route &, int, int);
     void CleanVoid();
-    Route Opt2Swap(Route r, std::list<Customer>::iterator i , std::list<Customer>::iterator k);
-    Route Opt3Swap(Route, std::list<Customer>::iterator, std::list<Customer>::iterator, std::list<Customer>::iterator, std::list<Customer>::iterator);
+    Route Opt2Swap(Route r, Customer i , Customer k);
+    Route Opt3Swap(Route, Customer, Customer, Customer, Customer);
+    int FindRouteFromCustomer(Customer);
+    bool CheckIntegrity();
+    void UpdateDistanceAverage();
+    void OrderByCosts();
 public:
     VRP() {}					//!< constructor
-    VRP(Graph, const int, const int, const int, const float, const bool, const float, const float, const int); //!< constructor
+    VRP(Graph, const int, const int, const int, const float, const bool, const float, const float); //!< constructor
     int InitSolutions();
-    std::list<Route>* GetRoutes();
-    void OrderByCosts();
-    bool Opt10();
-    bool Opt01();
-    bool Opt11();
-    bool Opt21();
-    bool Opt12();
-    bool Opt22();
+    int Opt10(bool);
+    int Opt01(bool);
+    int Opt11(bool);
+    int Opt21(bool);
+    int Opt12(bool);
+    int Opt22(bool);
     void RouteBalancer();
     bool Opt2();
     bool Opt3();
-    int GetTotalCost() const;
+    int GetTotalCost();
     int GetNumberOfCustomers() const;
 	void TabuSearch();
-    int FindRouteFromCustomer(Customer);
-    bool CheckIntegrity();
+    std::list<Route>* GetRoutes();
+	std::list<Route>* GetBestRoutes();
+	void UpdateBest();
+    void Evaluate();
 	~VRP();						//!< destructor
 };
 
