@@ -12,18 +12,21 @@ private:
     Controller(Controller const&) = delete;
     void operator=(Controller const&) = delete;
     bool RunOpts(int);
-    void RunVRP();
     bool RunTabuSearch(int);
-    void SaveResult();
     int MAX_TIME_MIN;
+    int initCost;
+    int finalCost;
 protected:
-    void PrintRoutes();
 public:
     static Controller& Instance() {
         static Controller instance;
         return instance;
     }
-    void Init(char **argv, float, float, int, int);
+    void Init(int, char **argv, float, float, int);
+    void RunVRP();
+    void SaveResult();
+    void PrintRoutes();
+	void PrintBestRoutes();
     Utils& GetUtils() const;
 };
 
