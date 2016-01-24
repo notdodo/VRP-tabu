@@ -189,6 +189,7 @@ bool Route::AddElem(const Customer c) {
         if (capac <= 0 || workT <= 0) break;
         tCost = r.totalCost;
         std::advance(it, iter);
+        if (it == this->route.cend()) break;
         Customer before = it->first;
         travelCost = r.graph.GetCosts(before, c).second;
         workT -= travelCost * r.TRAVEL_COST;
@@ -217,7 +218,7 @@ bool Route::AddElem(const Customer c) {
     }while (it != this->route.cend() && (unsigned)iter < this->route.size());
     // if the route is changed return the best match
     if (best.size() > 0) {
-        *this = (*best.cbegin()).second;
+        *this = (*best.begin()).second;
         ret = true;
     }else
         ret = false;
@@ -308,7 +309,7 @@ bool Route::AddElem(const std::list<Customer> &custs) {
     }while (it != this->route.cend() && (unsigned)iter < this->route.size());
     // if the route is changed return the best match
     if (best.size() > 0) {
-        *this = (*best.cbegin()).second;
+        *this = (*best.begin()).second;
         ret = true;
     }else
         ret = false;
@@ -429,7 +430,7 @@ bool Route::AddElem(const Customer c, const Customer rem) {
     }while (it != this->route.cend() && (unsigned)iter < this->route.size());
     // if the route is changed return the best match
     if (best.size() > 0) {
-        *this = (*best.cbegin()).second;
+        *this = (*best.begin()).second;
         ret = true;
     }else
         ret = false;
@@ -572,7 +573,7 @@ bool Route::RebuildRoute(std::list<Customer> cust) {
  * Less is better.
  * @return The value of the assessment.
  */
-float Route::Evaluate() const {
+float Route::Evaluate() {
     float percLoad = (float(this->capacity) / this->initialCapacity) * 100;
     float percTime = (float(this->workTime) / this->initialWorkTime) * 100;
     float g = this->totalCost *

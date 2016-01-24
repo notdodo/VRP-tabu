@@ -6,7 +6,7 @@
 class Customer {
 private:
     /** @brief ###Overriding '<' operator to evaluate two customers */
-    friend bool operator< (const Customer &c1, const Customer &c2) {
+    friend bool operator<(const Customer &c1, const Customer &c2) {
         return c1.name < c2.name;
     }
     /** @brief ###Overriding '<<' operator for printing the customer */
@@ -17,6 +17,15 @@ private:
         return out;
     }
 public:
+    /** @brief ###Overriding of the "=" operator to assign a customer to another */
+    Customer& operator=(const Customer &c) {
+        this->name = c.name;
+        this->x = c.x;
+        this->y = c.y;
+        this->request = c.request;
+        this->serviceTime = c.serviceTime;
+        return *this;
+    }
     /** @brief ###Overriding '==' operator to evaluate two customers */
     bool operator==(const Customer &c) const {
         return name == c.name;

@@ -100,7 +100,7 @@ public:
     float GetDistanceFrom(Route);
 	bool FindCustomer(const Customer &);
     bool RebuildRoute(std::list<Customer>);
-    float Evaluate() const;
+    float Evaluate();
 };
 
 #endif /* Route_H */
