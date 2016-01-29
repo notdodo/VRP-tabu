@@ -92,14 +92,16 @@ function playStop(c) {
     if(c.value == 1) {
         loadedPrinted = false;
         c.value = 0;
+        c.checked = false;
     }else if(c.value == 0) {
         loadedPrinted = true;
         c.value = 1;
+        c.checked = true;
+        loadedPrinted();
     }
 }
 
 function loadJSON() {
-    console.log(loadedPrinted);
     if (loadedPrinted) {
         var xobj = new XMLHttpRequest();
         xobj.overrideMimeType("application/json");
