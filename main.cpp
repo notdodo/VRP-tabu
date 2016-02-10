@@ -16,14 +16,13 @@
  ****************************************************************************/
 
 #include "Controller.h"
-#include <chrono>
 
 using namespace std;
 using namespace chrono;
 
 #define TRAVEL_COST 0.3f
 #define ALPHA 0.4f
-#define MAX_TIME_MIN 200
+#define MAX_TIME_MIN 300
 
 int main(int argc, char** argv) {
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
@@ -33,6 +32,7 @@ int main(int argc, char** argv) {
     try {
         c.Init(argc, argv, TRAVEL_COST, ALPHA, MAX_TIME_MIN);
         c.PrintRoutes();
+        c.SaveResult();
         c.RunVRP();
         c.SaveResult();
 		c.PrintBestRoutes();
