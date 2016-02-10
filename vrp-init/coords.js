@@ -97,7 +97,7 @@ function playStop(c) {
         loadedPrinted = true;
         c.value = 1;
         c.checked = true;
-        loadedPrinted();
+        loadJSON();
     }
 }
 
@@ -105,7 +105,7 @@ function loadJSON() {
     if (loadedPrinted) {
         var xobj = new XMLHttpRequest();
         xobj.overrideMimeType("application/json");
-        xobj.open('GET', 'output.json', true); // Replace 'my_data' with the path to your file
+        xobj.open('GET', 'output.json', true);
         xobj.onreadystatechange = function () {
             if (xobj.readyState == 4 && xobj.status == "200") {
                 parseCustomer(JSON.parse(xobj.responseText));
@@ -115,7 +115,16 @@ function loadJSON() {
     }
  }
 
-window.setInterval(loadJSON, 20000);
+
+var blob = new Blob(["self.onmessage = function(event) { postMessage(event.data); }"], {type: 'application/javascript'});
+var worker = new Worker(URL.createObjectURL(blob));
+worker.onmessage = function(event) {
+    loadJSON();
+};
+function runWorker() {
+    worker.postMessage("run");
+}
+window.setInterval(runWorker, 4000);
 
 /* get the mouse position on the canvas */
 function getMousePos(evt) {
@@ -175,11 +184,11 @@ function getCostsMatrix(max) {
     for (var k = 0; k < vertex.length; k++) {
         var row = [];
         for (j = 0; j < vertex.length; j++) {
-            if ( k !== j) {
+            if (k !== j) {
                 var item = {
                     from : k,
                     to: j,
-                    value: Math.floor(distance(vertex[k], vertex[j]))
+                    value: Math.round(distance(vertex[k], vertex[j]))
                 };
                 row.push(item);
             }
@@ -191,8 +200,6 @@ function getCostsMatrix(max) {
 
 function distance(a, b) {
     var dist = Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
-    if (Math.floor(dist) <= 0)
-        dist = 1;
     return dist;
 }
 
