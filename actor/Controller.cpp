@@ -25,7 +25,6 @@
  * @param[in] argv The arguments passed through command line.
  * @param[in] costTravel The cost of travelling.
  * @param[in] alphaParam Alpha parameter for route evaluation.
- * @param[in] aspiration Aspiration factor.
  * @param[in] max_time Maximum execution time in minutes.
  */
 void Controller::Init(int argc, char **argv, float costTravel, float alphaParam, int max_time) {
@@ -58,22 +57,28 @@ void Controller::RunVRP() {
 	int timeOpts = customers, iteration = customers;
     // number of opt functions executions
 	if (customers > 60){
-		timeOpts = customers / 7;
-    }else {
-		timeOpts *= 0.75;
-        iteration = 60;
-    }
-    int noimprov = 0, duration = 0;
+		timeOpts = customers / 5;
+    }else
+		timeOpts *= 0.50;
+    int noimprov = 0, duration = 0, last = 0, prelast = 0;
     // start time
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
     // run the routines for 'customers' times or stop if no improvement or duration is more than MAX_TIME
     for (int i = 0; i < iteration && noimprov < 5 && duration <= this->MAX_TIME_MIN; i++) {
-        bool ts, opt;
-        ts = this->RunTabuSearch(1);
+        bool opt, optflag = false;
+        int ts = this->RunTabuSearch(1);
+        if (abs(ts) == last || ts == prelast) {
+            optflag = true;
+            noimprov++;
+        }else {
+            prelast = abs(last);
+            last = abs(ts);
+        }
         Utils::Instance().logger("Starting opt", Utils::VERBOSE);
-        opt = this->RunOpts(timeOpts);
+        opt = this->vrp->RunOpts(timeOpts, optflag);
+        optflag = false;
 		this->vrp->UpdateBest();
-        if (!ts && !opt)
+        if (ts == 0 && !opt)
             noimprov++;
         else
             noimprov = 0;
@@ -81,7 +86,7 @@ void Controller::RunVRP() {
         std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
         duration = std::chrono::duration_cast<std::chrono::minutes>(t2 - t1).count();
 		Utils::Instance().logger("PARTIAL: " + std::to_string(this->vrp->GetTotalCost()) +
-				" " +std::to_string(i) + "/" + std::to_string(iteration-1), Utils::INFO);
+				" " +std::to_string(i+1) + "/" + std::to_string(iteration), Utils::INFO);
     }
     this->finalCost = this->vrp->GetTotalCost();
     int percCost = (float)(this->finalCost - this->initCost) / this->initCost * 100;
@@ -93,68 +98,20 @@ void Controller::RunVRP() {
  * @param[in] times Number of iteration.
  * @return          If the routine made some improvements.
  */
-bool Controller::RunTabuSearch(int times) {
+int Controller::RunTabuSearch(int times) {
     int initCost = this->vrp->GetTotalCost();
     Utils::Instance().logger("Starting Tabu Search", Utils::VERBOSE);
     for (int k = 0; k < times; ++k) {
-        this->vrp->TabuSearch();
+        this->vrp->RunTabuSearch();
     }
     int diffCost = initCost - this->vrp->GetTotalCost();
     if (diffCost != 0) {
         Utils::Instance().logger("Tabu Search improved: " + std::to_string(diffCost), Utils::VERBOSE);
-        return true;
+        return diffCost;
     }else {
         Utils::Instance().logger("Tabu Search no improvement", Utils::VERBOSE);
-        return false;
+        return 0;
     }
-}
-
-/** @brief ###Run optimal functions.
- *
- * Runs all the optimal functions to achieve a better optimization of the routes.
- * When the routine do not improve the routes, stops and try to balance the routes.
- * @param[in] times Number of iteration
- * @return          If the routine made some improvements.
- */
-bool Controller::RunOpts(int times) {
-    this->vrp->RouteBalancer();
-    int i = 0, duration = 0, result;
-    bool flag = false, optxx = true;
-    // start time
-    std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
-    // do at least 4 iteration in less than 30 minutes
-    while (i < times && !(i > 3 && duration >= 25)) {
-        Utils::Instance().logger("Round " + std::to_string(i) + " of " + std::to_string(times-1), Utils::VERBOSE);
-        if (optxx) {
-            result = this->vrp->Opt10(flag);
-            /*if (result < 0)
-                result = this->vrp->Opt01(flag);*/
-            if (result <= 0)
-                result = this->vrp->Opt11(flag);
-            if (result <= 0)
-                result = this->vrp->Opt12(flag);
-            /*if (result < 0)
-                result = this->vrp->Opt21(flag);*/
-            if (result <= 0)
-                result = this->vrp->Opt22(flag);
-        }
-        // if no more improvements run only 2-opt and 3-opt
-        if (result < 0)
-            optxx = false;
-        if (this->vrp->Opt2())
-            optxx = true;
-        if (this->vrp->Opt3())
-            optxx = true;
-        if (result < 0 && !optxx)
-            break;
-        i++;
-        // partial time
-        std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
-        duration = std::chrono::duration_cast<std::chrono::minutes>(t2 - t1).count();
-    }
-    this->vrp->RouteBalancer();
-    // if no improvements return false;
-    return !(result < 0 && !optxx);
 }
 
 Utils& Controller::GetUtils() const {

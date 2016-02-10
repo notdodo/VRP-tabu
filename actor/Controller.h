@@ -1,7 +1,6 @@
 #ifndef Controller_H
 #define Controller_H
 
-#include "Utils.h"
 #include "VRP.h"
 #include <chrono>
 
@@ -11,8 +10,7 @@ private:
     Controller() {};
     Controller(Controller const&) = delete;
     void operator=(Controller const&) = delete;
-    bool RunOpts(int);
-    bool RunTabuSearch(int);
+    int RunTabuSearch(int);
     int MAX_TIME_MIN;
     int initCost;
     int finalCost;
