@@ -7,6 +7,8 @@
 #include "rapidjson/prettywriter.h" // for stringify JSON PrettyWriter
 #include "rapidjson/error/en.h"
 #include "VRP.h"
+#include "Route.h"
+#include <list>
 
 class VRP;
 class Utils {

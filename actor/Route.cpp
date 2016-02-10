@@ -172,16 +172,16 @@ Route Route::CopyRoute() const {
  * @param[in] c The customer to insert
  */
 bool Route::AddElem(const Customer c) {
-    // in this case 'this' need to be updated
     bool ret = false;
     // the map is sorted by costs
     std::map<int, Route> best;
     Customer depot = this->GetRoute()->front().first;
-    std::list<std::pair<Customer, int>>::iterator it = this->route.begin();
+    std::list<StepType>::iterator it = this->route.begin();
     int iter = 0;
     do {
         int travelCost, costNext, tCost, capac, fallbackCost;
         float workT;
+        // work copy
         Route r = *this;
         it = r.route.begin();
         capac = r.capacity - c.request;
@@ -203,9 +203,9 @@ bool Route::AddElem(const Customer c) {
         // compute next cost and time
         costNext = r.graph.GetCosts(c, it->first).second;
         tCost += costNext;
+        workT -= costNext * r.TRAVEL_COST;
         fallbackCost = r.graph.GetCosts(before, it->first).second;
         tCost -= fallbackCost;
-        workT -= costNext * r.TRAVEL_COST;
         workT += fallbackCost * r.TRAVEL_COST;
         // if the customer is visitable add to route in position 'it'
         if (workT >= 0) {
@@ -487,24 +487,21 @@ void Route::GetUnderAverageCustomers(std::list<Customer> &customers) {
  * @return      The distance from the two routes.
  */
 float Route::GetDistanceFrom(Route r) {
+    if (r == *this)
+        return 0;
     Customer depot = this->route.front().first;
     std::list<StepType>::const_iterator it = this->route.cbegin();
-    float min = std::numeric_limits<float>::max();
+    std::vector<float> min;
     // for each customers of each route (except the depot)
-    for (++it; it != this->route.cend(); ++it) {
-        if (it->first != depot) {
-            std::list<StepType>::iterator ir = r.GetRoute()->begin();
-            for (++ir; ir != r.GetRoute()->end(); ++ir) {
-                if (ir->first != depot) {
-                    // compute the distance and update the min
-                    float v = std::sqrt(std::pow(it->first.x - ir->first.x,2) + std::pow(it->first.y - ir->first.y,2));
-                    if (v < min && v > 0)
-                        min = v;
-                }
-            }
+    for (++it; it->first != this->route.front().first; ++it) {
+        std::list<StepType>::iterator ir = r.GetRoute()->begin();
+        for (++ir; ir->first != r.GetRoute()->front().first; ++ir) {
+            // compute the distance and update the min
+            float v = std::sqrt(std::pow(it->first.x - ir->first.x,2) + std::pow(it->first.y - ir->first.y,2));
+            min.push_back(v);
         }
     }
-    return min;
+    return *min_element(min.begin(), min.end());
 }
 
 /** @brief ###Find a customer in the route
@@ -574,11 +571,13 @@ bool Route::RebuildRoute(std::list<Customer> cust) {
  * @return The value of the assessment.
  */
 float Route::Evaluate() {
-    float percLoad = (float(this->capacity) / this->initialCapacity) * 100;
+    if (this->size() <= 2)
+        return 0;
+    return this->totalCost;
+    /*float percLoad = (float(this->capacity) / this->initialCapacity) * 100;
+    if (this->TRAVEL_COST == 0) {
+        return (std::sqrt(percLoad) * this->totalCost);
+    }
     float percTime = (float(this->workTime) / this->initialWorkTime) * 100;
-    float g = this->totalCost *
-                std::sqrt(
-                    std::pow(percLoad, 2) * std::pow(percTime, 2)
-                );
-    return g * this->ALPHA;
+    return (std::sqrt(percLoad * percTime) * this->totalCost);*/
 }

@@ -18,21 +18,21 @@ private:
     }
 public:
     /** @brief ###Overriding of the "=" operator to assign a customer to another */
-    Customer& operator=(const Customer &c) {
+    /*Customer& operator=(const Customer &c) {
         this->name = c.name;
         this->x = c.x;
         this->y = c.y;
         this->request = c.request;
         this->serviceTime = c.serviceTime;
         return *this;
-    }
+    }*/
     /** @brief ###Overriding '==' operator to evaluate two customers */
     bool operator==(const Customer &c) const {
-        return name == c.name;
+        return name == c.name && x == c.x && y == c.y;
     }
     /** @brief ###Overriding '!=' operator to evaluate two customers */
     bool operator!=(const Customer&c) const {
-        return name != c.name;
+        return x != c.x || y != c.y;
     }
     std::string name;       /**< Name of the customer */
     int x;                  /**< Coordinate X of the customer */

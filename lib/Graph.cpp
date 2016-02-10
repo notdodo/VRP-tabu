@@ -92,7 +92,7 @@ std::multimap<int, Customer> Graph::GetNeighborhood(Customer c) const {
     std::multimap<int, Customer> mm;
     Vertex it = vertexes.find(c)->second;
     for (std::pair<Customer, Edge> edge : it.GetEdges()) {
-		mm.insert(std::pair<int, Customer>(edge.second.weight, edge.first));
+        mm.emplace(std::pair<int, Customer>(edge.second.weight, edge.first));
 	}
     return mm;
 }
