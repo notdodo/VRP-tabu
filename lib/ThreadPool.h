@@ -1,115 +1,153 @@
-/*
-Copyright (c) 2012 Jakob Progsch, Václav Zeman
+#ifndef CONCURRENT_THREADPOOL_H
+#define CONCURRENT_THREADPOOL_H
 
-This software is provided 'as-is', without any express or implied
-warranty. In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-   1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-
-   2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-
-   3. This notice may not be removed or altered from any source
-   distribution.
-*/
-
-#ifndef THREAD_POOL_H
-#define THREAD_POOL_H
-
-// containers
-#include <vector>
-#include <queue>
-// threading
+#include <atomic>
 #include <thread>
 #include <mutex>
-#include <condition_variable>
-#include <atomic>
-#include <future>
-// utility wrappers
-#include <memory>
+#include <array>
+#include <list>
 #include <functional>
-// exceptions
-#include <stdexcept>
+#include <condition_variable>
 
-// std::thread pool for resources recycling
+/**
+ *  Simple ThreadPool that creates `ThreadCount` threads upon its creation,
+ *  and pulls from a queue to get new jobs. The default is 9 threads.
+ *
+ *  This class requires a number of c++11 features be present in your compiler.
+ */
+template <unsigned ThreadCount = 9>
 class ThreadPool {
 
-public:
-    // the constructor just launches some amount of workers
-    ThreadPool(size_t threads_n = std::thread::hardware_concurrency()) : stop(false)
-    {
-        if(!threads_n)
-            throw std::invalid_argument("more than zero threads expected");
+    std::array<std::thread, ThreadCount> threads;
+    std::list<std::function<void(void)>> queue;
 
-        this->workers.reserve(threads_n);
-        for(; threads_n; --threads_n)
-            this->workers.emplace_back(
-                [this] {
-                    while(true) {
-                        std::function<void()> task;
-                        {
-                            std::unique_lock<std::mutex> lock(this->queue_mutex);
-                            this->condition.wait(lock, [this]{ return this->stop || !this->tasks.empty(); });
-                            if(this->stop && this->tasks.empty())
-                                return;
-                            task = std::move(this->tasks.front());
-                            this->tasks.pop();
-                        }
+    std::atomic_int         jobs_left;
+    std::atomic_bool        bailout;
+    std::atomic_bool        finished;
+    std::condition_variable job_available_var;
+    std::condition_variable wait_var;
+    std::mutex              wait_mutex;
+    std::mutex              queue_mutex;
 
-                        task();
-                    }
-                }
-                );
-    }
-    // deleted copy&move ctors&assignments
-    ThreadPool(const ThreadPool&) = delete;
-    ThreadPool& operator=(const ThreadPool&) = delete;
-    ThreadPool(ThreadPool&&) = delete;
-    ThreadPool& operator=(ThreadPool&&) = delete;
-    // add new work item to the pool
-    template<class F, class... Args>
-    std::future<typename std::result_of<F(Args...)>::type> enqueue(F&& f, Args&&... args)
-    {
-        using packaged_task_t = std::packaged_task<typename std::result_of<F(Args...)>::type ()>;
-
-        std::shared_ptr<packaged_task_t> task(new packaged_task_t(
-            std::bind(std::forward<F>(f), std::forward<Args>(args)...)
-            ));
-        auto res = task->get_future();
-        {
-            std::unique_lock<std::mutex> lock(this->queue_mutex);
-            this->tasks.emplace([task](){ (*task)(); });
+    /**
+     *  Take the next job in the queue and run it.
+     *  Notify the main thread that a job has completed.
+     */
+    void Task() {
+        while( !bailout ) {
+            next_job()();
+            --jobs_left;
+            wait_var.notify_one();
         }
-        this->condition.notify_one();
+    }
+
+    /**
+     *  Get the next job; pop the first item in the queue,
+     *  otherwise wait for a signal from the main thread.
+     */
+    std::function<void(void)> next_job() {
+        std::function<void(void)> res;
+        std::unique_lock<std::mutex> job_lock( queue_mutex );
+
+        // Wait for a job if we don't have any.
+        job_available_var.wait( job_lock, [this]() ->bool { return queue.size() || bailout; } );
+
+        // Get job from the queue
+        if( !bailout ) {
+            res = queue.front();
+            queue.pop_front();
+        }
+        else { // If we're bailing out, 'inject' a job into the queue to keep jobs_left accurate.
+            res = []{};
+            ++jobs_left;
+        }
         return res;
     }
-    // the destructor joins all threads
-    virtual ~ThreadPool()
-    {
-        this->stop = true;
-        this->condition.notify_all();
-        for(std::thread& worker : this->workers)
-            worker.join();
-    }
-private:
-    // need to keep track of threads so we can join them
-    std::vector< std::thread > workers;
-    // the task queue
-    std::queue< std::function<void()> > tasks;
 
-    // synchronization
-    std::mutex queue_mutex;
-    std::condition_variable condition;
-    // workers finalization flag
-    std::atomic_bool stop;
+public:
+    ThreadPool()
+        : jobs_left( 0 )
+        , bailout( false )
+        , finished( false )
+    {
+        for( unsigned i = 0; i < ThreadCount; ++i )
+            threads[ i ] = std::move( std::thread( [this,i]{ this->Task(); } ) );
+    }
+
+    /**
+     *  JoinAll on deconstruction
+     */
+    ~ThreadPool() {
+        JoinAll();
+    }
+
+    /**
+     *  Get the number of threads in this pool
+     */
+    inline unsigned Size() const {
+        return ThreadCount;
+    }
+
+    /**
+     *  Get the number of jobs left in the queue.
+     */
+    inline unsigned JobsRemaining() {
+        std::lock_guard<std::mutex> guard( queue_mutex );
+        return queue.size();
+    }
+
+    /**
+     *  Add a new job to the pool. If there are no jobs in the queue,
+     *  a thread is woken up to take the job. If all threads are busy,
+     *  the job is added to the end of the queue.
+     */
+    void AddJob( std::function<void(void)> job ) {
+        std::lock_guard<std::mutex> guard( queue_mutex );
+        queue.emplace_back( job );
+        ++jobs_left;
+        job_available_var.notify_one();
+    }
+
+    /**
+     *  Join with all threads. Block until all threads have completed.
+     *  Params: WaitForAll: If true, will wait for the queue to empty
+     *          before joining with threads. If false, will complete
+     *          current jobs, then inform the threads to exit.
+     *  The queue will be empty after this call, and the threads will
+     *  be done. After invoking `ThreadPool::JoinAll`, the pool can no
+     *  longer be used. If you need the pool to exist past completion
+     *  of jobs, look to use `ThreadPool::WaitAll`.
+     */
+    void JoinAll( bool WaitForAll = true ) {
+        if( !finished ) {
+            if( WaitForAll ) {
+                WaitAll();
+            }
+
+            // note that we're done, and wake up any thread that's
+            // waiting for a new job
+            bailout = true;
+            job_available_var.notify_all();
+
+            for( auto &x : threads )
+                if( x.joinable() )
+                    x.join();
+            finished = true;
+        }
+    }
+
+    /**
+     *  Wait for the pool to empty before continuing.
+     *  This does not call `std::thread::join`, it only waits until
+     *  all jobs have finshed executing.
+     */
+    void WaitAll() {
+        if( jobs_left > 0 ) {
+            std::unique_lock<std::mutex> lk( wait_mutex );
+            wait_var.wait( lk, [this]{ return this->jobs_left == 0; } );
+            lk.unlock();
+        }
+    }
 };
 
-#endif // THREAD_POOL_H
+#endif //CONCURRENT_THREADPOOL_H
