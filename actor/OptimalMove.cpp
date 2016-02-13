@@ -45,7 +45,7 @@ int OptimalMove::Opt10(Routes &routes, bool force) {
     // list of best results from threads
     BestResult best = {{-1, -1}, {*it, *it}};
     // pool of threads
-    ThreadPool<8> pool;
+    ThreadPool pool(this->cores);
     for (int i = 0; it != routes.end(); std::advance(it, 1), ++i) {
         std::list<Route>::const_iterator jt = routes.cbegin();
         for (int j = 0; jt != routes.cend(); std::advance(jt, 1), ++j) {
@@ -102,7 +102,7 @@ int OptimalMove::Opt01(Routes &routes, bool force) {
     int diffCost = -1;
     std::list<Route>::iterator it = routes.begin();
     BestResult best = {{-1, -1}, {*it, *it}};
-    ThreadPool<8> pool;
+    ThreadPool pool(this->cores);
     for (int i = 0; it != routes.end(); std::advance(it, 1), ++i) {
         std::list<Route>::const_iterator jt = routes.cbegin();
         for (int j = 0; jt != routes.cend(); std::advance(jt, 1), ++j) {
@@ -205,7 +205,7 @@ int OptimalMove::Opt11(Routes &routes, bool force) {
     int diffCost = -1;
     std::list<Route>::iterator it = routes.begin();
     BestResult best = {{-1, -1}, {*it, *it}};
-    ThreadPool<8> pool;
+    ThreadPool pool(this->cores);
     for (int i = 0; it != routes.end(); std::advance(it, 1), ++i) {
         std::list<Route>::const_iterator jt = routes.cbegin();
         for (int j = 0; jt != routes.cend(); std::advance(jt, 1), ++j) {
@@ -342,7 +342,7 @@ int OptimalMove::Opt12(Routes &routes, bool force) {
     int diffCost = -1;
     std::list<Route>::iterator it = routes.begin();
     BestResult best = {{-1, -1}, {*it, *it}};
-    ThreadPool<8> pool;
+    ThreadPool pool(this->cores);
     for (int i = 0; it != routes.end(); std::advance(it, 1), ++i) {
         std::list<Route>::const_iterator jt = routes.cbegin();
         for (int j = 0; jt != routes.cend(); std::advance(jt, 1), ++j) {
@@ -458,7 +458,7 @@ int OptimalMove::Opt21(Routes &routes, bool force) {
     int diffCost = -1;
     std::list<Route>::iterator it = routes.begin();
     BestResult best = {{-1, -1}, {*it, *it}};
-    ThreadPool<8> pool;
+    ThreadPool pool(this->cores);
     for (int i = 0; it != routes.end(); std::advance(it, 1), ++i) {
         std::list<Route>::const_iterator jt = routes.cbegin();
         for (int j = 0; jt != routes.cend(); std::advance(jt, 1), ++j) {
@@ -509,7 +509,7 @@ int OptimalMove::Opt22(Routes &routes, bool force) {
     int diffCost = -1;
     std::list<Route>::iterator it = routes.begin();
     BestResult best = {{-1, -1}, {*it, *it}};
-    ThreadPool<8> pool;
+    ThreadPool pool(this->cores);
     for (int i = 0; it != routes.end(); std::advance(it, 1), ++i) {
         std::list<Route>::const_iterator jt = routes.cbegin();
         for (int j = 0; jt != routes.cend(); std::advance(jt, 1), ++j) {
@@ -604,7 +604,7 @@ bool OptimalMove::Opt2(Routes &routes) {
     // for each route
     for (; it != routes.end(); ++it) {
         Route bestRoute = *it;
-        ThreadPool<8> pool;
+        ThreadPool pool(this->cores);
         int bestCost = it->GetTotalCost();
         std::list<StepType>::iterator i = it->GetRoute()->begin();
         std::advance(i, 1);
@@ -698,7 +698,7 @@ bool OptimalMove::Opt3(Routes &routes) {
     // for each route
     for (; it != routes.end(); ++it) {
         Route bestRoute = *it;
-        ThreadPool<8> pool;
+        ThreadPool pool(this->cores);
         int bestCost = it->GetTotalCost();
         std::list<StepType>::iterator i = it->GetRoute()->begin();
         Customer depot = i->first;

@@ -14,6 +14,7 @@ typedef std::pair<std::pair<int, int>, std::pair<Route, Route>> BestResult;
 class OptimalMove {
 private:
 	std::mutex mtx;
+    const unsigned cores;
     Route Opt2Swap(Route, Customer, Customer);
     Route Opt3Swap(Route, Customer, Customer, Customer, Customer);
     float UpdateDistanceAverage(Routes);
@@ -21,7 +22,7 @@ private:
     bool SwapFromTo(Route &, Route &);
     bool AddRemoveFromTo(Route &, Route &, int, int);
 public:
-	OptimalMove() {};
+	OptimalMove(): cores(std::thread::hardware_concurrency()) {};
 	void CleanVoid(Routes &);
 	int Opt10(Routes &, bool);
     int Opt01(Routes &, bool);
