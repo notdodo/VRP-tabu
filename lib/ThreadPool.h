@@ -4,37 +4,36 @@
 #include <atomic>
 #include <thread>
 #include <mutex>
-#include <array>
+#include <vector>
 #include <list>
-#include <functional>
 #include <condition_variable>
 
 /**
- *  Simple ThreadPool that creates `ThreadCount` threads upon its creation,
- *  and pulls from a queue to get new jobs. The default is 9 threads.
+ *  Simple ThreadPool that creates `threadCount` threads and pulls from a queue to get new jobs.
  *
  *  This class requires a number of c++11 features be present in your compiler.
  */
-template <unsigned ThreadCount = 9>
 class ThreadPool {
 
-    std::array<std::thread, ThreadCount> threads;
-    std::list<std::function<void(void)>> queue;
+    unsigned threadCount;
+    std::vector<std::thread> threads;
+    std::list<std::function<void(void)> > queue;
 
-    std::atomic_int         jobs_left;
-    std::atomic_bool        bailout;
-    std::atomic_bool        finished;
+    std::atomic_int jobs_left;
+    std::atomic_bool bailout;
+    std::atomic_bool finished;
     std::condition_variable job_available_var;
     std::condition_variable wait_var;
-    std::mutex              wait_mutex;
-    std::mutex              queue_mutex;
+    std::mutex wait_mutex;
+    std::mutex queue_mutex;
+    std::mutex mtx;
 
     /**
      *  Take the next job in the queue and run it.
      *  Notify the main thread that a job has completed.
      */
     void Task() {
-        while( !bailout ) {
+        while (!bailout) {
             next_job()();
             --jobs_left;
             wait_var.notify_one();
@@ -47,31 +46,34 @@ class ThreadPool {
      */
     std::function<void(void)> next_job() {
         std::function<void(void)> res;
-        std::unique_lock<std::mutex> job_lock( queue_mutex );
+        std::unique_lock<std::mutex> job_lock(queue_mutex);
 
         // Wait for a job if we don't have any.
-        job_available_var.wait( job_lock, [this]() ->bool { return queue.size() || bailout; } );
+        job_available_var.wait(job_lock, [this]()->bool { return queue.size() || bailout; });
 
         // Get job from the queue
-        if( !bailout ) {
+        if (!bailout) {
             res = queue.front();
             queue.pop_front();
         }
-        else { // If we're bailing out, 'inject' a job into the queue to keep jobs_left accurate.
-            res = []{};
+        else {
+            // If we're bailing out, 'inject' a job into the queue to keep jobs_left accurate.
+            res = [] {};
             ++jobs_left;
         }
         return res;
     }
 
 public:
-    ThreadPool()
-        : jobs_left( 0 )
-        , bailout( false )
-        , finished( false )
+    ThreadPool(int c)
+        : threadCount(c)
+        , threads(threadCount)
+        , jobs_left(0)
+        , bailout(false)
+        , finished(false)
     {
-        for( unsigned i = 0; i < ThreadCount; ++i )
-            threads[ i ] = std::move( std::thread( [this,i]{ this->Task(); } ) );
+        for (unsigned i = 0; i < threadCount; ++i)
+            threads[i] = std::move(std::thread([this, i] { this->Task(); }));
     }
 
     /**
@@ -84,15 +86,15 @@ public:
     /**
      *  Get the number of threads in this pool
      */
-    inline unsigned Size() const {
-        return ThreadCount;
+    inline unsigned Size() const{
+        return threadCount;
     }
 
     /**
      *  Get the number of jobs left in the queue.
      */
     inline unsigned JobsRemaining() {
-        std::lock_guard<std::mutex> guard( queue_mutex );
+        std::lock_guard<std::mutex> guard(queue_mutex);
         return queue.size();
     }
 
@@ -101,9 +103,9 @@ public:
      *  a thread is woken up to take the job. If all threads are busy,
      *  the job is added to the end of the queue.
      */
-    void AddJob( std::function<void(void)> job ) {
-        std::lock_guard<std::mutex> guard( queue_mutex );
-        queue.emplace_back( job );
+    void AddJob(std::function<void(void)> job) {
+        std::lock_guard<std::mutex> guard(queue_mutex);
+        queue.emplace_back(job);
         ++jobs_left;
         job_available_var.notify_one();
     }
@@ -118,19 +120,22 @@ public:
      *  longer be used. If you need the pool to exist past completion
      *  of jobs, look to use `ThreadPool::WaitAll`.
      */
-    void JoinAll( bool WaitForAll = true ) {
-        if( !finished ) {
-            if( WaitForAll ) {
+    void JoinAll(bool WaitForAll = true) {
+        std::lock_guard<std::mutex> lock(mtx);
+        if (!finished) {
+            if (WaitForAll) {
                 WaitAll();
             }
 
             // note that we're done, and wake up any thread that's
             // waiting for a new job
+            std::unique_lock<std::mutex> lk(queue_mutex);
             bailout = true;
             job_available_var.notify_all();
+            lk.unlock();
 
-            for( auto &x : threads )
-                if( x.joinable() )
+            for (auto& x : threads)
+                if (x.joinable())
                     x.join();
             finished = true;
         }
@@ -142,9 +147,9 @@ public:
      *  all jobs have finshed executing.
      */
     void WaitAll() {
-        if( jobs_left > 0 ) {
-            std::unique_lock<std::mutex> lk( wait_mutex );
-            wait_var.wait( lk, [this]{ return this->jobs_left == 0; } );
+        if (jobs_left > 0) {
+            std::unique_lock<std::mutex> lk(wait_mutex);
+            wait_var.wait(lk, [this] { return this->jobs_left == 0; });
             lk.unlock();
         }
     }
