@@ -29,8 +29,7 @@
  * @param[in] alphaParam Alpha parameter for router evaluation.
  */
 VRP::VRP(const Graph &g, const int n, const int v, const int c, const float t, const bool flagTime,
-        const float costTravel, const float alphaParam) {
-    this->graph = g;
+        const float costTravel, const float alphaParam) : graph(g) {
     this->numVertices = n;
     this->vehicles = v;
     this->capacity = c;
@@ -56,10 +55,55 @@ VRP::VRP(const Graph &g, const int n, const int v, const int c, const float t, c
  *  the capacity or the working time a new route is created.
  *  @return Error or Warning code.
  */
+
 int VRP::InitSolutions() {
-    std::random_device rd;
-    std::mt19937 g(rd());
-    int start;
+    // Create the best solution (i.e. E-n51-k5)
+    /*Map dist = this->graph.sortV0();
+    Customer depot = dist.cbegin()->second;
+    std::set<Customer> custs;
+    for (auto &e : dist)
+        custs.emplace(e.second);
+    this->CreateBest(custs, {5, 49, 10, 39, 33, 45, 15, 44, 37, 17, 12}, depot);
+    this->CreateBest(custs, {47, 4, 42, 19, 40, 41, 13, 18}, depot);
+    this->CreateBest(custs, {46, 32, 1, 22, 20, 35, 36, 3, 28, 31, 26, 8}, depot);
+    this->CreateBest(custs, {6, 14, 25, 24, 43, 7, 23, 48, 27}, depot);
+    this->CreateBest(custs, {11, 16, 2, 29, 21, 50, 34, 30, 9, 38}, depot);*/
+
+    int best = 0, ret = 0;
+    std::list<Route> b;
+    for (int i = 0; i < this->numVertices -1; i++) {
+        int r = this->init(i);
+        int cost = this->GetTotalCost();
+        if (best == 0 || cost < best) {
+            b = this->routes;
+            best = cost;
+            ret = r;
+        }
+    }
+    this->routes = b;
+    return ret;
+}
+
+void VRP::CreateBest(std::set<Customer> custs, std::list<int> best, Customer depot) {
+    Route v(this->capacity, this->workTime, this->graph, this->costTravel, this->alphaParam);
+    auto it = custs.cbegin();
+    auto from = custs.cbegin();
+    std::advance(it, best.front());
+    v.Travel(depot, *it);
+    best.erase(best.begin());
+    for (auto e : best) {
+        from = it;
+        it = custs.cbegin();
+        std::advance(it, e);
+        v.Travel(*from, *it);
+    }
+    v.CloseTravel(*it);
+    this->routes.push_back(v);
+}
+
+
+int VRP::init(int start) {
+    this->routes.clear();
     Customer depot, last;
     // the iterator for the sorted customer
     Map::const_iterator it;
@@ -68,16 +112,11 @@ int VRP::InitSolutions() {
     /* get the depot and remove it from the map */
     depot = dist.cbegin()->second;
     dist.erase(dist.cbegin());
-    /* choosing a random customer, from 0 to numVertices-1 */
-    //start = rand() % (this->numVertices-1);
-    std::uniform_int_distribution<int> dis(0, (this->numVertices - 2));
-    start = dis(g);
-    Utils::Instance().logger(std::to_string(start), Utils::VERBOSE);
     it = dist.cbegin();
     std::advance(it, start);
     // for each customer try to insert it in a route, otherwise create a new route
     while(!dist.empty()) {
-        bool stop = true;
+        bool stop = false;
         // create an empty route
         Route v(this->capacity, this->workTime, this->graph, this->costTravel, this->alphaParam);
         Customer from, to;
@@ -87,11 +126,11 @@ int VRP::InitSolutions() {
 		// if one customer is left add it to route
         if (dist.size() == 1) {
             v.CloseTravel(it->second);
-            stop = false;
+            stop = true;
             dist.clear();
         }
         // while the route is not empty
-        while (stop) {
+        while (!stop) {
             from = it->second;
             Map::const_iterator fallback = it;
             ++it;
@@ -100,7 +139,7 @@ int VRP::InitSolutions() {
             to = it->second;
             // add path from 'from' to 'to'
             if(from != to && !v.Travel(from, to)) {
-                stop = false;
+                stop = true;
                 // if cannot add the customer try to close the route
                 if (!v.CloseTravel(from, depot))
                     v.CloseTravel(from);
@@ -108,11 +147,81 @@ int VRP::InitSolutions() {
             }else if (dist.size() == 1) {
                 if (!v.CloseTravel(to, depot))
                     v.CloseTravel(from);
-                stop = false;
+                stop = true;
             }
             dist.erase(fallback);
         }
         this->routes.push_back(v);
+        it = dist.cbegin();
+    }
+    int j = 0;
+    if (this->routes.size() < (unsigned)this->vehicles)
+        j = -1;
+    else if (this->routes.size() == (unsigned)this->vehicles)
+        j = 0;
+    else
+        j = 1;
+    return j;
+}
+
+/** @brief ###This function creates the initial solution.
+ *
+ *  This function creates the initial solution of the algorithm.
+ *  Starting from the depot it creates the routes from an iterated local search
+ *  for each customer. Whenever the insertion of a customer would lead to a violation
+ *  of the capacity of the working time a new route is created.
+ *  @return Error or Warning code.
+ */
+int VRP::InitSolutionsNeigh() {
+    // distances of customers sorted from depot
+    Map dist = this->graph.sortV0();
+    // get the depot and remove it from the map
+    Customer depot = dist.cbegin()->second;
+    Customer from, to;
+    dist.erase(dist.cbegin());
+    std::set<Customer> done;
+    done.emplace(depot);
+    // the customer closer to the depot
+    auto it = dist.cbegin();
+    while((int)done.size() < this->numVertices) {
+        bool stop = false;
+        Route v(this->capacity, this->workTime, this->graph, this->costTravel, this->alphaParam);
+        while(done.find(it->second) != done.end()) {
+            ++it;
+        }
+        to = it->second;
+        if (!v.Travel(depot, to))
+            throw std::runtime_error("Customer unreachable!!");
+        while (!stop) {
+            from = to;
+            // find the closer customer to it->second
+            auto neigh = this->graph.GetNeighborhood(from);
+            auto neighit = neigh.begin();
+            if ((int)done.size() == this->numVertices - 1) {
+                /*if (!v.CloseTravel(from, depot)) {
+                    v.CloseTravel(from);
+                }else
+                    done.emplace(from);*/
+                break;
+            }
+            // take the next customer, the nearest
+            while(done.find(neighit->second) != done.end()) {
+                ++neighit;
+            }
+            to = neighit->second;
+            // add path from 'from' to 'to'
+            if(!v.Travel(from, to)) {
+                stop = true;
+            }else {
+                done.emplace(from);
+            }
+        }
+        // if cannot add the customer try to close the route
+        if (!v.CloseTravel(from, depot)) {
+            v.CloseTravel(from);
+        }else
+            done.emplace(from);
+        this->routes.emplace_back(v);
     }
     int j = 0;
     if (this->routes.size() < (unsigned)this->vehicles)
@@ -125,9 +234,15 @@ int VRP::InitSolutions() {
     return j;
 }
 
-void VRP::RunTabuSearch() {
+/* @brief ###Run the tabu search function.
+ *
+ * Run the basic function of this algorithm.
+ * @param[in] times Iteration condition.
+ */
+void VRP::RunTabuSearch(int times) {
+    if(!this->CheckIntegrity()) throw std::runtime_error("WTF!?");
     TabuSearch s(this->graph, this->numVertices);
-    s.Tabu(this->routes);
+    s.Tabu(this->routes, times);
 }
 
 /** @brief ###Run optimal functions.
@@ -140,7 +255,7 @@ void VRP::RunTabuSearch() {
  */
 bool VRP::RunOpts(int times, bool flag) {
     OptimalMove opt;
-    int i = 0, duration = 0, result;
+    int i = 0, duration = 0, result, last = 0;
     bool optxx = true;
     // start time
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
@@ -170,6 +285,14 @@ bool VRP::RunOpts(int times, bool flag) {
         if (result < 0 && !optxx)
             break;
         i++;
+        if (flag) flag = false;
+        int partialCost = this->GetTotalCost();
+        if (partialCost == last) {
+            Utils::Instance().logger("Loop detected", Utils::VERBOSE);
+            flag = true;
+        }else {
+            partialCost = last;
+        }
         // partial time
         std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
         duration = std::chrono::duration_cast<std::chrono::minutes>(t2 - t1).count();

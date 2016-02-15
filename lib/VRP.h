@@ -29,7 +29,10 @@ public:
     VRP() {};			                                                                                  //!< constructor
     VRP(const Graph &, const int, const int, const int, const float, const bool, const float, const float); //!< constructor
     int InitSolutions();
-    void RunTabuSearch();
+    void CreateBest(std::set<Customer>, std::list<int>, Customer);
+    int init(int);
+    int InitSolutionsNeigh();
+    void RunTabuSearch(int);
     bool RunOpts(int, bool);
     int GetTotalCost();
     int GetNumberOfCustomers() const;
