@@ -565,7 +565,7 @@ void OptimalMove::RouteBalancer(Routes &routes) {
     Routes::const_iterator it = routes.cbegin();
     BestResult best = {{-1, -1}, {*it, *it}};
     for (int i = 0; it != routes.cend(); std::advance(it, 1), ++i) {
-        if (it->size() == 3 && it->size() == 4) {
+        if (it->size() == 3 || it->size() == 4) {
             Routes::const_iterator jt = routes.cbegin();
             for (int j = 0; jt != routes.cend(); std::advance(jt, 1), ++j) {
                 if (jt != it && jt->size() > 3) {
