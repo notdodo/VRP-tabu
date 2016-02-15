@@ -189,7 +189,7 @@ bool Route::AddElem(const Customer c) {
         if (capac <= 0 || workT <= 0) break;
         tCost = r.totalCost;
         std::advance(it, iter);
-        if (it == this->route.cend()) break;
+        //if (it == this->route.cend()) break;
         Customer before = it->first;
         travelCost = r.graph.GetCosts(before, c).second;
         workT -= travelCost * r.TRAVEL_COST;
@@ -215,7 +215,7 @@ bool Route::AddElem(const Customer c) {
             r.route.insert(it, {c, costNext});
             best.insert({r.GetTotalCost(), r});
         }
-    }while (it != this->route.cend() && (unsigned)iter < this->route.size());
+    }while (it != this->route.cend() && (unsigned)iter < (this->route.size() - 1));
     // if the route is changed return the best match
     if (best.size() > 0) {
         *this = (*best.begin()).second;
@@ -279,7 +279,7 @@ bool Route::AddElem(const std::list<Customer> &custs) {
         std::advance(it, 1);
         iter++;
         // if end of route, stop
-        if (iter == r.size()) break;
+        //if (iter == r.size()) break;
         // compute next cost and time
         Customer nextCustomer = it->first;
         costNext = r.graph.GetCosts(lastList, nextCustomer).second;
@@ -306,7 +306,7 @@ bool Route::AddElem(const std::list<Customer> &custs) {
             }
             best.insert({r.GetTotalCost(), r});
         }
-    }while (it != this->route.cend() && (unsigned)iter < this->route.size());
+    }while (it != this->route.cend() && (unsigned)iter < (this->route.size() - 1));
     // if the route is changed return the best match
     if (best.size() > 0) {
         *this = (*best.begin()).second;
@@ -411,7 +411,7 @@ bool Route::AddElem(const Customer c, const Customer rem) {
         std::advance(it, 1);
         iter++;
         // if end of route, stop
-        if (iter == r.size()) break;
+        //if (iter == r.size()) break;
         // compute next cost and time
         costNext = r.graph.GetCosts(c, it->first).second;
         tCost += costNext;
@@ -427,7 +427,7 @@ bool Route::AddElem(const Customer c, const Customer rem) {
             r.route.insert(it, {c, costNext});
             best.insert({r.totalCost, r});
         }
-    }while (it != this->route.cend() && (unsigned)iter < this->route.size());
+    }while (it != this->route.cend() && (unsigned)iter < (this->route.size() - 1));
     // if the route is changed return the best match
     if (best.size() > 0) {
         *this = (*best.begin()).second;

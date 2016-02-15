@@ -39,7 +39,7 @@ public:
     int y;                  /**< Coordinate Y of the customer */
     int request;            /**< Quantity request from the customer */
     int serviceTime;        /**< Time for serving the customer */
-    Customer() {}           //!< Constructor
+    Customer() {};          //!< Constructor
     Customer(std::string n, int x , int y , int r, int t): name(n), x(x), y(y), request(r), serviceTime(t) {}    //!< Constructor
     Customer(std::string n, int x, int y): name(n), x(x), y(y), request(0), serviceTime(0) {}                    //!< Constructor
     ~Customer();            //!< Destructor

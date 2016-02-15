@@ -74,10 +74,10 @@ std::multimap<int, Customer> Graph::sortV0() {
     // get depot
     Customer c = vertexes.begin()->first;
     // insert the depot
-    v.insert(std::pair<int, Customer>(0, c));
+    v.emplace(std::pair<int, Customer>(0, c));
     Vertex it = vertexes.find(c)->second;
     for (auto &edge : it.GetEdges()) {
-        v.insert(std::pair<int, Customer>(edge.second.weight, edge.first));
+        v.emplace(std::pair<int, Customer>(edge.second.weight, edge.first));
     }
     return v;
 }
@@ -91,8 +91,10 @@ std::multimap<int, Customer> Graph::sortV0() {
 std::multimap<int, Customer> Graph::GetNeighborhood(Customer c) const {
     std::multimap<int, Customer> mm;
     Vertex it = vertexes.find(c)->second;
+    Customer depot = vertexes.begin()->first;
     for (std::pair<Customer, Edge> edge : it.GetEdges()) {
-        mm.emplace(std::pair<int, Customer>(edge.second.weight, edge.first));
+        if (edge.first != depot)
+            mm.emplace(std::pair<int, Customer>(edge.second.weight, edge.first));
 	}
     return mm;
 }
