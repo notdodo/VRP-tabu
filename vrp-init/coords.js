@@ -40,7 +40,7 @@ $(function() {
 
     // item of vertex array
     var item = {
-            name: "v0",
+            name: "V0",
             x: 0,
             y: 0
     };
@@ -75,8 +75,12 @@ $(function() {
                 var cust = id + $.strPad(x, 4) + "; " + $.strPad(y, 4) + "<br/>";
                 clicks.innerHTML += cust;
                 drawCustomer(i, evt.e);
+                if (parseInt(i, 10) < 10)
+                    var n = "V0" + i;
+                else
+                    var n = "V" + i;
                 var item = {
-                    name: "v" + i,
+                    name: n,
                     x: x,
                     y: y
                 };
@@ -114,7 +118,6 @@ function loadJSON() {
         xobj.send(null);
     }
  }
-
 
 var blob = new Blob(["self.onmessage = function(event) { postMessage(event.data); }"], {type: 'application/javascript'});
 var worker = new Worker(URL.createObjectURL(blob));
@@ -310,7 +313,10 @@ function parseCustomer(cs) {
             a.clientY -= rect.top;
             a.request = cs.vertices[c].request;
             a.time = cs.vertices[c].time;
-			a.name = "V" + i;
+            if (parseInt(i, 10) < 10)
+                a.name = "V0" + i;
+            else
+			 a.name = "V" + i;
             var id = "<span class='num'>" + "V<sub>" + i + "</sub>" + "</span> ";
             var app = id + $.strPad(cs.vertices[c].x, 4) + "; " +
             $.strPad(cs.vertices[c].y, 4) + "<br/>";
@@ -358,6 +364,7 @@ function drawRoutes(rs) {
         for (var c in rs[h]) {
             index = rs[h][c].replace(/[^\d\.\-]/g, '');
             if (index !== 0) {
+                index = parseInt(index, 10);
                 var x = vertex[index].clientX - 2;
                 var y = vertex[index].clientY - 3;
                 step += x + " " + y + " L ";
@@ -561,9 +568,12 @@ function convertFile(data) {
                 item = "";
                 X = parseInt(data[i].split(" ")[1].trim()) - xDepot;
                 Y = parseInt(data[i].split(" ")[2].trim()) - yDepot;
-                console.log(X, Y);
+                if (iCustomer + 1 < 10)
+                    var n = "V0" + (iCustomer + 1);
+                else
+                    var n = "V" + (iCustomer + 1);
                 item = {
-                    "name" : "V" + (iCustomer + 1),
+                    "name" : n,
                     "x": X,
                     "y": Y,
                     "request": 0,
