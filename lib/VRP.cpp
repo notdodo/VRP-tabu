@@ -46,16 +46,7 @@ VRP::VRP(const Graph &g, const int n, const int v, const int c, const float t, c
     this->averageDistance = 0;
 }
 
-/** @brief ###This function creates the routes.
- *
- *  This function creates the initial solution of the algorithm.
- *  Customers are sorted in increasing order of distance from the depot.
- *  Starting with a random customer the route is created inserting one customer
- *  at time. Whenever the insertion of the customer would lead to a violation of
- *  the capacity or the working time a new route is created.
- *  @return Error or Warning code.
- */
-
+/** @brief ###This function creates the routes. */
 int VRP::InitSolutions() {
     // Create the best solution (i.e. E-n51-k5)
     /*Map dist = this->graph.sortV0();
@@ -84,6 +75,14 @@ int VRP::InitSolutions() {
     return ret;
 }
 
+/** @brief ###Create a personalize routes.
+ *
+ * From a list of indexes of customers creates the route.
+ * Created for testing a visualizing the best routes for a known problem.
+ * @param[in] custs Set of all customers
+ * @param[in] best  List of ordered customer forming the route
+ * @param[in] depot The depot
+ */
 void VRP::CreateBest(std::set<Customer> custs, std::list<int> best, Customer depot) {
     Route v(this->capacity, this->workTime, this->graph, this->costTravel, this->alphaParam);
     auto it = custs.cbegin();
@@ -101,7 +100,15 @@ void VRP::CreateBest(std::set<Customer> custs, std::list<int> best, Customer dep
     this->routes.push_back(v);
 }
 
-
+/** @brief ###This function creates the routes.
+ *
+ *  This function creates the initial solution of the algorithm.
+ *  Customers are sorted in increasing order of distance from the depot.
+ *  Starting with a random customer the route is created inserting one customer
+ *  at time. Whenever the insertion of the customer would lead to a violation of
+ *  the capacity or the working time a new route is created.
+ *  @return Error or Warning code.
+ */
 int VRP::init(int start) {
     this->routes.clear();
     Customer depot, last;
@@ -167,7 +174,7 @@ int VRP::init(int start) {
 /** @brief ###This function creates the initial solution.
  *
  *  This function creates the initial solution of the algorithm.
- *  Starting from the depot it creates the routes from an iterated local search
+ *  Starting from the depot it creates the routes running an iterated local search
  *  for each customer. Whenever the insertion of a customer would lead to a violation
  *  of the capacity of the working time a new route is created.
  *  @return Error or Warning code.
@@ -311,7 +318,7 @@ void VRP::UpdateBest() {
     for (auto e : this->bestRoutes)
         tCost += e.GetTotalCost();
     this->GetTotalCost();
-    if (this->totalCost < tCost || tCost == 0) {
+    if (this->totalCost <= tCost || tCost == 0) {
         this->bestRoutes.clear();
         std::copy(this->routes.cbegin(), this->routes.cend(), std::back_inserter(this->bestRoutes));
         Utils::Instance().SaveResult(this->bestRoutes);
