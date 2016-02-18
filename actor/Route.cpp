@@ -511,11 +511,8 @@ float Route::GetDistanceFrom(Route r) {
  * @param[in] c The customer to search for
  * @return The result
  */
-bool Route::FindCustomer(const Customer &c) {
-	auto findIter = std::find_if(this->route.begin(), this->route.end(),
-			[c](StepType &e) {
-				return e.first == c;
-			});
+bool Route::FindCustomer(const Customer c) {
+	auto findIter = std::find_if(this->route.begin(), this->route.end(), [c](const auto e) { return e.first == c; });
     return findIter != this->route.end();
 }
 
@@ -576,8 +573,8 @@ float Route::Evaluate() {
     return this->totalCost;
     /*float percLoad = (float(this->capacity) / this->initialCapacity) * 100;
     if (this->TRAVEL_COST == 0) {
-        return (std::sqrt(percLoad) * this->totalCost);
+        return (std::sqrt(percLoad) / this->totalCost) * 100;
     }
     float percTime = (float(this->workTime) / this->initialWorkTime) * 100;
-    return (std::sqrt(percLoad * percTime) * this->totalCost);*/
+    return (std::sqrt(percLoad * percTime) / this->totalCost) * 100;*/
 }

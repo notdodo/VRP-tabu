@@ -32,7 +32,7 @@ void Controller::Init(int argc, char **argv, float costTravel, float alphaParam,
     Utils &u = this->GetUtils();
     u.logger("Initializing...", u.INFO);
     this->vrp = Utils::Instance().InitParameters(argc, argv, costTravel, alphaParam);
-    int res = this->vrp->InitSolutions();
+    int res = this->vrp->InitSolutionsNeigh();
     switch (res) {
         case -1:
             u.logger("You need less vehicles.", u.WARNING);
@@ -57,7 +57,7 @@ void Controller::RunVRP() {
 	int timeOpts = customers, iteration = customers;
     // number of opt functions executions
 	if (customers > 60){
-		timeOpts = customers / 5;
+		timeOpts = customers / 4;
     }else
 		timeOpts *= 0.50;
     int noimprov = 0, duration = 0, last = 0, prelast = 0;
@@ -66,13 +66,15 @@ void Controller::RunVRP() {
     // run the routines for 'customers' times or stop if no improvement or duration is more than MAX_TIME
     for (int i = 0; i < iteration && noimprov < 5 && duration <= this->MAX_TIME_MIN; i++) {
         bool opt, optflag = false;
-        int ts = this->RunTabuSearch(1);
-        if (abs(ts) == last || ts == prelast) {
+        int ts = this->RunTabuSearch(10);
+        if (ts < 0)
+            optflag = true;
+        if (ts == -last || ts == prelast || ts == 0) {
             optflag = true;
             noimprov++;
         }else {
-            prelast = abs(last);
-            last = abs(ts);
+            prelast = last;
+            last = ts;
         }
         Utils::Instance().logger("Starting opt", Utils::VERBOSE);
         opt = this->vrp->RunOpts(timeOpts, optflag);
@@ -101,9 +103,7 @@ void Controller::RunVRP() {
 int Controller::RunTabuSearch(int times) {
     int initCost = this->vrp->GetTotalCost();
     Utils::Instance().logger("Starting Tabu Search", Utils::VERBOSE);
-    for (int k = 0; k < times; ++k) {
-        this->vrp->RunTabuSearch();
-    }
+    this->vrp->RunTabuSearch(times);
     int diffCost = initCost - this->vrp->GetTotalCost();
     if (diffCost != 0) {
         Utils::Instance().logger("Tabu Search improved: " + std::to_string(diffCost), Utils::VERBOSE);

@@ -98,7 +98,7 @@ public:
     float GetAverageCost() const;
     void GetUnderAverageCustomers(std::list<Customer> &);
     float GetDistanceFrom(Route);
-	bool FindCustomer(const Customer &);
+	bool FindCustomer(const Customer);
     bool RebuildRoute(std::list<Customer>);
     float Evaluate();
 };
