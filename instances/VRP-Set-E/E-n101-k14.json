@@ -8,63 +8,63 @@
             "y": 0
         },
         {
-            "name": "V1",
+            "name": "V01",
             "x": 6,
             "y": 14,
             "request": 10,
             "time": 0
         },
         {
-            "name": "V2",
+            "name": "V02",
             "x": 0,
             "y": -18,
             "request": 7,
             "time": 0
         },
         {
-            "name": "V3",
+            "name": "V03",
             "x": 20,
             "y": 10,
             "request": 13,
             "time": 0
         },
         {
-            "name": "V4",
+            "name": "V04",
             "x": 20,
             "y": -15,
             "request": 19,
             "time": 0
         },
         {
-            "name": "V5",
+            "name": "V05",
             "x": -20,
             "y": -5,
             "request": 26,
             "time": 0
         },
         {
-            "name": "V6",
+            "name": "V06",
             "x": -10,
             "y": -5,
             "request": 3,
             "time": 0
         },
         {
-            "name": "V7",
+            "name": "V07",
             "x": -15,
             "y": 15,
             "request": 5,
             "time": 0
         },
         {
-            "name": "V8",
+            "name": "V08",
             "x": -25,
             "y": 8,
             "request": 9,
             "time": 0
         },
         {
-            "name": "V9",
+            "name": "V09",
             "x": 20,
             "y": 25,
             "request": 16,
@@ -708,7 +708,7 @@
             "time": 0
         }
     ],
-    "vehicles": 15,
+    "vehicles": 18,
     "capacity": 112,
     "worktime": 101,
     "costs": [
