@@ -27,7 +27,7 @@
 void TabuSearch::Tabu(Routes &routes, int times) {
     unsigned MAX = 100;
     // 0.80 530
-    float TABUTIME = this->numCustomers * 0.70;
+    float TABUTIME = this->numCustomers * 0.80;
     // number of neighbors to consider
     int N = (int)(this->numCustomers / routes.size());
     // copy all routes in a local list
