@@ -3,39 +3,29 @@
 
 #include "Route.h"
 #include "Customer.h"
+#include <forward_list>
 
-typedef std::pair<Customer, Route> TabuKey;
+// insert the customer in the i-th route
+typedef std::pair<std::pair<Customer, int>, int> Move;
+// list of tabu moves: the customer inserted in i-th route from the k-th route
+typedef std::pair<Move, float> TabuElement;
 
 class TabuList {
 private:
-	/** @brief overriding of the "<<" operator to print the list, for debugging */
-    friend std::ostream& operator<<(std::ostream& out, const TabuList &l) {
-        if (l.tabulist.size() > 0) {
-        	for (auto i : l.tabulist) {
-        		out << "{ " << std::setw(3) << i.first.first << ", " << i.first.second << " }, " << i.second << std::endl;
-        	};
-        };
-        return out;
-    }
-	/** @brief Function for ordering the elements inside the std::map */
-	struct tabucomp {
-  		bool operator() (const TabuKey& lhs, const TabuKey& rhs) const {
-  			if (lhs.first == rhs.first) {
-  				return lhs.second.GetTotalCost() < rhs.second.GetTotalCost();
-  			} else
-  				return lhs.first < rhs.first;
-  		};
-	};
-	std::map<TabuKey, float, tabucomp> tabulist; 	/**< List of all tabu moves*/
-	int ASPIRATION_FACTOR;					              /**< Aspiration factor of moves */
+	std::forward_list<TabuElement> tabulist;			/**< List of all tabu moves */
+	std::vector<TabuElement> bestMoves;
+	unsigned size = 7;
+	void FlushTabu();
 public:
-  TabuList() {};
-	TabuList(const float);   			                //! constructor
-  int size() const;
-	void AddElement(TabuKey, float);
+	TabuList() {};
+	TabuList(int n) : size(n) {};
+	void IncrementSize();
+	void DecrementSize();
+	void AddTabu(Move, int);
+	void RemoveTabu(Move);
 	void Clean();
-	void FlushList();
-	bool Find(TabuKey) const;
+	bool Find(Move) const;
+	float Check(Move) const;
 };
 
 #endif /* TabuList_H */

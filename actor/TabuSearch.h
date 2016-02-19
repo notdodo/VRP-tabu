@@ -13,15 +13,14 @@ class TabuSearch {
 private:
 	Graph graph;
 	TabuList tabulist;          /**< List of all tabu moves */
-	int numCustomers;
+	int numCustomers;			/**< Number of customers */
 	float fitness;
-    float lambda = 0.00011f;
+    float lambda = 0.0001f;     /**< Parameter for penalization of moves */
     int FindRouteFromCustomer(Customer, Routes);
     float Evaluate(Routes);
-    std::pair<Routes, float> IteratedLocalSearch(Routes &, int);
 public:
 	TabuSearch(const Graph &g, const int n) : graph(g), numCustomers(n) {};
-	void Tabu(Routes &);
+	void Tabu(Routes &, int);
 };
 
 #endif /* TabuSearch_H */
