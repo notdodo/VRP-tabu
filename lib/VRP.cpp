@@ -230,6 +230,7 @@ int VRP::InitSolutionsNeigh() {
             done.emplace(from);
         this->routes.emplace_back(v);
     }
+    Utils::Instance().logger("Routes created", Utils::VERBOSE);
     int j = 0;
     if (this->routes.size() < (unsigned)this->vehicles)
         j = -1;
@@ -237,7 +238,6 @@ int VRP::InitSolutionsNeigh() {
         j = 0;
     else
         j = 1;
-    Utils::Instance().logger("Routes created", Utils::VERBOSE);
     return j;
 }
 
@@ -247,7 +247,6 @@ int VRP::InitSolutionsNeigh() {
  * @param[in] times Iteration condition.
  */
 void VRP::RunTabuSearch(int times) {
-    if(!this->CheckIntegrity()) throw std::runtime_error("WTF!?");
     TabuSearch s(this->graph, this->numVertices);
     s.Tabu(this->routes, times);
 }
@@ -313,7 +312,7 @@ bool VRP::RunOpts(int times, bool flag) {
  *
  * Finds out if the actual configuration is the best and save it.
  */
-void VRP::UpdateBest() {
+bool VRP::UpdateBest() {
     int tCost = 0;
     for (auto e : this->bestRoutes)
         tCost += e.GetTotalCost();
@@ -321,8 +320,9 @@ void VRP::UpdateBest() {
     if (this->totalCost <= tCost || tCost == 0) {
         this->bestRoutes.clear();
         std::copy(this->routes.cbegin(), this->routes.cend(), std::back_inserter(this->bestRoutes));
-        Utils::Instance().SaveResult(this->bestRoutes);
+        return true;
     }
+    return false;
 }
 
 /** @brief ###Sort the list of routes by cost.

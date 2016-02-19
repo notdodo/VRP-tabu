@@ -38,7 +38,7 @@ public:
     int GetNumberOfCustomers() const;
     std::list<Route>* GetRoutes();
 	std::list<Route>* GetBestRoutes();
-	void UpdateBest();
+	bool UpdateBest();
 	~VRP();						//!< destructor
 };
 

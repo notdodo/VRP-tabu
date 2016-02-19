@@ -42,6 +42,9 @@ VRP* Utils::InitParameters(int argc, char **argv, const float costTravel, const 
         fileIndex = 2;
     }
     /* open the file */
+    std::string file(argv[fileIndex]);
+    std::size_t found = file.find_last_of("/\\");
+    this->filename = file.substr(found+1);
     FILE *fp = fopen(argv[fileIndex], "r");
     if (fp == NULL) {
         if (argc == 3)
@@ -126,8 +129,9 @@ VRP* Utils::InitParameters(int argc, char **argv, const float costTravel, const 
  * Saves the routes into the input JSON file.
  * @param[in] routes The routes list to save to the file
  */
-void Utils::SaveResult(const std::list<Route> routes) {
-    FILE *fp = fopen("vrp-init/output.json", "w");
+void Utils::SaveResult(const std::list<Route> routes, int t) {
+    std::string path = "vrp-init/" + this->filename;
+    FILE *fp = fopen(path.c_str(), "w");
     if (fp != NULL) {
         char writeBuffer[65536];
         rapidjson::FileWriteStream os(fp, writeBuffer, sizeof(writeBuffer));
@@ -135,6 +139,7 @@ void Utils::SaveResult(const std::list<Route> routes) {
         rapidjson::Document::AllocatorType &allocator = this->d.GetAllocator();
         rapidjson::Value route(rapidjson::kArrayType);
         rapidjson::Value totalCosts(rapidjson::kArrayType);
+        rapidjson::Value timeExec(t);
         // for each route
         for (Route routeElem : routes) {
             rapidjson::Value r(rapidjson::kArrayType);
@@ -149,6 +154,7 @@ void Utils::SaveResult(const std::list<Route> routes) {
         }
         d.AddMember("routes", route, allocator);
         d.AddMember("costs", totalCosts, allocator);
+        d.AddMember("time", timeExec, allocator);
         d.Accept(writer);
         fclose(fp);
     }else {

@@ -28,6 +28,7 @@
  * @param[in] max_time Maximum execution time in minutes.
  */
 void Controller::Init(int argc, char **argv, float costTravel, float alphaParam, int max_time) {
+    this->startTime = std::chrono::high_resolution_clock::now();
     this->MAX_TIME_MIN = max_time;
     Utils &u = this->GetUtils();
     u.logger("Initializing...", u.INFO);
@@ -67,11 +68,8 @@ void Controller::RunVRP() {
     for (int i = 0; i < iteration && noimprov < 5 && duration <= this->MAX_TIME_MIN; i++) {
         bool opt, optflag = false;
         int ts = this->RunTabuSearch(10);
-        if (ts < 0)
+        if (ts == -last || (ts == prelast && ts < 0) || ts <= 0) {
             optflag = true;
-        if (ts == -last || ts == prelast || ts == 0) {
-            optflag = true;
-            noimprov++;
         }else {
             prelast = last;
             last = ts;
@@ -79,7 +77,6 @@ void Controller::RunVRP() {
         Utils::Instance().logger("Starting opt", Utils::VERBOSE);
         opt = this->vrp->RunOpts(timeOpts, optflag);
         optflag = false;
-		this->vrp->UpdateBest();
         if (ts == 0 && !opt)
             noimprov++;
         else
@@ -89,6 +86,8 @@ void Controller::RunVRP() {
         duration = std::chrono::duration_cast<std::chrono::minutes>(t2 - t1).count();
 		Utils::Instance().logger("PARTIAL: " + std::to_string(this->vrp->GetTotalCost()) +
 				" " +std::to_string(i+1) + "/" + std::to_string(iteration), Utils::INFO);
+        if (this->vrp->UpdateBest())
+            this->SaveResult();
     }
     this->finalCost = this->vrp->GetTotalCost();
     int percCost = (float)(this->finalCost - this->initCost) / this->initCost * 100;
@@ -166,5 +165,7 @@ void Controller::SaveResult() {
     Utils &u = this->GetUtils();
     u.logger("Saving to output.json", u.VERBOSE);
     std::list<Route> *e = this->vrp->GetBestRoutes();
-    u.SaveResult(*e);
+    std::chrono::high_resolution_clock::time_point partialTime = std::chrono::high_resolution_clock::now();
+    auto timeExec = std::chrono::duration_cast<std::chrono::minutes>(partialTime - this->startTime).count();
+    u.SaveResult(*e, timeExec);
 }

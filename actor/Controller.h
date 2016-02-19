@@ -14,6 +14,7 @@ private:
     int MAX_TIME_MIN;
     int initCost;
     int finalCost;
+    std::chrono::high_resolution_clock::time_point startTime;
 protected:
 public:
     static Controller& Instance() {
