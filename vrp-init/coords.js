@@ -13,6 +13,7 @@ var centerX = canvas.width / 2 - 6, centerY = canvas.height / 2 - 2;
 var fontSize = 14;
 var intRegex = /(\d+)/g;
 var flagVRP = false;
+var fileName = "";
 
 /* display the center of the canvas */
 $(function() {
@@ -109,7 +110,7 @@ function loadJSON() {
     if (loadedPrinted) {
         var xobj = new XMLHttpRequest();
         xobj.overrideMimeType("application/json");
-        xobj.open('GET', 'output.json', true);
+        xobj.open('GET', fileName, true);
         xobj.onreadystatechange = function () {
             if (xobj.readyState == 4 && xobj.status == "200") {
                 parseCustomer(JSON.parse(xobj.responseText));
@@ -249,6 +250,7 @@ function readSingleFile(evt) {
         var r = new FileReader();
         r.onload = function(e) {
             var contents = e.target.result;
+            fileName = f.name;
 			var extension = f.name.substr((~-f.name.lastIndexOf(".") >>> 0) + 2);
             if (f.type == "application/json" && extension === "json") {
                 var data = JSON.parse(contents);
