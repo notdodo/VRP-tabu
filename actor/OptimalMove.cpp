@@ -58,12 +58,12 @@ int OptimalMove::Opt10(Routes &routes, bool force) {
                     // if the swap is done and the cost of routes is less than before
                     if (Move1FromTo(tFrom, tTo, force)) {
                         // wait until the lock is unlocked from an other thread, which is terminated
-                        std::lock_guard<std::mutex> lock(this->mtx);
+                        std::lock_guard<std::mutex> guard(this->mtx);
                         // LOCK acquired, if the cost of routes is better than the actual best, update the best
-                        if ((tFrom.GetTotalCost() < best.second.first.GetTotalCost() &&
-                                tTo.GetTotalCost() < best.second.second.GetTotalCost()) || best.first.first == -1 ||
-                                    (force && tFrom.GetTotalCost() < best.second.first.GetTotalCost()
-                                        && tTo.GetTotalCost() < best.second.second.GetTotalCost()))
+                        if ((tFrom.GetTotalCost() < best.second.first.GetTotalCost()
+                                && tTo.GetTotalCost() < best.second.second.GetTotalCost()) || best.first.first == -1
+                                || (force && tFrom.GetTotalCost() > best.second.first.GetTotalCost()
+                                    && tTo.GetTotalCost() > best.second.second.GetTotalCost()))
                             best = std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo));
                     }
                 });
@@ -113,11 +113,12 @@ int OptimalMove::Opt01(Routes &routes, bool force) {
                     Route tFrom = *it;
                     Route tTo = *jt;
                     if (Move1FromTo(tTo, tFrom, force)) {
-                        std::lock_guard<std::mutex> lock(this->mtx);
-                        if ((tFrom.GetTotalCost() < best.second.first.GetTotalCost() &&
-                                tTo.GetTotalCost() < best.second.second.GetTotalCost()) || best.first.first == -1 ||
-                                    (force && tFrom.GetTotalCost() < best.second.first.GetTotalCost()
-                                        && tTo.GetTotalCost() < best.second.second.GetTotalCost()))
+                        std::lock_guard<std::mutex> guard(this->mtx);
+                        // LOCK acquired, if the cost of routes is better than the actual best, update the best
+                        if ((tFrom.GetTotalCost() < best.second.first.GetTotalCost()
+                                && tTo.GetTotalCost() < best.second.second.GetTotalCost()) || best.first.first == -1
+                                || (force && tFrom.GetTotalCost() > best.second.first.GetTotalCost()
+                                    && tTo.GetTotalCost() > best.second.second.GetTotalCost()))
                             best = std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo));
                     }
                 });
@@ -217,11 +218,12 @@ int OptimalMove::Opt11(Routes &routes, bool force) {
                     Route tFrom = *it;
                     Route tTo = *jt;
                     if (SwapFromTo(tFrom, tTo)) {
-                        std::lock_guard<std::mutex> lock(this->mtx);
-                        if ((tFrom.GetTotalCost() < best.second.first.GetTotalCost() &&
-                                tTo.GetTotalCost() < best.second.second.GetTotalCost()) || best.first.first == -1 ||
-                                    (force && tFrom.GetTotalCost() < best.second.first.GetTotalCost()
-                                        && tTo.GetTotalCost() < best.second.second.GetTotalCost()))
+                        std::lock_guard<std::mutex> guard(this->mtx);
+                        // LOCK acquired, if the cost of routes is better than the actual best, update the best
+                        if ((tFrom.GetTotalCost() < best.second.first.GetTotalCost()
+                                && tTo.GetTotalCost() < best.second.second.GetTotalCost()) || best.first.first == -1
+                                || (force && tFrom.GetTotalCost() > best.second.first.GetTotalCost()
+                                    && tTo.GetTotalCost() > best.second.second.GetTotalCost()))
                             best = std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo));
                     }
                 });
@@ -355,11 +357,12 @@ int OptimalMove::Opt12(Routes &routes, bool force) {
                     Route tFrom = *it;
                     Route tTo = *jt;
                     if (AddRemoveFromTo(tFrom, tTo, 1, 2)) {
-                        std::lock_guard<std::mutex> lock(this->mtx);
-                        if ((tFrom.GetTotalCost() < best.second.first.GetTotalCost() &&
-                                tTo.GetTotalCost() < best.second.second.GetTotalCost()) || best.first.first == -1 ||
-                                    (force && tFrom.GetTotalCost() < best.second.first.GetTotalCost()
-                                        && tTo.GetTotalCost() < best.second.second.GetTotalCost()))
+                        std::lock_guard<std::mutex> guard(this->mtx);
+                        // LOCK acquired, if the cost of routes is better than the actual best, update the best
+                        if ((tFrom.GetTotalCost() < best.second.first.GetTotalCost()
+                                && tTo.GetTotalCost() < best.second.second.GetTotalCost()) || best.first.first == -1
+                                || (force && tFrom.GetTotalCost() > best.second.first.GetTotalCost()
+                                    && tTo.GetTotalCost() > best.second.second.GetTotalCost()))
                             best = std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo));
                     }
                 });
@@ -472,11 +475,12 @@ int OptimalMove::Opt21(Routes &routes, bool force) {
                     Route tFrom = *it;
                     Route tTo = *jt;
                     if (AddRemoveFromTo(tFrom, tTo, 2, 1)) {
-                        std::lock_guard<std::mutex> lock(this->mtx);
-                        if ((tFrom.GetTotalCost() < best.second.first.GetTotalCost() &&
-                                tTo.GetTotalCost() < best.second.second.GetTotalCost()) || best.first.first == -1 ||
-                                    (force && tFrom.GetTotalCost() < best.second.first.GetTotalCost()
-                                        && tTo.GetTotalCost() < best.second.second.GetTotalCost()))
+                        std::lock_guard<std::mutex> guard(this->mtx);
+                        // LOCK acquired, if the cost of routes is better than the actual best, update the best
+                        if ((tFrom.GetTotalCost() < best.second.first.GetTotalCost()
+                                && tTo.GetTotalCost() < best.second.second.GetTotalCost()) || best.first.first == -1
+                                || (force && tFrom.GetTotalCost() > best.second.first.GetTotalCost()
+                                    && tTo.GetTotalCost() > best.second.second.GetTotalCost()))
                             best = std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo));
                     }
                 });
@@ -524,11 +528,12 @@ int OptimalMove::Opt22(Routes &routes, bool force) {
                     Route tFrom = *it;
                     Route tTo = *jt;
                     if (AddRemoveFromTo(tFrom, tTo, 2, 2)) {
-                        std::lock_guard<std::mutex> lock(this->mtx);
-                        if ((tFrom.GetTotalCost() < best.second.first.GetTotalCost() &&
-                                tTo.GetTotalCost() < best.second.second.GetTotalCost()) || best.first.first == -1 ||
-                                    (force && tFrom.GetTotalCost() < best.second.first.GetTotalCost()
-                                        && tTo.GetTotalCost() < best.second.second.GetTotalCost()))
+                        std::lock_guard<std::mutex> guard(this->mtx);
+                        // LOCK acquired, if the cost of routes is better than the actual best, update the best
+                        if ((tFrom.GetTotalCost() < best.second.first.GetTotalCost()
+                                && tTo.GetTotalCost() < best.second.second.GetTotalCost()) || best.first.first == -1
+                                || (force && tFrom.GetTotalCost() > best.second.first.GetTotalCost()
+                                    && tTo.GetTotalCost() > best.second.second.GetTotalCost()))
                             best = std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo));
                     }
                 });
@@ -562,40 +567,30 @@ int OptimalMove::Opt22(Routes &routes, bool force) {
  * execute an Opt10 to balance the route and get more occupancy.
  */
 void OptimalMove::RouteBalancer(Routes &routes) {
-    Routes::const_iterator it = routes.cbegin();
-    BestResult best = {{-1, -1}, {*it, *it}};
-    for (int i = 0; it != routes.cend(); std::advance(it, 1), ++i) {
-        if (it->size() == 3 || it->size() == 4) {
-            Routes::const_iterator jt = routes.cbegin();
-            for (int j = 0; jt != routes.cend(); std::advance(jt, 1), ++j) {
-                if (jt != it && jt->size() > 3) {
-                    Route tFrom = *it;
-                    Route tTo = *jt;
-                    if (Move1FromTo(tFrom, tTo, true) && ((tFrom.GetTotalCost() < best.second.first.GetTotalCost() &&
-                            tTo.GetTotalCost() < best.second.second.GetTotalCost()) || best.first.first == -1))
-                        best = std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo));
+    Routes temp = routes;
+    bool stop = false;
+    while(!stop) {
+        bool reset = false;
+        Routes::iterator it = temp.begin();
+        for (int i = 0; it != temp.end() && !reset; ++it, i++) {
+            if (it->size() == 3) {
+                Routes::iterator jt = temp.begin();
+                for (int j = 0; jt != temp.end(); ++jt, j++) {
+                    if (jt != it && jt->size() > 4) {
+                        if (this->Move1FromTo(*it, *jt, true)) {
+                            this->CleanVoid(temp);
+                            reset = true;
+                            break;
+                        }
+                    }
                 }
             }
         }
+        if (reset || it == temp.end())
+            stop = true;
     }
-    if (best.first.first != -1) {
-        Routes::iterator itFinal = routes.begin();
-        int indexFrom = best.first.first;
-        int indexTo = best.first.second;
-        std::advance(itFinal, indexFrom);
-        int diffCost = itFinal->GetTotalCost();
-        *itFinal= best.second.first;
-        diffCost -= itFinal->GetTotalCost();
-        itFinal = routes.begin();
-        std::advance(itFinal, indexTo);
-        diffCost += itFinal->GetTotalCost();
-        *itFinal = best.second.second;
-        diffCost -= itFinal->GetTotalCost();
-        this->CleanVoid(routes);
-        Utils::Instance().logger("Routes balancing: " + std::to_string(diffCost), Utils::VERBOSE);
-    }else {
-        Utils::Instance().logger("No routes balancing", Utils::VERBOSE);
-    }
+    routes = temp;
+    Utils::Instance().logger("Routes balancing...", Utils::VERBOSE);
 }
 
 /** @brief ###Reorder the customers of route to delete cross over path.
@@ -621,7 +616,7 @@ bool OptimalMove::Opt2(Routes &routes) {
                 pool.AddJob([i, k, it, &bestCost, &bestRoute, &ret, this]() {
                     // swap customers
                     Route tempRoute = this->Opt2Swap(*it, i->first, k->first);
-                    std::lock_guard<std::mutex> lock(this->mtx);
+                    std::lock_guard<std::mutex> guard(this->mtx);
                     if (tempRoute.GetTotalCost() <= bestCost) {
                         bestCost = tempRoute.GetTotalCost();
                         bestRoute = tempRoute;
@@ -727,7 +722,7 @@ bool OptimalMove::Opt3(Routes &routes) {
                                     pool.AddJob([i, k, l, m, it, &bestCost, &bestRoute, &ret, this]() {
                                         // swap customers
                                         Route tempRoute = this->Opt3Swap(*it, i->first, k->first, l->first, m->first);
-                                        std::lock_guard<std::mutex> lock(this->mtx);
+                                        std::lock_guard<std::mutex> guard(this->mtx);
                                         if (tempRoute.GetTotalCost() <= bestCost) {
                                             bestCost = tempRoute.GetTotalCost();
                                             bestRoute = tempRoute;
