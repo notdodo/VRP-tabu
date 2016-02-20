@@ -52,7 +52,6 @@ class ThreadPool {
         // Wait for a job if we don't have any.
         job_available_var.wait(job_lock, [this]()->bool { return queue.size() || bailout; });
 
-        std::lock_guard<std::mutex> guard(mtx);
         // Get job from the queue
         if (!bailout) {
             res = queue.front();
@@ -114,10 +113,8 @@ public:
 
             // note that we're done, and wake up any thread that's
             // waiting for a new job
-            std::unique_lock<std::mutex> lk(queue_mutex);
             bailout = true;
             job_available_var.notify_all();
-            lk.unlock();
 
             for (auto& x : threads)
                 if (x.joinable())
@@ -132,11 +129,11 @@ public:
      *  all jobs have finshed executing.
      */
     void WaitAll() {
+        std::unique_lock<std::mutex> lk(wait_mutex);
         if (jobs_left > 0) {
-            std::unique_lock<std::mutex> lk(wait_mutex);
             wait_var.wait(lk, [this] { return this->jobs_left == 0; });
-            lk.unlock();
         }
+        lk.unlock();
     }
 };
 
