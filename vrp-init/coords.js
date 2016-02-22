@@ -305,8 +305,8 @@ function parseCustomer(cs) {
             var a = [];
             /* calculate real points for canvas */
             if (flagVRP) {
-                cs.vertices[c].x = cs.vertices[c].x * cs.size;
-                cs.vertices[c].y = cs.vertices[c].y * cs.size;
+                cs.vertices[c].x = cs.vertices[c].x * (cs.size + 1);
+                cs.vertices[c].y = cs.vertices[c].y * (cs.size + 1);
             }
             a.clientX = cs.vertices[c].x + canvas.width / 2 + rect.left;
             a.clientY = -(cs.vertices[c].y - canvas.height / 2) + rect.top;
