@@ -34,7 +34,6 @@ int main(int argc, char** argv) {
         c.PrintRoutes();
         c.SaveResult();
         c.RunVRP();
-        c.SaveResult();
 		c.PrintBestRoutes();
     }catch(std::exception &e) {
         u.logger(e.what(), u.ERROR);

@@ -39,7 +39,7 @@ public:
         , stop(false)
     {
         for (unsigned i = 0; i < threadCount; ++i)
-            threads[i] = std::move(std::thread([this] { this->Run(); }));
+            threads[i] = std::move(std::thread([this]{ this->Run(); }));
     }
 
     ~ThreadPool() {
