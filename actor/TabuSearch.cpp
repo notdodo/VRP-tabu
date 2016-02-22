@@ -25,16 +25,17 @@
  * If no improvement are made choose the best of the worst.
  */
 void TabuSearch::Tabu(Routes &routes, int times) {
-    unsigned MAX = 100;
+    unsigned MAX = 50;
     // 0.80 521
-    float TABUTIME = this->numCustomers;
+    float TABUTIME = this->numCustomers * 0.80;
     // number of neighbors to consider
     int N = (int)(this->numCustomers / routes.size());
     // copy all routes in a local list
     std::list<Route> s(routes.begin(), routes.end());
     // best solution
     std::list<Route> sbest(routes.begin(), routes.end());
-    std::set<std::pair<float, std::list<Route>>> nonBest;
+    auto nonBestComp = [](const std::pair<float, Routes> &l, const std::pair<float, Routes> &r)->bool { return l.first < r.first; };
+    std::set<std::pair<float, Routes>, decltype(nonBestComp)> nonBest(nonBestComp);
     float bestFitness = 0;
     int iterations = 0;
     while (iterations < times) {

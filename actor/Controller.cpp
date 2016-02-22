@@ -67,10 +67,12 @@ void Controller::RunVRP() {
     // run the routines for 'customers' times or stop if no improvement or duration is more than MAX_TIME
     for (int i = 0; i < iteration && noimprov < 5 && duration <= this->MAX_TIME_MIN; i++) {
         bool opt, optflag = false;
-        int ts = this->RunTabuSearch(10);
+        int ts = this->RunTabuSearch(10 + noimprov);
         if (ts == -last || (ts == prelast && ts < 0) || ts <= 0) {
             optflag = true;
+            noimprov++;
         }else {
+            noimprov = 0;
             prelast = last;
             last = ts;
         }

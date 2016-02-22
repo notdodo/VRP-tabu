@@ -38,33 +38,34 @@ void OptimalMove::CleanVoid(Routes &routes) { routes.remove_if([](Route r){ retu
  * from a route to another and removes empty route.
  * @return True if the routes are improved
  */
+                    #include <unistd.h>
+
 int OptimalMove::Opt10(Routes &routes, bool force) {
     float avg = this->UpdateDistanceAverage(routes);
     int diffCost = -1;
     std::list<Route>::iterator it = routes.begin();
-    // list of best results from threads
-    BestResult best = {{-1, -1}, {*it, *it}};
+    std::set<BestResult, decltype(comp)> b(comp);
+    bool flag = false;
+    // best result from threads
+    //BestResult best = {{-1, -1}, {*it, *it}};
     // pool of threads
     ThreadPool pool(this->cores);
     for (int i = 0; it != routes.end(); std::advance(it, 1), ++i) {
         std::list<Route>::const_iterator jt = routes.cbegin();
         for (int j = 0; jt != routes.cend(); std::advance(jt, 1), ++j) {
             // if the route are close
-            if (jt != it && it->GetDistanceFrom(*jt) < avg) {
+            if (jt != it && it->GetDistanceFrom(*jt) <= avg) {
                 // create a thread to run Move1FromTo function and save the result in l list
-                pool.AddJob([force, it, jt, i, j, &best, this]() {
+                pool.AddTask([&pool, force, it, jt, i, j, &b, &flag, this]() {
                     Route tFrom = *it;
                     Route tTo = *jt;
                     // if the swap is done and the cost of routes is less than before
                     if (Move1FromTo(tFrom, tTo, force)) {
                         // wait until the lock is unlocked from an other thread, which is terminated
-                        std::lock_guard<std::mutex> guard(this->mtx);
-                        // LOCK acquired, if the cost of routes is better than the actual best, update the best
-                        if ((tFrom.GetTotalCost() < best.second.first.GetTotalCost()
-                                && tTo.GetTotalCost() < best.second.second.GetTotalCost()) || best.first.first == -1
-                                || (force && tFrom.GetTotalCost() > best.second.first.GetTotalCost()
-                                    && tTo.GetTotalCost() > best.second.second.GetTotalCost()))
-                            best = std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo));
+                        this->mtx.lock();
+                        b.insert(std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo)));
+                        flag = true;
+                        this->mtx.unlock();
                     }
                 });
             }
@@ -73,18 +74,18 @@ int OptimalMove::Opt10(Routes &routes, bool force) {
     // wait to finish all threads
     pool.JoinAll();
     // if some improvements are made update the routes
-    if (best.first.first != -1) {
+    if (flag) {
         std::list<Route>::iterator itFinal = routes.begin();
-        int indexFrom = best.first.first;
-        int indexTo = best.first.second;
+        int indexFrom = b.begin()->first.first;
+        int indexTo = b.begin()->first.second;
         std::advance(itFinal, indexFrom);
         diffCost = itFinal->GetTotalCost();
-        *itFinal = best.second.first;
+        *itFinal = b.begin()->second.first;
         diffCost -= itFinal->GetTotalCost();
         itFinal = routes.begin();
         std::advance(itFinal, indexTo);
         diffCost += itFinal->GetTotalCost();
-        *itFinal = best.second.second;
+        *itFinal = b.begin()->second.second;
         diffCost -= itFinal->GetTotalCost();
         this->CleanVoid(routes);
         Utils::Instance().logger("opt10 improved: " + std::to_string(diffCost), Utils::VERBOSE);
@@ -103,44 +104,43 @@ int OptimalMove::Opt01(Routes &routes, bool force) {
     float avg = this->UpdateDistanceAverage(routes);
     int diffCost = -1;
     std::list<Route>::iterator it = routes.begin();
-    BestResult best = {{-1, -1}, {*it, *it}};
+    std::set<BestResult, decltype(comp)> b(comp);
+    bool flag = false;
     ThreadPool pool(this->cores);
     for (int i = 0; it != routes.end(); std::advance(it, 1), ++i) {
         std::list<Route>::const_iterator jt = routes.cbegin();
         for (int j = 0; jt != routes.cend(); std::advance(jt, 1), ++j) {
-            if (jt != it && it->GetDistanceFrom(*jt) < avg) {
-                pool.AddJob([force, it, jt, i, j, &best, this]() {
+            if (jt != it && it->GetDistanceFrom(*jt) <= avg) {
+                pool.AddTask([force, it, jt, i, j, &b, &flag, this]() {
                     Route tFrom = *it;
                     Route tTo = *jt;
                     if (Move1FromTo(tTo, tFrom, force)) {
-                        std::lock_guard<std::mutex> guard(this->mtx);
-                        // LOCK acquired, if the cost of routes is better than the actual best, update the best
-                        if ((tFrom.GetTotalCost() < best.second.first.GetTotalCost()
-                                && tTo.GetTotalCost() < best.second.second.GetTotalCost()) || best.first.first == -1
-                                || (force && tFrom.GetTotalCost() > best.second.first.GetTotalCost()
-                                    && tTo.GetTotalCost() > best.second.second.GetTotalCost()))
-                            best = std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo));
+                        // wait until the lock is unlocked from an other thread, which is terminated
+                        this->mtx.lock();
+                        b.insert(std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo)));
+                        flag = true;
+                        this->mtx.unlock();
                     }
                 });
             }
         }
     }
     pool.JoinAll();
-    if (best.first.first != -1) {
+    if (flag) {
         std::list<Route>::iterator itFinal = routes.begin();
-        int indexFrom = best.first.first;
-        int indexTo = best.first.second;
+        int indexFrom = b.begin()->first.first;
+        int indexTo = b.begin()->first.second;
         std::advance(itFinal, indexFrom);
         diffCost = itFinal->GetTotalCost();
-        *itFinal= best.second.first;
+        *itFinal = b.begin()->second.first;
         diffCost -= itFinal->GetTotalCost();
         itFinal = routes.begin();
         std::advance(itFinal, indexTo);
         diffCost += itFinal->GetTotalCost();
-        *itFinal = best.second.second;
+        *itFinal = b.begin()->second.second;
         diffCost -= itFinal->GetTotalCost();
         this->CleanVoid(routes);
-        Utils::Instance().logger("opt01 improved: " + std::to_string(diffCost), Utils::VERBOSE);
+        Utils::Instance().logger("opt10 improved: " + std::to_string(diffCost), Utils::VERBOSE);
     }else
         Utils::Instance().logger("opt01 no improvement", Utils::VERBOSE);
     return diffCost;
@@ -177,7 +177,7 @@ bool OptimalMove::Move1FromTo(Route &source, Route &dest, bool force) {
                 // copy the source route to check out if this configuration is valid and better
                 Route copySource = source.CopyRoute();
                 copySource.RemoveCustomer(itSource->first);
-                if (copySource.size() <= 2 || copySource.GetTotalCost() <= sourceCost || force) {
+                if (copySource.size() <= 2 || copySource.GetTotalCost() < sourceCost || force) {
                     best = temp.GetTotalCost();
                     bestRoute = temp;
                     // index of customer to remove
@@ -208,44 +208,43 @@ int OptimalMove::Opt11(Routes &routes, bool force) {
     float avg = this->UpdateDistanceAverage(routes);
     int diffCost = -1;
     std::list<Route>::iterator it = routes.begin();
-    BestResult best = {{-1, -1}, {*it, *it}};
+    std::set<BestResult, decltype(comp)> b(comp);
+    bool flag = false;
     ThreadPool pool(this->cores);
     for (int i = 0; it != routes.end(); std::advance(it, 1), ++i) {
         std::list<Route>::const_iterator jt = routes.cbegin();
         for (int j = 0; jt != routes.cend(); std::advance(jt, 1), ++j) {
-            if (jt != it && it->GetDistanceFrom(*jt) < avg) {
-                pool.AddJob([force, it, jt, i, j, &best, this]() {
+            if (jt != it && it->GetDistanceFrom(*jt) <= avg) {
+                pool.AddTask([force, it, jt, i, j, &b, &flag, this]() {
                     Route tFrom = *it;
                     Route tTo = *jt;
                     if (SwapFromTo(tFrom, tTo)) {
-                        std::lock_guard<std::mutex> guard(this->mtx);
-                        // LOCK acquired, if the cost of routes is better than the actual best, update the best
-                        if ((tFrom.GetTotalCost() < best.second.first.GetTotalCost()
-                                && tTo.GetTotalCost() < best.second.second.GetTotalCost()) || best.first.first == -1
-                                || (force && tFrom.GetTotalCost() > best.second.first.GetTotalCost()
-                                    && tTo.GetTotalCost() > best.second.second.GetTotalCost()))
-                            best = std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo));
+                        // wait until the lock is unlocked from an other thread, which is terminated
+                        this->mtx.lock();
+                        b.insert(std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo)));
+                        flag = true;
+                        this->mtx.unlock();
                     }
                 });
             }
         }
     }
     pool.JoinAll();
-    if (best.first.first != -1) {
+    if (flag) {
         std::list<Route>::iterator itFinal = routes.begin();
-        int indexFrom = best.first.first;
-        int indexTo = best.first.second;
+        int indexFrom = b.begin()->first.first;
+        int indexTo = b.begin()->first.second;
         std::advance(itFinal, indexFrom);
         diffCost = itFinal->GetTotalCost();
-        *itFinal= best.second.first;
+        *itFinal = b.begin()->second.first;
         diffCost -= itFinal->GetTotalCost();
         itFinal = routes.begin();
         std::advance(itFinal, indexTo);
         diffCost += itFinal->GetTotalCost();
-        *itFinal = best.second.second;
+        *itFinal = b.begin()->second.second;
         diffCost -= itFinal->GetTotalCost();
         this->CleanVoid(routes);
-        Utils::Instance().logger("opt11 improved: " + std::to_string(diffCost), Utils::VERBOSE);
+        Utils::Instance().logger("opt10 improved: " + std::to_string(diffCost), Utils::VERBOSE);
     }else
         Utils::Instance().logger("opt11 no improvement", Utils::VERBOSE);
     return diffCost;
@@ -347,44 +346,43 @@ int OptimalMove::Opt12(Routes &routes, bool force) {
     float avg = this->UpdateDistanceAverage(routes);
     int diffCost = -1;
     std::list<Route>::iterator it = routes.begin();
-    BestResult best = {{-1, -1}, {*it, *it}};
+    std::set<BestResult, decltype(comp)> b(comp);
+    bool flag = false;
     ThreadPool pool(this->cores);
     for (int i = 0; it != routes.end(); std::advance(it, 1), ++i) {
         std::list<Route>::const_iterator jt = routes.cbegin();
         for (int j = 0; jt != routes.cend(); std::advance(jt, 1), ++j) {
-            if (jt != it && it->GetDistanceFrom(*jt) < avg) {
-                pool.AddJob([force, it, jt, i, j, &best, this]() {
+            if (jt != it && it->GetDistanceFrom(*jt) <= avg) {
+                pool.AddTask([force, it, jt, i, j, &b, &flag, this]() {
                     Route tFrom = *it;
                     Route tTo = *jt;
                     if (AddRemoveFromTo(tFrom, tTo, 1, 2)) {
-                        std::lock_guard<std::mutex> guard(this->mtx);
-                        // LOCK acquired, if the cost of routes is better than the actual best, update the best
-                        if ((tFrom.GetTotalCost() < best.second.first.GetTotalCost()
-                                && tTo.GetTotalCost() < best.second.second.GetTotalCost()) || best.first.first == -1
-                                || (force && tFrom.GetTotalCost() > best.second.first.GetTotalCost()
-                                    && tTo.GetTotalCost() > best.second.second.GetTotalCost()))
-                            best = std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo));
+                        // wait until the lock is unlocked from an other thread, which is terminated
+                        this->mtx.lock();
+                        b.insert(std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo)));
+                        flag = true;
+                        this->mtx.unlock();
                     }
                 });
             }
         }
     }
     pool.JoinAll();
-    if (best.first.first != -1) {
+    if (flag) {
         std::list<Route>::iterator itFinal = routes.begin();
-        int indexFrom = best.first.first;
-        int indexTo = best.first.second;
+        int indexFrom = b.begin()->first.first;
+        int indexTo = b.begin()->first.second;
         std::advance(itFinal, indexFrom);
         diffCost = itFinal->GetTotalCost();
-        *itFinal= best.second.first;
+        *itFinal = b.begin()->second.first;
         diffCost -= itFinal->GetTotalCost();
         itFinal = routes.begin();
         std::advance(itFinal, indexTo);
         diffCost += itFinal->GetTotalCost();
-        *itFinal = best.second.second;
+        *itFinal = b.begin()->second.second;
         diffCost -= itFinal->GetTotalCost();
         this->CleanVoid(routes);
-        Utils::Instance().logger("opt12 improved: " + std::to_string(diffCost), Utils::VERBOSE);
+        Utils::Instance().logger("opt10 improved: " + std::to_string(diffCost), Utils::VERBOSE);
     }else
         Utils::Instance().logger("opt12 no improvement", Utils::VERBOSE);
     return diffCost;
@@ -465,44 +463,43 @@ int OptimalMove::Opt21(Routes &routes, bool force) {
     float avg = this->UpdateDistanceAverage(routes);
     int diffCost = -1;
     std::list<Route>::iterator it = routes.begin();
-    BestResult best = {{-1, -1}, {*it, *it}};
+    std::set<BestResult, decltype(comp)> b(comp);
+    bool flag = false;
     ThreadPool pool(this->cores);
     for (int i = 0; it != routes.end(); std::advance(it, 1), ++i) {
         std::list<Route>::const_iterator jt = routes.cbegin();
         for (int j = 0; jt != routes.cend(); std::advance(jt, 1), ++j) {
-            if (jt != it && it->GetDistanceFrom(*jt) < avg) {
-                pool.AddJob([force, it, jt, i, j, &best, this]() {
+            if (jt != it && it->GetDistanceFrom(*jt) <= avg) {
+                pool.AddTask([force, it, jt, i, j, &b, &flag, this]() {
                     Route tFrom = *it;
                     Route tTo = *jt;
                     if (AddRemoveFromTo(tFrom, tTo, 2, 1)) {
-                        std::lock_guard<std::mutex> guard(this->mtx);
-                        // LOCK acquired, if the cost of routes is better than the actual best, update the best
-                        if ((tFrom.GetTotalCost() < best.second.first.GetTotalCost()
-                                && tTo.GetTotalCost() < best.second.second.GetTotalCost()) || best.first.first == -1
-                                || (force && tFrom.GetTotalCost() > best.second.first.GetTotalCost()
-                                    && tTo.GetTotalCost() > best.second.second.GetTotalCost()))
-                            best = std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo));
+                        // wait until the lock is unlocked from an other thread, which is terminated
+                        this->mtx.lock();
+                        b.insert(std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo)));
+                        flag = true;
+                        this->mtx.unlock();
                     }
                 });
             }
         }
     }
     pool.JoinAll();
-    if (best.first.first != -1) {
+    if (flag) {
         std::list<Route>::iterator itFinal = routes.begin();
-        int indexFrom = best.first.first;
-        int indexTo = best.first.second;
+        int indexFrom = b.begin()->first.first;
+        int indexTo = b.begin()->first.second;
         std::advance(itFinal, indexFrom);
         diffCost = itFinal->GetTotalCost();
-        *itFinal = best.second.first;
+        *itFinal = b.begin()->second.first;
         diffCost -= itFinal->GetTotalCost();
         itFinal = routes.begin();
         std::advance(itFinal, indexTo);
         diffCost += itFinal->GetTotalCost();
-        *itFinal = best.second.second;
+        *itFinal = b.begin()->second.second;
         diffCost -= itFinal->GetTotalCost();
         this->CleanVoid(routes);
-        Utils::Instance().logger("opt21 improved: " + std::to_string(diffCost), Utils::VERBOSE);
+        Utils::Instance().logger("opt10 improved: " + std::to_string(diffCost), Utils::VERBOSE);
     }else
         Utils::Instance().logger("opt21 no improvement", Utils::VERBOSE);
     return diffCost;
@@ -518,44 +515,43 @@ int OptimalMove::Opt22(Routes &routes, bool force) {
     float avg = this->UpdateDistanceAverage(routes);
     int diffCost = -1;
     std::list<Route>::iterator it = routes.begin();
-    BestResult best = {{-1, -1}, {*it, *it}};
+    std::set<BestResult, decltype(comp)> b(comp);
+    bool flag = false;
     ThreadPool pool(this->cores);
     for (int i = 0; it != routes.end(); std::advance(it, 1), ++i) {
         std::list<Route>::const_iterator jt = routes.cbegin();
         for (int j = 0; jt != routes.cend(); std::advance(jt, 1), ++j) {
-            if (jt != it && it->GetDistanceFrom(*jt) < avg) {
-                pool.AddJob([force, it, jt, i, j, &best, this]() {
+            if (jt != it && it->GetDistanceFrom(*jt) <= avg) {
+                pool.AddTask([force, it, jt, i, j, &b, &flag, this]() {
                     Route tFrom = *it;
                     Route tTo = *jt;
                     if (AddRemoveFromTo(tFrom, tTo, 2, 2)) {
-                        std::lock_guard<std::mutex> guard(this->mtx);
-                        // LOCK acquired, if the cost of routes is better than the actual best, update the best
-                        if ((tFrom.GetTotalCost() < best.second.first.GetTotalCost()
-                                && tTo.GetTotalCost() < best.second.second.GetTotalCost()) || best.first.first == -1
-                                || (force && tFrom.GetTotalCost() > best.second.first.GetTotalCost()
-                                    && tTo.GetTotalCost() > best.second.second.GetTotalCost()))
-                            best = std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo));
+                        // wait until the lock is unlocked from an other thread, which is terminated
+                        this->mtx.lock();
+                        b.insert(std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo)));
+                        flag = true;
+                        this->mtx.unlock();
                     }
                 });
             }
         }
     }
     pool.JoinAll();
-    if (best.first.first != -1) {
+    if (flag) {
         std::list<Route>::iterator itFinal = routes.begin();
-        int indexFrom = best.first.first;
-        int indexTo = best.first.second;
+        int indexFrom = b.begin()->first.first;
+        int indexTo = b.begin()->first.second;
         std::advance(itFinal, indexFrom);
         diffCost = itFinal->GetTotalCost();
-        *itFinal = best.second.first;
+        *itFinal = b.begin()->second.first;
         diffCost -= itFinal->GetTotalCost();
         itFinal = routes.begin();
         std::advance(itFinal, indexTo);
         diffCost += itFinal->GetTotalCost();
-        *itFinal = best.second.second;
+        *itFinal = b.begin()->second.second;
         diffCost -= itFinal->GetTotalCost();
         this->CleanVoid(routes);
-        Utils::Instance().logger("opt22 improved: " + std::to_string(diffCost), Utils::VERBOSE);
+        Utils::Instance().logger("opt10 improved: " + std::to_string(diffCost), Utils::VERBOSE);
     }else
         Utils::Instance().logger("opt22 no improvement", Utils::VERBOSE);
     return diffCost;
@@ -613,15 +609,16 @@ bool OptimalMove::Opt2(Routes &routes) {
         for (; i->first != it->GetRoute()->back().first; ++i) {
             std::list<StepType>::iterator k = i;
             for (++k; k->first != it->GetRoute()->back().first; ++k) {
-                pool.AddJob([i, k, it, &bestCost, &bestRoute, &ret, this]() {
+                pool.AddTask([i, k, it, &bestCost, &bestRoute, &ret, this]() {
                     // swap customers
                     Route tempRoute = this->Opt2Swap(*it, i->first, k->first);
-                    std::lock_guard<std::mutex> guard(this->mtx);
+                    this->mtx.lock();
                     if (tempRoute.GetTotalCost() <= bestCost) {
                         bestCost = tempRoute.GetTotalCost();
                         bestRoute = tempRoute;
                         ret = true;
                     }
+                    this->mtx.unlock();
                 });
             }
         }
@@ -719,15 +716,16 @@ bool OptimalMove::Opt3(Routes &routes) {
                             if (l->first != depot) {
                                 std::list<StepType>::iterator m = l;
                                 for (++m; m != it->GetRoute()->end(); ++m) {
-                                    pool.AddJob([i, k, l, m, it, &bestCost, &bestRoute, &ret, this]() {
+                                    pool.AddTask([i, k, l, m, it, &bestCost, &bestRoute, &ret, this]() {
                                         // swap customers
                                         Route tempRoute = this->Opt3Swap(*it, i->first, k->first, l->first, m->first);
-                                        std::lock_guard<std::mutex> guard(this->mtx);
+                                        this->mtx.lock();
                                         if (tempRoute.GetTotalCost() <= bestCost) {
                                             bestCost = tempRoute.GetTotalCost();
                                             bestRoute = tempRoute;
                                             ret = true;
                                         }
+                                        this->mtx.unlock();
                                     });
                                 }
                             }
