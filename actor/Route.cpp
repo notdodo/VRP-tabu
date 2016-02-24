@@ -359,9 +359,8 @@ void Route::RemoveCustomer(std::list<StepType>::iterator &it) {
  * @param[in] c The customer to remove
  */
 bool Route::RemoveCustomer(const Customer c) {
-    std::list<StepType>::iterator it;
     if (c != this->route.front().first && c != this->route.back().first) {
-        for (it = this->route.begin(); it != this->route.cend(); ++it) {
+        for (auto it = this->route.begin(); it != this->route.cend(); ++it) {
             if (it->first == c) {
                 this->RemoveCustomer(it);
                 return true;
@@ -489,7 +488,6 @@ void Route::GetUnderAverageCustomers(std::list<Customer> &customers) {
 float Route::GetDistanceFrom(Route r) {
     if (r == *this)
         return 0;
-    Customer depot = this->route.front().first;
     std::list<StepType>::const_iterator it = this->route.cbegin();
     std::vector<float> min;
     // for each customers of each route (except the depot)

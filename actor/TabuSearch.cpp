@@ -41,18 +41,18 @@ void TabuSearch::Tabu(Routes &routes, int times) {
     while (iterations < times) {
         iterations++;
         // create a local working copy of solutions
-        std::list<Route>::iterator its = s.begin();
         float fitnessBestCandidate = 0;
         std::list<Route> bestCandidate;
         std::vector<Move> bestMoves;
         std::list<Route> temp(s.begin(), s.end());
+        // route index
+        int r = 0;
         // for each route find the local best solution
-        for (int r = 0; its != s.end(); ++its, r++) {
-            RouteList::iterator itc = its->GetRoute()->begin();
-            Customer depot = its->GetRoute()->front().first;
-            ++itc;
+        for (auto &its : s) {
+            RouteList::iterator itc = its.GetRoute()->begin();
+            Customer depot = its.GetRoute()->front().first;
             // for each customer in the route
-            for (int cc = 0; itc->first != depot; ++itc, ++cc) {
+            for (++itc; itc->first != depot; ++itc) {
                 std::vector<Move> candidateMoves;
                 float penalization = 0;
                 // get the neighborhood of the customer
@@ -100,6 +100,7 @@ void TabuSearch::Tabu(Routes &routes, int times) {
                 }
                 temp = s;
             }
+            r++;
         }
         // update the solution (local best)
         s = bestCandidate;

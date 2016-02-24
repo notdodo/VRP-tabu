@@ -50,10 +50,9 @@ public:
     }
 	/** @brief ###Overriding '!=' operator to evaluate two routes */
     bool operator!=(const Route &r) const {
-        auto i = route.cbegin();
         auto j = r.route.cbegin();
-        for (; i != route.cend(); ++i) {
-            if (i->first != j->first)
+        for (auto &i : route) {
+            if (i.first != j->first)
                 return true;
             ++j;
         }

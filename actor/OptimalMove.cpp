@@ -46,8 +46,6 @@ int OptimalMove::Opt10(Routes &routes, bool force) {
     std::list<Route>::iterator it = routes.begin();
     std::set<BestResult, decltype(comp)> b(comp);
     bool flag = false;
-    // best result from threads
-    //BestResult best = {{-1, -1}, {*it, *it}};
     // pool of threads
     ThreadPool pool(this->cores);
     for (int i = 0; it != routes.end(); std::advance(it, 1), ++i) {
@@ -62,7 +60,7 @@ int OptimalMove::Opt10(Routes &routes, bool force) {
                     // if the swap is done and the cost of routes is less than before
                     if (Move1FromTo(tFrom, tTo, force)) {
                         // wait until the lock is unlocked from an other thread, which is terminated
-                        std::unique_lock<std::mutex> lock(this->mtx);
+                        std::lock_guard<std::mutex> lock(this->mtx);
                         b.insert(std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo)));
                         flag = true;
                     }
@@ -115,7 +113,7 @@ int OptimalMove::Opt01(Routes &routes, bool force) {
                     Route tTo = *jt;
                     if (Move1FromTo(tTo, tFrom, force)) {
                         // wait until the lock is unlocked from an other thread, which is terminated
-                        std::unique_lock<std::mutex> lock(this->mtx);
+                        std::lock_guard<std::mutex> lock(this->mtx);
                         b.insert(std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo)));
                         flag = true;
                     }
@@ -218,7 +216,7 @@ int OptimalMove::Opt11(Routes &routes, bool force) {
                     Route tTo = *jt;
                     if (SwapFromTo(tFrom, tTo)) {
                         // wait until the lock is unlocked from an other thread, which is terminated
-                        std::unique_lock<std::mutex> lock(this->mtx);
+                        std::lock_guard<std::mutex> lock(this->mtx);
                         b.insert(std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo)));
                         flag = true;
                     }
@@ -355,7 +353,7 @@ int OptimalMove::Opt12(Routes &routes, bool force) {
                     Route tTo = *jt;
                     if (AddRemoveFromTo(tFrom, tTo, 1, 2)) {
                         // wait until the lock is unlocked from an other thread, which is terminated
-                        std::unique_lock<std::mutex> lock(this->mtx);
+                        std::lock_guard<std::mutex> lock(this->mtx);
                         b.insert(std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo)));
                         flag = true;
                     }
@@ -471,7 +469,7 @@ int OptimalMove::Opt21(Routes &routes, bool force) {
                     Route tTo = *jt;
                     if (AddRemoveFromTo(tFrom, tTo, 2, 1)) {
                         // wait until the lock is unlocked from an other thread, which is terminated
-                        std::unique_lock<std::mutex> lock(this->mtx);
+                        std::lock_guard<std::mutex> lock(this->mtx);
                         b.insert(std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo)));
                         flag = true;
                     }
@@ -522,7 +520,7 @@ int OptimalMove::Opt22(Routes &routes, bool force) {
                     Route tTo = *jt;
                     if (AddRemoveFromTo(tFrom, tTo, 2, 2)) {
                         // wait until the lock is unlocked from an other thread, which is terminated
-                        std::unique_lock<std::mutex> lock(this->mtx);
+                        std::lock_guard<std::mutex> lock(this->mtx);
                         b.insert(std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo)));
                         flag = true;
                     }
@@ -606,12 +604,13 @@ bool OptimalMove::Opt2(Routes &routes) {
                 pool.AddTask([i, k, it, &bestCost, &bestRoute, &ret, this]() {
                     // swap customers
                     Route tempRoute = this->Opt2Swap(*it, i->first, k->first);
-                    std::unique_lock<std::mutex> lock(this->mtx);
+                    this->mtx.lock();
                     if (tempRoute.GetTotalCost() <= bestCost) {
                         bestCost = tempRoute.GetTotalCost();
                         bestRoute = tempRoute;
                         ret = true;
                     }
+                    this->mtx.unlock();
                 });
             }
         }
@@ -712,7 +711,7 @@ bool OptimalMove::Opt3(Routes &routes) {
                                     pool.AddTask([i, k, l, m, it, &bestCost, &bestRoute, &ret, this]() {
                                         // swap customers
                                         Route tempRoute = this->Opt3Swap(*it, i->first, k->first, l->first, m->first);
-                                        std::unique_lock<std::mutex> lock(this->mtx);
+                                        std::lock_guard<std::mutex> lock(this->mtx);
                                         if (tempRoute.GetTotalCost() <= bestCost) {
                                             bestCost = tempRoute.GetTotalCost();
                                             bestRoute = tempRoute;
