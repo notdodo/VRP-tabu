@@ -38,8 +38,6 @@ void OptimalMove::CleanVoid(Routes &routes) { routes.remove_if([](Route r){ retu
  * from a route to another and removes empty route.
  * @return True if the routes are improved
  */
-                    #include <unistd.h>
-
 int OptimalMove::Opt10(Routes &routes, bool force) {
     float avg = this->UpdateDistanceAverage(routes);
     int diffCost = -1;
