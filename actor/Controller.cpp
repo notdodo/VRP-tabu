@@ -61,35 +61,32 @@ void Controller::RunVRP() {
 		timeOpts = customers / 4;
     }else
 		timeOpts *= 0.50;
-    int noimprov = 0, duration = 0, last = 0, prelast = 0;
+    int stopCondition = 0, duration = 0, last = 0, prelast = 0;
     // start time
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
     // run the routines for 'customers' times or stop if no improvement or duration is more than MAX_TIME
-    for (int i = 0; i < iteration && noimprov < 5 && duration <= this->MAX_TIME_MIN; i++) {
-        bool opt, optflag = false;
-        int ts = this->RunTabuSearch(10 + noimprov);
+    for (int i = 0; i < iteration && stopCondition < 10 && duration <= this->MAX_TIME_MIN; i++) {
+        bool optflag = false;
+        int ts = this->RunTabuSearch(10 + stopCondition);
         if (ts == -last || (ts == prelast && ts < 0) || ts <= 0) {
             optflag = true;
-            noimprov++;
         }else {
-            noimprov = 0;
             prelast = last;
             last = ts;
         }
         Utils::Instance().logger("Starting opt", Utils::VERBOSE);
-        opt = this->vrp->RunOpts(timeOpts, optflag);
+        this->vrp->RunOpts(timeOpts, optflag);
         optflag = false;
-        if (ts == 0 && !opt)
-            noimprov++;
-        else
-            noimprov = 0;
         // partial time
         std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
         duration = std::chrono::duration_cast<std::chrono::minutes>(t2 - t1).count();
-		Utils::Instance().logger("PARTIAL: " + std::to_string(this->vrp->GetTotalCost()) +
+		Utils::Instance().logger("[!]\tPARTIAL: " + std::to_string(this->vrp->GetTotalCost()) +
 				" " +std::to_string(i+1) + "/" + std::to_string(iteration), Utils::INFO);
-        if (this->vrp->UpdateBest())
+        if (this->vrp->UpdateBest()) {
             this->SaveResult();
+            stopCondition = 0;
+        }else
+            stopCondition++;
     }
     this->finalCost = this->vrp->GetTotalCost();
     int percCost = (float)(this->finalCost - this->initCost) / this->initCost * 100;

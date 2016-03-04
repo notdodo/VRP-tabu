@@ -21,11 +21,11 @@ class ThreadPool {
     void Run() {
         while(!stop) {
             std::function<void(void)> run;
-            std::unique_lock<std::mutex> lock(queue_mutex);
+            std::unique_lock<std::mutex> lk(queue_mutex);
             if (!queue.empty()) {
                 run = queue.front();
                 queue.pop_front();
-                lock.unlock();
+                lk.unlock();
                 run();
             }
             wait_var.notify_one();
@@ -50,7 +50,6 @@ public:
         if (!stop) {
             std::lock_guard<std::mutex> lock(queue_mutex);
             queue.emplace_back(job);
-            wait_var.notify_one();
         }
     }
 

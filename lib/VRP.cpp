@@ -71,6 +71,9 @@ int VRP::InitSolutions() {
             ret = r;
         }
     }
+    OptimalMove opt;
+    opt.Opt2(b);
+    opt.Opt3(b);
     this->routes = b;
     return ret;
 }
@@ -161,6 +164,8 @@ int VRP::init(int start) {
         this->routes.push_back(v);
         it = dist.cbegin();
     }
+    OptimalMove opt;
+    opt.RouteBalancer(this->routes);
     int j = 0;
     if (this->routes.size() < (unsigned)this->vehicles)
         j = -1;
@@ -205,10 +210,6 @@ int VRP::InitSolutionsNeigh() {
             auto neigh = this->graph.GetNeighborhood(from);
             auto neighit = neigh.begin();
             if ((int)done.size() == this->numVertices - 1) {
-                /*if (!v.CloseTravel(from, depot)) {
-                    v.CloseTravel(from);
-                }else
-                    done.emplace(from);*/
                 break;
             }
             // take the next customer, the nearest
@@ -261,44 +262,32 @@ void VRP::RunTabuSearch(int times) {
  */
 bool VRP::RunOpts(int times, bool flag) {
     OptimalMove opt;
-    int i = 0, duration = 0, result, last = 0;
+    int i = 0, duration = 0, result;
     bool optxx = true;
     // start time
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
     // do at least 4 iteration in less than 30 minutes
-    while (i < times && !(i > 3 && duration >= 25)) {
+    while (i < times && duration <= 25) {
         Utils::Instance().logger("Round " + std::to_string(i+1) + " of " + std::to_string(times), Utils::VERBOSE);
         if (optxx) {
             result = opt.Opt10(this->routes, flag);
-            /*if (result < 0)
-                result = opt.Opt01(this->routes, flag);*/
-            if (result <= 0 || flag)
-                result = opt.Opt11(this->routes, flag);
-            if (result <= 0 || flag)
-                result = opt.Opt12(this->routes, flag);
-            /*if (result < 0)
-                result = this->opt->Opt21(this->routes, flag);*/
-            if (result <= 0 || flag)
-                result = opt.Opt22(this->routes, flag);
+            if (flag) flag = false;
+            //if (result < 0) result = opt.Opt01(this->routes, flag);
+            if (result <= 0) result = opt.Opt11(this->routes, flag);
+            if (result <= 0) result = opt.Opt12(this->routes, flag);
+            //if (result <= 0 || flag) result = opt.Opt21(this->routes, flag);
+            if (result <= 0) result = opt.Opt22(this->routes, flag);
         }
         // if no more improvements run only 2-opt and 3-opt
-        if (result < 0)
+        if (result <= 0)
             optxx = false;
         if (opt.Opt2(this->routes))
             optxx = true;
         if (opt.Opt3(this->routes))
             optxx = true;
-        if (result < 0 && !optxx)
+        if (result <= 0 && !optxx)
             break;
         i++;
-        if (flag) flag = false;
-        int partialCost = this->GetTotalCost();
-        if (partialCost == last) {
-            Utils::Instance().logger("Loop detected", Utils::VERBOSE);
-            flag = true;
-        }else {
-            partialCost = last;
-        }
         // partial time
         std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
         duration = std::chrono::duration_cast<std::chrono::minutes>(t2 - t1).count();

@@ -46,6 +46,7 @@ public:
         this->graph = r.graph;
         this->TRAVEL_COST = r.TRAVEL_COST;
         this->ALPHA = r.ALPHA;
+        this->averageCost = r.averageCost;
         return *this;
     }
 	/** @brief ###Overriding '!=' operator to evaluate two routes */
@@ -86,10 +87,8 @@ public:
     bool Travel(const Customer, const Customer);
     int size() const;
     std::list<StepType>* GetRoute();
-    Route CopyRoute() const;
     bool AddElem(const Customer);
     bool AddElem(const std::list<Customer> &);
-    bool AddElem(const Customer, const Customer);
     void RemoveCustomer(std::list<StepType>::iterator &);
     bool RemoveCustomer(const Customer);
     int GetTotalCost() const;
