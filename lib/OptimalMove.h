@@ -24,8 +24,8 @@ private:
     Route Opt3Swap(Route, Customer, Customer, Customer, Customer);
     float UpdateDistanceAverage(Routes);
 	bool Move1FromTo(Route &, Route &, bool);
-    bool SwapFromTo(Route &, Route &);
-    bool AddRemoveFromTo(Route &, Route &, int, int);
+    bool SwapFromTo(Route &, Route &, bool);
+    bool AddRemoveFromTo(Route &, Route &, int, int, bool);
 public:
 	OptimalMove(): cores(std::thread::hardware_concurrency() + 1) {};
 	void CleanVoid(Routes &);

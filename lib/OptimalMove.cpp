@@ -55,7 +55,7 @@ int OptimalMove::Opt10(Routes &routes, bool force) {
                 pool.AddTask([&pool, force, it, jt, i, j, &b, &flag, this]() {
                     Route tFrom = *it;
                     Route tTo = *jt;
-                    // if the swap is done and the cost of routes is less than before
+                    // if the move is done and the cost of routes is less than before
                     if (Move1FromTo(tFrom, tTo, force)) {
                         // wait until the lock is unlocked from an other thread, which is terminated
                         std::lock_guard<std::mutex> lock(this->mtx);
@@ -93,6 +93,8 @@ int OptimalMove::Opt10(Routes &routes, bool force) {
  *
  * This opt function try to move, for every route, a customer
  * from a route to another and remove empty route.
+ * @param[in] routes The routes to edit
+ * @param[in] force  If needs to find the worst combination
  * @return True if the routes are improves
  */
 int OptimalMove::Opt01(Routes &routes, bool force) {
@@ -134,7 +136,7 @@ int OptimalMove::Opt01(Routes &routes, bool force) {
         *itFinal = b.begin()->second.second;
         diffCost -= itFinal->GetTotalCost();
         this->CleanVoid(routes);
-        Utils::Instance().logger("opt10 improved: " + std::to_string(diffCost), Utils::VERBOSE);
+        Utils::Instance().logger("opt01 improved: " + std::to_string(diffCost), Utils::VERBOSE);
     }else
         Utils::Instance().logger("opt01 no improvement", Utils::VERBOSE);
     return diffCost;
@@ -152,42 +154,32 @@ int OptimalMove::Opt01(Routes &routes, bool force) {
  */
 bool OptimalMove::Move1FromTo(Route &source, Route &dest, bool force) {
     bool ret = false;
-    bool flag = false;
-    int best = dest.GetTotalCost();
-    int sourceCost = source.GetTotalCost();
-    int index = 0;
-    Route bestRoute = dest.CopyRoute();
+    int bestDest = dest.GetTotalCost(), bestSource = source.GetTotalCost();
+    Route bestDestRoute = dest, bestSourceRoute = source;
     RouteList::iterator itSource = source.GetRoute()->begin();
     // cannot move the depot
     std::advance(itSource, 1);
     // for each position in source route
-    for (int i = 1; itSource != source.GetRoute()->cend(); ++itSource, ++i) {
-        // cannot move the depot
-        if ((unsigned)i < source.GetRoute()->size() - 1) {
-            // copy the destination route to try some path configuration
-            Route temp = dest.CopyRoute();
-            // find the best position and update (if needed) the best route
-            if (temp.AddElem(itSource->first) && (temp.GetTotalCost() <= best || force)) {
-                // copy the source route to check out if this configuration is valid and better
-                Route copySource = source.CopyRoute();
-                copySource.RemoveCustomer(itSource->first);
-                if (copySource.size() <= 2 || copySource.GetTotalCost() < sourceCost || force) {
-                    best = temp.GetTotalCost();
-                    bestRoute = temp;
-                    // index of customer to remove
-                    index = i;
-                    flag = true;
-                }
-            }
+    for (unsigned i = 1; i < (source.GetRoute()->size() - 1); ++itSource, ++i) {
+        // copy the destination route to try some path configuration
+        Route tempDest = dest;
+        Route tempSource = source;
+        // find the best position and update (if needed) the best route
+        if (tempSource.RemoveCustomer(itSource->first) && tempDest.AddElem(itSource->first) &&
+                ((!force && tempDest.GetTotalCost() <= bestDest && tempSource.GetTotalCost() <= bestSource) ||
+                    (force && tempDest.GetTotalCost() > bestDest))) {
+            // copy the source route to check out if this configuration is valid and better
+            bestDest = tempDest.GetTotalCost();
+            bestSource = tempSource.GetTotalCost();
+            bestSourceRoute = tempSource;
+            bestDestRoute = tempDest;
+            ret = true;
         }
     }
     // if the route is better than before, update
-    if (best < dest.GetTotalCost() || flag) {
-        itSource = source.GetRoute()->begin();
-        std::advance(itSource, index);
-        source.RemoveCustomer(itSource);
-        dest = bestRoute;
-        ret = true;
+    if (ret) {
+        source = bestSourceRoute;
+        dest = bestDestRoute;
     }
     return ret;
 }
@@ -196,6 +188,8 @@ bool OptimalMove::Move1FromTo(Route &source, Route &dest, bool force) {
  *
  * This opt function try to swap, for every route, a random customer
  * from a route with another random customer from the next.
+ * @param[in] routes The routes to edit
+ * @param[in] force  If needs to find the worst combination
  * @return True if the routes are improves
  */
 int OptimalMove::Opt11(Routes &routes, bool force) {
@@ -212,7 +206,7 @@ int OptimalMove::Opt11(Routes &routes, bool force) {
                 pool.AddTask([force, it, jt, i, j, &b, &flag, this]() {
                     Route tFrom = *it;
                     Route tTo = *jt;
-                    if (SwapFromTo(tFrom, tTo)) {
+                    if (SwapFromTo(tFrom, tTo, force)) {
                         // wait until the lock is unlocked from an other thread, which is terminated
                         std::lock_guard<std::mutex> lock(this->mtx);
                         b.insert(std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo)));
@@ -237,7 +231,7 @@ int OptimalMove::Opt11(Routes &routes, bool force) {
         *itFinal = b.begin()->second.second;
         diffCost -= itFinal->GetTotalCost();
         this->CleanVoid(routes);
-        Utils::Instance().logger("opt10 improved: " + std::to_string(diffCost), Utils::VERBOSE);
+        Utils::Instance().logger("opt11 improved: " + std::to_string(diffCost), Utils::VERBOSE);
     }else
         Utils::Instance().logger("opt11 no improvement", Utils::VERBOSE);
     return diffCost;
@@ -247,81 +241,42 @@ int OptimalMove::Opt11(Routes &routes, bool force) {
  *
  * This function swap two customers from two routes.
  * @param[in] source First route
- * @param[in] dest Second route
+ * @param[in] dest   Second route
+ * @param[in] force  If needs to find the worst combination
  * @return True is the swap is successful
  */
-bool OptimalMove::SwapFromTo(Route &source, Route &dest) {
+bool OptimalMove::SwapFromTo(Route &source, Route &dest, bool force) {
     bool ret = false;
     int bestSourceCost = source.GetTotalCost(), bestDestCost = dest.GetTotalCost();
-    int sourceCost = source.GetTotalCost();
-    int removeSource = 0, removeDest = 0;
-    Route bestRouteSource = source.CopyRoute(), bestRouteDest = dest.CopyRoute();
+    Route bestRouteSource = source, bestRouteDest = dest;
     RouteList::iterator itSource = source.GetRoute()->begin();
-    RouteList::iterator itDest;
+    RouteList::iterator itDest = dest.GetRoute()->begin();
     // cannot move the depot (start)
     std::advance(itSource, 1);
     // for each customer in the source route try to move it to the next route
-    for (int i = 1; itSource != source.GetRoute()->cend(); std::advance(itSource, 1), i++) {
+    for (unsigned i = 1; i < (source.GetRoute()->size() - 1); std::advance(itSource, 1), i++) {
         // cannot move the depot (end)
-        if ((unsigned) i < source.GetRoute()->size() - 1) {
+        for (unsigned j = 1; j < (dest.GetRoute()->size() - 1); std::advance(itDest, 1), j++) {
             // copy the destination route to try some path configuration
-            Route temp = dest.CopyRoute();
+            Route tempDest = dest;
+            // copy the source route to check out if this configuration is valid and better
+            Route tempSource = source;
             // find the best position and update (if needed) the best route
-            if (temp.AddElem(itSource->first) && temp.GetTotalCost() <= bestDestCost) {
-                // copy the source route to check out if this configuration is valid and better
-                Route copySource = source.CopyRoute();
-                copySource.RemoveCustomer(itSource->first);
-                if (copySource.GetTotalCost() < sourceCost) {
-                    bestDestCost = temp.GetTotalCost();
-                    bestRouteDest = temp;
-                    // index of customer to remove from the source route
-                    removeSource = i;
-                    ret = true;
-                }
-            }
-        }
-    }
-    if (ret) {
-        ret = false;
-        // copy of the final source route (customer removed)
-        Route copySourceTemp = source.CopyRoute();
-        itSource = copySourceTemp.GetRoute()->begin();
-        std::advance(itSource, removeSource);
-        copySourceTemp.RemoveCustomer(itSource);
-        bestSourceCost = copySourceTemp.GetTotalCost();
-        // copy of the final dest route (customer added)
-        Route copyDestTemp = bestRouteDest;
-        bestDestCost = copyDestTemp.GetTotalCost();
-        itDest = copyDestTemp.GetRoute()->begin();
-        std::advance(itDest, 1);
-        // for each customer in the destination route try to move it to the source route
-        for (int i = 1; itDest != copyDestTemp.GetRoute()->cend(); std::advance(itDest, 1), i++) {
-            // cannot move the depot (end)
-            if ((unsigned) i < copyDestTemp.GetRoute()->size() - 1) {
-                // copy the destination route to try some path configuration
-                Route temp = copySourceTemp.CopyRoute();
-                // find the best position and update (if needed) the best route
-                if (temp.AddElem(itDest->first) && temp.GetTotalCost() <= bestSourceCost) {
-                    // copy the source route to check out if this configuration is valid and better
-                    Route copyDest = copyDestTemp.CopyRoute();
-                    copyDest.RemoveCustomer(itDest->first);
-                    if (copyDest.GetTotalCost() < bestDestCost) {
-                        bestSourceCost = temp.GetTotalCost();
-                        bestRouteSource = temp;
-                        // index of customer to remove from the source route
-                        removeDest = i;
-                        ret = true;
-                    }
-                }
+            if (tempSource.RemoveCustomer(itSource->first) && tempDest.RemoveCustomer(itDest->first) &&
+                    tempSource.AddElem(itDest->first) && tempDest.AddElem(itSource->first) &&
+                    ((!force && tempDest.GetTotalCost() < bestDestCost && tempSource.GetTotalCost() < bestSourceCost) ||
+                        (force && tempDest.GetTotalCost() > bestDestCost && tempSource.GetTotalCost() > bestSourceCost))) {
+                bestDestCost = tempDest.GetTotalCost();
+                bestSourceCost = tempSource.GetTotalCost();
+                bestRouteDest = tempDest;
+                bestRouteSource = tempSource;
+                // index of customer to remove from the source route
+                ret = true;
             }
         }
     }
     // if the routes are better than before, update
     if (ret) {
-        // remove the customer from the dest route
-        itDest = bestRouteDest.GetRoute()->begin();
-        std::advance(itDest, removeDest);
-        bestRouteDest.RemoveCustomer(itDest);
         // update the routes
         dest = bestRouteDest;
         source = bestRouteSource;
@@ -333,6 +288,8 @@ bool OptimalMove::SwapFromTo(Route &source, Route &dest) {
  *
  * This function swap two customers from the routes and moves one
  * customer from the second to the first route.
+ * @param[in] routes The routes to edit
+ * @param[in] force  If needs to find the worst combination
  * @return True if the routes are improves
  */
 int OptimalMove::Opt12(Routes &routes, bool force) {
@@ -349,7 +306,7 @@ int OptimalMove::Opt12(Routes &routes, bool force) {
                 pool.AddTask([force, it, jt, i, j, &b, &flag, this]() {
                     Route tFrom = *it;
                     Route tTo = *jt;
-                    if (AddRemoveFromTo(tFrom, tTo, 1, 2)) {
+                    if (AddRemoveFromTo(tFrom, tTo, 1, 2, force)) {
                         // wait until the lock is unlocked from an other thread, which is terminated
                         std::lock_guard<std::mutex> lock(this->mtx);
                         b.insert(std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo)));
@@ -374,7 +331,7 @@ int OptimalMove::Opt12(Routes &routes, bool force) {
         *itFinal = b.begin()->second.second;
         diffCost -= itFinal->GetTotalCost();
         this->CleanVoid(routes);
-        Utils::Instance().logger("opt10 improved: " + std::to_string(diffCost), Utils::VERBOSE);
+        Utils::Instance().logger("opt12 improved: " + std::to_string(diffCost), Utils::VERBOSE);
     }else
         Utils::Instance().logger("opt12 no improvement", Utils::VERBOSE);
     return diffCost;
@@ -388,23 +345,23 @@ int OptimalMove::Opt12(Routes &routes, bool force) {
  * @param[in] dest Route destination
  * @param[in] nInsert Number of customer to move from 'source' to 'dest'
  * @param[in] nRemove Number of customer to move from 'dest' to 'source'
+ * @param[in] force  If needs to find the worst combination
  * @return True if the customer is moved.
  */
-bool OptimalMove::AddRemoveFromTo(Route &source, Route &dest, int nInsert, int nRemove) {
+bool OptimalMove::AddRemoveFromTo(Route &source, Route &dest, int nInsert, int nRemove, bool force) {
     bool bestFound = false;
     RouteList::iterator itSource = source.GetRoute()->begin();
     RouteList::iterator itDest;
     std::list<Customer> custsInsert;
     std::list<Customer> custsRemove;
-    int bestFrom = source.GetTotalCost();
-    int bestTo = dest.GetTotalCost();
+    int bestFrom = source.GetTotalCost(), bestTo = dest.GetTotalCost();
     std::pair<Route, Route> bests = std::make_pair(source, dest);
     if ((int)source.GetRoute()->size() > (nInsert + 2) && (int)dest.GetRoute()->size() > (nRemove + 2)) {
         // do not try to remove/insert the depot
         std::advance(itSource, 1);
         for (; itSource != source.GetRoute()->cend(); std::advance(itSource, 1)) {
             custsInsert.clear();
-            Route copyFrom = source.CopyRoute();
+            Route copyFrom = source;
             auto copyit = itSource;
             for (int i = 0; i < nInsert && copyit != source.GetRoute()->cend(); i++, ++copyit) {
                 custsInsert.push_back(copyit->first);
@@ -418,8 +375,8 @@ bool OptimalMove::AddRemoveFromTo(Route &source, Route &dest, int nInsert, int n
             for (; itDest != dest.GetRoute()->cend(); std::advance(itDest, 1)) {
                 custsRemove.clear();
                 // copy route is the clean route (with customers removed)
-                Route tempFrom = copyFrom.CopyRoute();
-                Route copyTo = dest.CopyRoute();
+                Route tempFrom = copyFrom;
+                Route copyTo = dest;
                 auto copyit = itDest;
                 for (int i = 0; i < nRemove && copyit != dest.GetRoute()->cend(); i++, ++copyit) {
                     custsRemove.push_back(copyit->first);
@@ -428,7 +385,8 @@ bool OptimalMove::AddRemoveFromTo(Route &source, Route &dest, int nInsert, int n
                 }
                 if (copyit == dest.GetRoute()->cend()) break;
                 if (tempFrom.AddElem(custsRemove) && copyTo.AddElem(custsInsert) &&
-                        tempFrom.GetTotalCost() <= bestFrom && copyTo.GetTotalCost() <= bestTo) {
+                        ((!force && tempFrom.GetTotalCost() < bestFrom && copyTo.GetTotalCost() < bestTo) ||
+                            (force && tempFrom.GetTotalCost() > bestFrom && copyTo.GetTotalCost() > bestTo))) {
                     bestFound = true;
                     bestFrom = tempFrom.GetTotalCost();
                     bestTo = copyTo.GetTotalCost();
@@ -449,6 +407,8 @@ bool OptimalMove::AddRemoveFromTo(Route &source, Route &dest, int nInsert, int n
  *
  * This function swap one customers from each routes and moves one
  * customer from the first to the second.
+ * @param[in] routes The routes to edit
+ * @param[in] force  If needs to find the worst combination
  * @return True if the routes are improves
  */
 int OptimalMove::Opt21(Routes &routes, bool force) {
@@ -465,7 +425,7 @@ int OptimalMove::Opt21(Routes &routes, bool force) {
                 pool.AddTask([force, it, jt, i, j, &b, &flag, this]() {
                     Route tFrom = *it;
                     Route tTo = *jt;
-                    if (AddRemoveFromTo(tFrom, tTo, 2, 1)) {
+                    if (AddRemoveFromTo(tFrom, tTo, 2, 1, force)) {
                         // wait until the lock is unlocked from an other thread, which is terminated
                         std::lock_guard<std::mutex> lock(this->mtx);
                         b.insert(std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo)));
@@ -490,7 +450,7 @@ int OptimalMove::Opt21(Routes &routes, bool force) {
         *itFinal = b.begin()->second.second;
         diffCost -= itFinal->GetTotalCost();
         this->CleanVoid(routes);
-        Utils::Instance().logger("opt10 improved: " + std::to_string(diffCost), Utils::VERBOSE);
+        Utils::Instance().logger("opt21 improved: " + std::to_string(diffCost), Utils::VERBOSE);
     }else
         Utils::Instance().logger("opt21 no improvement", Utils::VERBOSE);
     return diffCost;
@@ -500,6 +460,8 @@ int OptimalMove::Opt21(Routes &routes, bool force) {
  *
  * This function swaps two customers from the first route
  * with two customers from the second.
+ * @param[in] routes The routes to edit
+ * @param[in] force  If needs to find the worst combination
  * @return True if the routes are improved
  */
 int OptimalMove::Opt22(Routes &routes, bool force) {
@@ -516,7 +478,7 @@ int OptimalMove::Opt22(Routes &routes, bool force) {
                 pool.AddTask([force, it, jt, i, j, &b, &flag, this]() {
                     Route tFrom = *it;
                     Route tTo = *jt;
-                    if (AddRemoveFromTo(tFrom, tTo, 2, 2)) {
+                    if (AddRemoveFromTo(tFrom, tTo, 2, 2, force)) {
                         // wait until the lock is unlocked from an other thread, which is terminated
                         std::lock_guard<std::mutex> lock(this->mtx);
                         b.insert(std::make_pair(std::make_pair(i, j), std::make_pair(tFrom, tTo)));
@@ -541,7 +503,7 @@ int OptimalMove::Opt22(Routes &routes, bool force) {
         *itFinal = b.begin()->second.second;
         diffCost -= itFinal->GetTotalCost();
         this->CleanVoid(routes);
-        Utils::Instance().logger("opt10 improved: " + std::to_string(diffCost), Utils::VERBOSE);
+        Utils::Instance().logger("opt22 improved: " + std::to_string(diffCost), Utils::VERBOSE);
     }else
         Utils::Instance().logger("opt22 no improvement", Utils::VERBOSE);
     return diffCost;
@@ -551,6 +513,7 @@ int OptimalMove::Opt22(Routes &routes, bool force) {
  *
  * Find route with one or two customers and move it/them to another route:
  * execute an Opt10 to balance the route and get more occupancy.
+ * @param[in] routes The routes to edit
  */
 void OptimalMove::RouteBalancer(Routes &routes) {
     Routes temp = routes;
@@ -559,7 +522,7 @@ void OptimalMove::RouteBalancer(Routes &routes) {
         bool reset = false;
         Routes::iterator it = temp.begin();
         for (int i = 0; it != temp.end() && !reset; ++it, i++) {
-            if (it->size() == 3) {
+            if (it->size() >= 3 && it->size() <= 4) {
                 Routes::iterator jt = temp.begin();
                 for (int j = 0; jt != temp.end(); ++jt, j++) {
                     if (jt != it && jt->size() > 4) {
@@ -576,13 +539,13 @@ void OptimalMove::RouteBalancer(Routes &routes) {
             stop = true;
     }
     routes = temp;
-    Utils::Instance().logger("Routes balancing...", Utils::VERBOSE);
 }
 
 /** @brief ###Reorder the customers of route to delete cross over path.
  *
  * For every route swap two customer with distance lower than the average distance
  * of the route and save the best solution.
+ * @param[in] routes The routes to edit
  * @return True if routes are improved
  */
 bool OptimalMove::Opt2(Routes &routes) {
@@ -602,13 +565,12 @@ bool OptimalMove::Opt2(Routes &routes) {
                 pool.AddTask([i, k, it, &bestCost, &bestRoute, &ret, this]() {
                     // swap customers
                     Route tempRoute = this->Opt2Swap(*it, i->first, k->first);
-                    this->mtx.lock();
+                    std::lock_guard<std::mutex> lock(this->mtx);
                     if (tempRoute.GetTotalCost() <= bestCost) {
                         bestCost = tempRoute.GetTotalCost();
                         bestRoute = tempRoute;
                         ret = true;
                     }
-                    this->mtx.unlock();
                 });
             }
         }
@@ -638,7 +600,7 @@ bool OptimalMove::Opt2(Routes &routes) {
  */
 Route OptimalMove::Opt2Swap(Route route, Customer i, Customer k) {
     std::list<Customer> cust;
-    Route tempRoute = route.CopyRoute();
+    Route tempRoute = route;
     RouteList::const_iterator it = tempRoute.GetRoute()->cbegin();
     // from start to i-1
     while(it->first != i) {
@@ -667,7 +629,7 @@ Route OptimalMove::Opt2Swap(Route route, Customer i, Customer k) {
         ++it;
     }
     // rebuild route
-    Route ret = route.CopyRoute();
+    Route ret = route;
     if ((unsigned)tempRoute.size() == cust.size() && tempRoute.RebuildRoute(cust))
         ret = tempRoute;
     return ret;
@@ -677,6 +639,7 @@ Route OptimalMove::Opt2Swap(Route route, Customer i, Customer k) {
  *
  * For every route swap two customer with distance lower than the average distance
  * (the route crosses over itself) of the route and save the best solution.
+ * @param[in] routes The routes to edit
  * @return True if routes are improved
  */
 bool OptimalMove::Opt3(Routes &routes) {

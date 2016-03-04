@@ -25,9 +25,9 @@
  * If no improvement are made choose the best of the worst.
  */
 void TabuSearch::Tabu(Routes &routes, int times) {
-    unsigned MAX = 50;
+    unsigned MAX = 20;
     // 0.80 521
-    float TABUTIME = this->numCustomers * 0.80;
+    float TABUTIME = this->numCustomers * 0.70;
     // number of neighbors to consider
     int N = (int)(this->numCustomers / routes.size());
     // copy all routes in a local list
