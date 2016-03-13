@@ -27,15 +27,15 @@
 void TabuList::AddTabu(Move m, int time) {
     float adj = 0.0f;
     // add the move to the solution moves for history searching and penalization
-    auto findIterBest = std::find_if(this->bestMoves.begin(), this->bestMoves.end(),
+    auto findIterBest = std::find_if(this->nonBestMoves.begin(), this->nonBestMoves.end(),
             [m](TabuElement &e) {
                 return m.first.first == e.first.first.first && m.first.second == e.first.second && m.second == e.second;
             });
-    if (findIterBest != this->bestMoves.end()) {
+    if (findIterBest != this->nonBestMoves.end()) {
         findIterBest->second += 1.0f;
         adj = findIterBest->second;
     }else
-        this->bestMoves.emplace_back(std::make_pair(m, 1.0f));
+        this->nonBestMoves.emplace_back(std::make_pair(m, 1.0f));
     // add the move the tabulist
     auto findIter = std::find_if(this->tabulist.begin(), this->tabulist.end(),
             [m](TabuElement &e) {
@@ -67,16 +67,15 @@ void TabuList::DecrementSize() { if(this->size > 7) this->size--; }
  * tabu anymore.
  */
 void TabuList::Clean() {
-    // 0.1 523/525
     for (auto &it : this->tabulist)
-        it.second -= 1;
-    for (auto &it : this->bestMoves)
-        it.second -= 0.1f;
+        it.second -= 1.0f;
+    for (auto &it : this->nonBestMoves)
+        it.second -= 0.25f;
     this->tabulist.sort([]( const auto &a, const auto &b ) { return a.second > b.second; } );
     this->tabulist.remove_if([](auto l){ return l.second < 1; });
-    std::sort(this->bestMoves.begin(), this->bestMoves.end(), [](const auto &lhs, const auto &rhs){ return lhs.second > rhs.second; });
-    std::remove_if(this->bestMoves.begin(), this->bestMoves.end(), [](auto l){ return l.second <= 0.0f;});
     this->tabulist.resize(this->size);
+    std::sort(this->nonBestMoves.begin(), this->nonBestMoves.end(), [](const auto &lhs, const auto &rhs){ return lhs.second > rhs.second; });
+    std::remove_if(this->nonBestMoves.begin(), this->nonBestMoves.end(), [](auto l){ return l.second <= 0.0f;});
 }
 
 /** @brief ###Clear the list */
@@ -109,9 +108,9 @@ bool TabuList::Find(Move m) const {
  * @return      Times the move is added to a solution
  */
 float TabuList::Check(Move m) const {
-    auto findIter = std::find_if(this->bestMoves.cbegin(), this->bestMoves.cend(),
+    auto findIter = std::find_if(this->nonBestMoves.cbegin(), this->nonBestMoves.cend(),
             [m](const TabuElement &e) {
                 return (m.first.first == e.first.first.first && m.first.second == e.first.first.second);
             });
-    return (findIter != this->bestMoves.cend())? findIter->second : 0;
+    return (findIter != this->nonBestMoves.cend())? findIter->second : 0;
 }

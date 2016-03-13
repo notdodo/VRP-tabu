@@ -65,9 +65,9 @@ void Controller::RunVRP() {
     // start time
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
     // run the routines for 'customers' times or stop if no improvement or duration is more than MAX_TIME
-    for (int i = 0; i < iteration && stopCondition < 10 && duration <= this->MAX_TIME_MIN; i++) {
+    for (int i = 0; i < iteration && stopCondition < 11 && duration <= this->MAX_TIME_MIN; i++) {
         bool optflag = false;
-        int ts = this->RunTabuSearch(10 + stopCondition);
+        int ts = this->RunTabuSearch(10 + stopCondition/2);
         if (ts == -last || (ts == prelast && ts < 0) || ts <= 0) {
             optflag = true;
         }else {

@@ -26,7 +26,6 @@
  */
 void TabuSearch::Tabu(Routes &routes, int times) {
     unsigned MAX = 20;
-    // 0.80 521
     float TABUTIME = this->numCustomers * 0.70;
     // number of neighbors to consider
     int N = (int)(this->numCustomers / routes.size());
@@ -48,6 +47,7 @@ void TabuSearch::Tabu(Routes &routes, int times) {
         // route index
         int r = 0;
         // for each route find the local best solution
+        float diverParam = 0;
         for (auto &its : s) {
             RouteList::iterator itc = its.GetRoute()->begin();
             Customer depot = its.GetRoute()->front().first;
@@ -90,13 +90,13 @@ void TabuSearch::Tabu(Routes &routes, int times) {
                     }
                 }
                 float asses = this->Evaluate(temp);
-                float p = this->lambda * asses * std::sqrt(this->numCustomers * temp.size()) * penalization;
-                if ((asses + p) < fitnessBestCandidate || fitnessBestCandidate == 0) {
+                if (asses < fitnessBestCandidate || fitnessBestCandidate == 0) {
                     fitnessBestCandidate = asses;
                     bestCandidate = temp;
                     bestMoves = candidateMoves;
                 }else if (temp != routes) {
                     nonBest.insert({asses, temp});
+                    diverParam += penalization;
                 }
                 temp = s;
             }
@@ -109,13 +109,14 @@ void TabuSearch::Tabu(Routes &routes, int times) {
             sbest = bestCandidate;
             bestFitness = fitnessBestCandidate;
         }else if (fitnessBestCandidate == bestFitness && !nonBest.empty()) {
+            diverParam *= this->lambda * this->Evaluate(s) * std::sqrt(this->numCustomers * s.size());
             auto nb = nonBest.begin();
             std::advance(nb, nonBest.size() - 1);
             s = nb->second;
             nonBest.erase(nb);
         }
         // add moves to tabulist
-        std::for_each(bestMoves.begin(), bestMoves.end(), [this, TABUTIME](Move &m){ this->tabulist.AddTabu(m, TABUTIME); });
+        std::for_each(bestMoves.begin(), bestMoves.end(), [this, TABUTIME, diverParam](Move &m){ this->tabulist.AddTabu(m, TABUTIME+diverParam); });
         this->tabulist.Clean();
         if (nonBest.size() > MAX) {
             auto nb = nonBest.begin();

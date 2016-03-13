@@ -13,7 +13,7 @@ typedef std::pair<Move, float> TabuElement;
 class TabuList {
 private:
 	std::forward_list<TabuElement> tabulist;			/**< List of all tabu moves */
-	std::vector<TabuElement> bestMoves;
+	std::vector<TabuElement> nonBestMoves;
 	unsigned size = 7;
 	void FlushTabu();
 public:
