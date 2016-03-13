@@ -6,7 +6,7 @@ BIN_NAME=VRP
 INCLUDE=-I actor/ -I lib/
 SECFLAGS=-fstack-protector-strong -Wstack-protector
 OPTFALGS=-O2 -march=native -mtune=native -fPIC
-CPPFLAGS=-g -s -std=c++1y -Wall -Wextra -Werror $(OPTFLAGS) $(INCLUDE) $(SECFLAGS) 
+CPPFLAGS=-s -std=c++1y -Wall -Wextra -Werror $(OPTFLAGS) $(INCLUDE) $(SECFLAGS) 
 LD=-lpthread
 
 SRCS=$(wildcard *.cpp actor/*.cpp lib/*.cpp lib/dist/*.cpp)
