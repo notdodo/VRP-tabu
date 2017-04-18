@@ -188,7 +188,9 @@ After creating and executing the JSON file through the VRP program the Web-UI ca
 
 ## Run
 
-Usage: ./VRP [-v] data.json
+Compile with: `make`
+
+Usage: `./VRP [-v] data.json`
 
 ## Documentation
 Run `doxygen` in root folder and the documentation will be generated in `doc/` folder
