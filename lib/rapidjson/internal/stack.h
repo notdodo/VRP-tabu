@@ -15,7 +15,7 @@
 #ifndef RAPIDJSON_INTERNAL_STACK_H_
 #define RAPIDJSON_INTERNAL_STACK_H_
 
-#include "../rapidjson.h"
+#include "../allocators.h"
 #include "swap.h"
 
 #if defined(__clang__)
@@ -38,7 +38,6 @@ public:
     // Optimization note: Do not allocate memory for stack_ in constructor.
     // Do it lazily when first Push() -> Expand() -> Resize().
     Stack(Allocator* allocator, size_t stackCapacity) : allocator_(allocator), ownAllocator_(0), stack_(0), stackTop_(0), stackEnd_(0), initialCapacity_(stackCapacity) {
-        RAPIDJSON_ASSERT(stackCapacity > 0);
     }
 
 #if RAPIDJSON_HAS_CXX11_RVALUE_REFS
@@ -127,6 +126,7 @@ public:
 
     template<typename T>
     RAPIDJSON_FORCEINLINE T* PushUnsafe(size_t count = 1) {
+        RAPIDJSON_ASSERT(stackTop_);
         RAPIDJSON_ASSERT(stackTop_ + sizeof(T) * count <= stackEnd_);
         T* ret = reinterpret_cast<T*>(stackTop_);
         stackTop_ += sizeof(T) * count;
@@ -147,7 +147,22 @@ public:
     }
 
     template<typename T>
+    const T* Top() const {
+        RAPIDJSON_ASSERT(GetSize() >= sizeof(T));
+        return reinterpret_cast<T*>(stackTop_ - sizeof(T));
+    }
+
+    template<typename T>
+    T* End() { return reinterpret_cast<T*>(stackTop_); }
+
+    template<typename T>
+    const T* End() const { return reinterpret_cast<T*>(stackTop_); }
+
+    template<typename T>
     T* Bottom() { return reinterpret_cast<T*>(stack_); }
+
+    template<typename T>
+    const T* Bottom() const { return reinterpret_cast<T*>(stack_); }
 
     bool HasAllocator() const {
         return allocator_ != 0;
@@ -157,6 +172,7 @@ public:
         RAPIDJSON_ASSERT(allocator_);
         return *allocator_;
     }
+
     bool Empty() const { return stackTop_ == stack_; }
     size_t GetSize() const { return static_cast<size_t>(stackTop_ - stack_); }
     size_t GetCapacity() const { return static_cast<size_t>(stackEnd_ - stack_); }
@@ -168,7 +184,7 @@ private:
         size_t newCapacity;
         if (stack_ == 0) {
             if (!allocator_)
-                ownAllocator_ = allocator_ = RAPIDJSON_NEW(Allocator());
+                ownAllocator_ = allocator_ = RAPIDJSON_NEW(Allocator)();
             newCapacity = initialCapacity_;
         } else {
             newCapacity = GetCapacity();

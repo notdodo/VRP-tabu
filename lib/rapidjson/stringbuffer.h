@@ -15,7 +15,8 @@
 #ifndef RAPIDJSON_STRINGBUFFER_H_
 #define RAPIDJSON_STRINGBUFFER_H_
 
-#include "rapidjson.h"
+#include "stream.h"
+#include "internal/stack.h"
 
 #if RAPIDJSON_HAS_CXX11_RVALUE_REFS
 #include <utility> // std::move
@@ -66,6 +67,7 @@ public:
 
     void Reserve(size_t count) { stack_.template Reserve<Ch>(count); }
     Ch* Push(size_t count) { return stack_.template Push<Ch>(count); }
+    Ch* PushUnsafe(size_t count) { return stack_.template PushUnsafe<Ch>(count); }
     void Pop(size_t count) { stack_.template Pop<Ch>(count); }
 
     const Ch* GetString() const {
@@ -76,7 +78,11 @@ public:
         return stack_.template Bottom<Ch>();
     }
 
+    //! Get the size of string in bytes in the string buffer.
     size_t GetSize() const { return stack_.GetSize(); }
+
+    //! Get the length of string in Ch in the string buffer.
+    size_t GetLength() const { return stack_.GetSize() / sizeof(Ch); }
 
     static const size_t kDefaultCapacity = 256;
     mutable internal::Stack<Allocator> stack_;
