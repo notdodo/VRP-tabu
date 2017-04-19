@@ -5,6 +5,7 @@
 #include <list>
 #include <iomanip>
 #include <algorithm>
+#include <cmath>
 
 typedef std::pair<Customer, int> StepType;
 

@@ -162,7 +162,6 @@ void Controller::PrintBestRoutes() {
  */
 void Controller::SaveResult() {
     Utils &u = this->GetUtils();
-    u.logger("Saving to output.json", u.VERBOSE);
     std::list<Route> *e = this->vrp->GetBestRoutes();
     std::chrono::high_resolution_clock::time_point partialTime = std::chrono::high_resolution_clock::now();
     auto timeExec = std::chrono::duration_cast<std::chrono::minutes>(partialTime - this->startTime).count();

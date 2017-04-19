@@ -45,6 +45,7 @@ VRP* Utils::InitParameters(int argc, char **argv, const float costTravel, const 
     std::string file(argv[fileIndex]);
     std::size_t found = file.find_last_of("/\\");
     this->filename = file.substr(found+1);
+    std::cout << this->filename << std::endl;
     FILE *fp = fopen(argv[fileIndex], "r");
     if (fp == NULL) {
         if (argc == 3)
@@ -158,6 +159,7 @@ void Utils::SaveResult(const std::list<Route> routes, int t) {
         d.AddMember("time", timeExec, allocator);
         d.Accept(writer);
         fclose(fp);
+        this->logger("Saving the routes inside vrp-init/" + this->filename, this->VERBOSE);
     }else {
         throw std::runtime_error("Error writing file! (Bad permissions)");
     }
