@@ -9,6 +9,5 @@ before_install:
 install: 
     - sudo apt-get install -qq g++-5
     - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-5 60
-    - make
 
 script: make -j2
