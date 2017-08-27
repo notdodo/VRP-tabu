@@ -1,7 +1,3 @@
 language: cpp
-
 install: make
-
-compiler: gcc
-
-scfript: make
+script: make
