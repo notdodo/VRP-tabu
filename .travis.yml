@@ -1,3 +1,6 @@
 language: cpp
 install: make
 script: make
+env:
+    CC=gcc-5
+    CXX=g++-5
