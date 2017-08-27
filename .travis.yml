@@ -1,6 +1,14 @@
 language: cpp
-install: make
-script: make
-env:
-    CC=gcc-5
-    CXX=g++-5
+compiler: gcc
+dist: trusty
+
+before_install:
+    - sudo add-apt-repository -u ppa:ubuntu-toolchain-r/test
+    - sudo apt-get update -qq
+
+install: 
+    - make
+    - sudo apt-get install -qq g++-5
+    - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-5 60
+
+script: make -j2
