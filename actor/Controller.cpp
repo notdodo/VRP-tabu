@@ -131,6 +131,7 @@ void Controller::PrintRoutes() {
         u.logger(*i, u.SUCCESS);
     }
     u.logger("Total cost: " + std::to_string(this->vrp->GetTotalCost()), u.INFO);
+    u.logger("Total routes: " + std::to_string(e->size()), u.INFO);
 	std::cout << std::endl;
 }
 
@@ -152,6 +153,7 @@ void Controller::PrintBestRoutes() {
 		totCost += i->GetTotalCost();
     }
     u.logger("Total cost: " + std::to_string(totCost), u.INFO);
+    u.logger("Total routes: " + std::to_string(e->size()), u.INFO);
 	std::cout << std::endl;
 }
 
