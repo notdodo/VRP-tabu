@@ -244,7 +244,7 @@ function readSingleFile(evt) {
 	routeDiv.innerHTML = "";
     //Retrieve the first (and only!) File from the FileList object
     var f = evt.target.files[0];
-    var time = f.lastModifiedDate;
+    var time = f.lastModified;
 
     if (f) {
         var r = new FileReader();
@@ -270,13 +270,12 @@ function readSingleFile(evt) {
 
 
 /* parse the json and display the results */
-/* ~130 microseconds */
+/* ~200 microseconds */
 function parseCustomer(cs) {
     canvas.__eventListeners["mouse:down"] = [];
     canvas.__eventListeners["mouse:over"] = [];
     canvas.__eventListeners["mouse:out"] = [];
     routeDiv.innerHTML = "";
-    var start = performance.now();
     if (cs.type === "VRP")
         flagVRP = true;
     if (Array.isArray(cs.vertices)) {
@@ -333,8 +332,6 @@ function parseCustomer(cs) {
             pars[n].disabled = true;
         if(Array.isArray(cs.routes))
             drawRoutes(cs.routes);
-        var stop = performance.now();
-        console.log(stop-start);
         fileupload.value = "";
         flagVRP = false;
     } else {
