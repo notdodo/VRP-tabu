@@ -17,6 +17,22 @@
 
 #include "Route.h"
 
+
+Route::Route(const Route& r) {
+    this->initialCapacity = r.initialCapacity;
+    this->capacity = r.capacity;
+    this->initialWorkTime = r.initialWorkTime;
+    this->workTime = r.workTime;
+    this->graph = r.graph;
+    this->totalCost = r.totalCost;
+    this->ALPHA = r.ALPHA;
+    this->TRAVEL_COST = r.TRAVEL_COST;
+    this->SetAverageCost();
+    for (StepType i : r.route) {
+        this->route.push_back({i.first, i.second});
+    }
+}
+
 /** @brief ###Constructor of Route.
  *
  * @param[in] c Initial capacity of the vehicle.
