@@ -17,14 +17,5 @@
 
 #include "Customer.h"
 
-
-Customer::Customer(const Customer& c) {
-    this->name = c.name;
-    this->x = c.x;
-    this->y = c.y;
-    this->request = c.request;
-    this->serviceTime = c.serviceTime;
-}
-
 /* destructor */
 Customer::~Customer() {}

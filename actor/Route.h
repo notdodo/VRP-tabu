@@ -82,7 +82,7 @@ public:
     }
 
     Route(const int, const float, const Graph, const float, const float);       //!< constructor
-    Route(const Route&); //!< constructor
+    Route(const Route&) = default;
     void CloseTravel(const Customer);
     bool CloseTravel(const Customer, const Customer);
     void PrintRoute() const;
