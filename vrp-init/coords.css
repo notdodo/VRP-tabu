@@ -1,165 +1,174 @@
 html {
-    box-sizing: border-box;
-    font-family: Lato, "Droid Sans";
-    color: white;
+  box-sizing: border-box;
+  font-family: Lato, "Droid Sans";
+  color: white;
 }
 
-*, *:before, *:after {
-    box-sizing: inherit;
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
 }
 
 body {
-    background-color: #52B3D9;
+  background-color: #2d3436;
 }
 
 a {
-	text-decoration: none;
+  text-decoration: none;
 }
 
-#left, #right div {
-    float: left;
+#left,
+#right div {
+  float: left;
 }
 
 #right {
-    float: right;
-    width: 36%;
+  float: right;
+  width: 36%;
 }
 
 #right #parameters {
-    float: right;
+  float: right;
 }
 
-.canvas-container, #clicks, #parameters {
-    margin: 10px 20px;
+.canvas-container,
+#clicks,
+#parameters {
+  margin: 10px 20px;
 }
 
 .canvas-container {
-    border: 2px solid white;
-    border-radius: 1%;
+  border: 2px solid white;
+  border-radius: 1%;
 }
 
 #clicks {
-    font-family: monospace;
-    font-size: 1.1em;
+  font-family: monospace;
+  font-size: 1.1em;
 }
 
 h2 {
-    font-family: "Droid Sans";
-    color: #019875;
-    font-size: 1.8em;
-    margin: 0 auto;
+  font-family: "Droid Sans";
+  color: #019875;
+  font-size: 1.8em;
+  margin: 0 auto;
 }
 
 h3 {
-    margin: 0 auto;
+  margin: 0 auto;
 }
 
-#parameters label, #parameters button {
-    margin: 30px;
-    text-align: right;
-    display: block;
+#parameters label,
+#parameters button {
+  margin: 30px;
+  text-align: right;
+  display: block;
 }
 
 #parameters label input[type="number"] {
-    width: 60px;
-    border: none;
-    background: #E4F1FE;
-    border-radius: 5px;
-    font-size: 1.2em;
-    text-align: center;
+  width: 60px;
+  border: none;
+  background: #636e72;
+  border-radius: 2px;
+  color: white;
+  font-size: 1.2em;
+  text-align: center;
 }
 
 #parameters label {
-    padding-right: 20px;
+  padding-right: 20px;
 }
 
-#parameters button, #parameters label:nth-last-child(2) {
-	font-family: Lato;
-    overflow: hidden !important;
-    font-size: 19px;
-    background-color: #3498db;
-    border: medium none;
-    border-radius: 6px;
-	padding: 10px 19px;
-	line-height: 1.471;
-	font-weight: 400;
-	color: #FFFFFF;
-	transition: all 0.35s ease 0s;
+#parameters button,
+#parameters label:nth-last-child(2) {
+  font-family: Lato;
+  overflow: hidden !important;
+  font-size: 19px;
+  background-color: #0984e3;
+  border: medium none;
+  border-radius: 6px;
+  padding: 10px 19px;
+  line-height: 1.471;
+  font-weight: 400;
+  color: #ffffff;
+  transition: all 0.35s ease 0s;
 }
 
 #parameters label:nth-last-child(2) a {
-	color: #FFFFFF;
+  color: #ffffff;
 }
 
 #parameters label:nth-last-child(2) {
-    font-size: 1.3em;
+  font-size: 1.3em;
 }
 
-#parameters button:hover, #parameters label:nth-last-child(2):hover {
-    cursor: pointer;
-	filter: brightness(1.1);
-	background-color: #D91E18;
+#parameters button:hover,
+#parameters label:nth-last-child(2):hover {
+  cursor: pointer;
+  filter: brightness(1.1);
+  background-color: #81ecec;
 }
 
 #controls {
-    margin: 10px 30px;
-    clear: both;
+  margin: 10px 30px;
+  clear: both;
 }
 
 #controls #log {
-    float: left;
-    font-family: sans;
-    width: 200px;
-    display: block;
-    font-weight: bold;
-    margin-right: 10px;
+  float: left;
+  font-family: sans;
+  width: 200px;
+  display: block;
+  font-weight: bold;
+  margin-right: 10px;
 }
 
 #controls #log #coord_msg {
-    float: right;
-    color: white;
-    font-weight: normal;
+  float: right;
+  color: white;
+  font-weight: normal;
 }
 
 #controls #routes {
-    width: 580px;
-    font-family: monospace;
-    font-size: 1.3em;
-    display: block;
-    float: left;
+  width: 580px;
+  font-family: monospace;
+  font-size: 1.3em;
+  display: block;
+  float: left;
 }
 
 #controls #routes .cost {
-	color: #ECF0F1;
+  color: #ecf0f1;
 }
 
 #controls #routes div span {
-    color: yellow;
+  color: yellow;
 }
 
 #controls #routes div {
-    margin: 10px 2px;
-    cursor: help;
+  margin: 10px 2px;
+  cursor: help;
 }
 
 #controls #routes div:first-child {
-    margin-top: 0;
+  margin-top: 0;
 }
 
 #controls #routes div .arrow {
-    color: black;
+  color: black;
 }
 
 .num {
-    color: #1F3A93;
+  color: #74b9ff;
 }
 
 #download {
-    display: none;
+  display: none;
 }
 
 #parameters #fileupload {
-    width: 10px;
-    height: 22px;
-    opacity: 0;
+  width: 10px;
+  height: 22px;
+  opacity: 0;
 }
