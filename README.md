@@ -1,4 +1,4 @@
-# VRP [![Build Status](https://travis-ci.org/edoz90/VRP-tabu.svg?branch=master)](https://travis-ci.org/edoz90/VRP-tabu)
+# VRP [![Build Status](https://travis-ci.org/notdodo/VRP-tabu.svg?branch=master)](https://travis-ci.org/notdodo/VRP-tabu)
 This repo contains the project of "Metodi ed Algoritmi di Ottimizzazione per il Problem Solving": a parallel algorithm for [VRP](https://en.wikipedia.org/wiki/Vehicle_routing_problem) with [tabu search](https://en.wikipedia.org/wiki/Tabu_search) heuristic.
 This program reads data from a JSON file which holds all informations about customers, vehicles, depot and requests.
 
