@@ -17,6 +17,11 @@
 
 #include "OptimalMove.h"
 
+auto comp = [](const BestResult &l, const BestResult &r) -> bool {
+    return (l.second.first.GetTotalCost() + l.second.second.GetTotalCost()) <
+           (r.second.first.GetTotalCost() + r.second.second.GetTotalCost());
+};
+
 float OptimalMove::UpdateDistanceAverage(Routes routes) {
     int count = std::pow(routes.size(), 2);
     float sum = 0;

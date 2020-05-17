@@ -11,11 +11,6 @@ typedef std::list<Route> Routes;
 // contains: the index of the two routes and the two routes
 typedef std::pair<std::pair<int, int>, std::pair<Route, Route>> BestResult;
 
-auto comp = [](const BestResult &l, const BestResult &r)->bool {
-    return (l.second.first.GetTotalCost() + l.second.second.GetTotalCost()) <
-        (r.second.first.GetTotalCost() + r.second.second.GetTotalCost());
-};
-
 class OptimalMove {
 private:
 	std::mutex mtx;

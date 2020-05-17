@@ -45,7 +45,6 @@ VRP* Utils::InitParameters(int argc, char **argv, const float costTravel, const 
     std::string file(argv[fileIndex]);
     std::size_t found = file.find_last_of("/\\");
     this->filename = file.substr(found+1);
-    std::cout << this->filename << std::endl;
     FILE *fp = fopen(argv[fileIndex], "r");
     if (fp == NULL) {
         if (argc == 3)
