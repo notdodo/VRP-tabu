@@ -20,22 +20,24 @@
 using namespace std;
 using namespace chrono;
 
-#define TRAVEL_COST 0.3f
-#define ALPHA 0.4f
-#define MAX_TIME_MIN 300
+namespace {
+constexpr float kTravelCost = 0.3f;
+constexpr float kAlpha = 0.4f;
+constexpr int kMaxTimeMin = 300;
+} // namespace
 
 int main(int argc, char** argv) {
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
     // create the controller
-    Controller &c = Controller::Instance();
-    Utils &u = Utils::Instance();
+    Controller& c = Controller::Instance();
+    Utils& u = Utils::Instance();
     try {
-        c.Init(argc, argv, TRAVEL_COST, ALPHA, MAX_TIME_MIN);
+        c.Init(argc, argv, kTravelCost, kAlpha, kMaxTimeMin);
         c.PrintRoutes();
         c.SaveResult();
         c.RunVRP();
-		c.PrintBestRoutes();
-    }catch(std::exception &e) {
+        c.PrintBestRoutes();
+    } catch (std::exception& e) {
         u.logger(e.what(), u.ERROR);
     }
     high_resolution_clock::time_point t2 = high_resolution_clock::now();
@@ -44,7 +46,6 @@ int main(int argc, char** argv) {
     u.logger(to_string(duration) + " milliseconds", u.INFO);
     return 0;
 }
-
 
 /*
  * Tabu Search is a meta-heuristic method designed for the solution of hard optimization problems.

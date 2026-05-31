@@ -24,27 +24,25 @@
  * @param[in] m    The move
  * @param[in] time Times the move is tabu
  */
-void TabuList::AddTabu(Move m, int time) {
+void TabuList::AddTabu(const Move& m, int time) {
     float adj = 0.0f;
     // add the move to the solution moves for history searching and penalization
-    auto findIterBest = std::find_if(this->nonBestMoves.begin(), this->nonBestMoves.end(),
-            [m](TabuElement &e) {
-                return m.first.first == e.first.first.first && m.first.second == e.first.second && m.second == e.second;
-            });
+    auto findIterBest = std::find_if(this->nonBestMoves.begin(), this->nonBestMoves.end(), [m](TabuElement& e) {
+        return m.first.first == e.first.first.first && m.first.second == e.first.second && m.second == e.second;
+    });
     if (findIterBest != this->nonBestMoves.end()) {
         findIterBest->second += 1.0f;
         adj = findIterBest->second;
-    }else
+    } else
         this->nonBestMoves.emplace_back(std::make_pair(m, 1.0f));
     // add the move the tabulist
-    auto findIter = std::find_if(this->tabulist.begin(), this->tabulist.end(),
-            [m](TabuElement &e) {
-                return m.first.first == e.first.first.first && m.first.second == e.first.second && m.second == e.second;
-            });
+    auto findIter = std::find_if(this->tabulist.begin(), this->tabulist.end(), [m](TabuElement& e) {
+        return m.first.first == e.first.first.first && m.first.second == e.first.second && m.second == e.second;
+    });
     if (findIter != this->tabulist.end())
         findIter->second += 1;
     else
-        this->tabulist.emplace_front(std::make_pair(m, (int)(time + (adj * time))));
+        this->tabulist.emplace_front(std::make_pair(m, static_cast<int>(time + (adj * time))));
 }
 
 /** @brief ###Remove a tabu move from the list
@@ -52,14 +50,20 @@ void TabuList::AddTabu(Move m, int time) {
  * Invalidate all moves which contain the route.
  * @param[in] p The move to remove
  */
-void TabuList::RemoveTabu(Move p) {
-    this->tabulist.remove_if([p](const TabuElement &e)->bool {
+void TabuList::RemoveTabu(const Move& p) {
+    this->tabulist.remove_if([p](const TabuElement& e) -> bool {
         return (p.first.first == e.first.first.first && p.first.second == e.first.second);
     });
 }
 
-void TabuList::IncrementSize() { if (this->size < 15) this->size++; }
-void TabuList::DecrementSize() { if(this->size > 7) this->size--; }
+void TabuList::IncrementSize() {
+    if (this->size < 15)
+        this->size++;
+}
+void TabuList::DecrementSize() {
+    if (this->size > 7)
+        this->size--;
+}
 
 /** @brief ###Aspiration criteria
  *
@@ -67,21 +71,22 @@ void TabuList::DecrementSize() { if(this->size > 7) this->size--; }
  * tabu anymore.
  */
 void TabuList::Clean() {
-    for (auto &it : this->tabulist)
+    for (auto& it : this->tabulist)
         it.second -= 1.0f;
-    for (auto &it : this->nonBestMoves)
+    for (auto& it : this->nonBestMoves)
         it.second -= 0.25f;
-    this->tabulist.sort([]( const auto &a, const auto &b ) { return a.second > b.second; } );
-    this->tabulist.remove_if([](auto l){ return l.second < 1; });
+    this->tabulist.sort([](const auto& a, const auto& b) { return a.second > b.second; });
+    this->tabulist.remove_if([](const auto& l) { return l.second < 1; });
     this->tabulist.resize(this->size);
-    std::sort(this->nonBestMoves.begin(), this->nonBestMoves.end(), [](const auto &lhs, const auto &rhs){ return lhs.second > rhs.second; });
-    std::remove_if(this->nonBestMoves.begin(), this->nonBestMoves.end(), [](auto l){ return l.second <= 0.0f;});
+    std::sort(this->nonBestMoves.begin(), this->nonBestMoves.end(),
+              [](const auto& lhs, const auto& rhs) { return lhs.second > rhs.second; });
+    this->nonBestMoves.erase(std::remove_if(this->nonBestMoves.begin(), this->nonBestMoves.end(),
+                                            [](const auto& l) { return l.second <= 0.0f; }),
+                             this->nonBestMoves.end());
 }
 
 /** @brief ###Clear the list */
-void TabuList::FlushTabu() {
-    this->tabulist.clear();
-}
+void TabuList::FlushTabu() { this->tabulist.clear(); }
 
 /** @brief ###Find a move in the list
  *
@@ -90,14 +95,14 @@ void TabuList::FlushTabu() {
  * @param[in] m The move to find
  * @return If the move is in list
  */
-bool TabuList::Find(Move m) const {
-    auto findIter = std::find_if(this->tabulist.cbegin(), this->tabulist.cend(),
-            [m](const TabuElement &e) {
-                // if in the list there is a move which the customer is the same as 's', the second
-                // element of TabuElement is the same as s.second or the move is the same
-                return ((m.first.first == e.first.first.first && m.first.second == e.first.second) ||
-                    (m.first.first == e.first.first.first && m.first.second == e.first.first.second && m.second == e.first.second));
-            });
+bool TabuList::Find(const Move& m) const {
+    auto findIter = std::find_if(this->tabulist.cbegin(), this->tabulist.cend(), [m](const TabuElement& e) {
+        // if in the list there is a move which the customer is the same as 's', the second
+        // element of TabuElement is the same as s.second or the move is the same
+        return ((m.first.first == e.first.first.first && m.first.second == e.first.second) ||
+                (m.first.first == e.first.first.first && m.first.second == e.first.first.second &&
+                 m.second == e.first.second));
+    });
     return findIter != this->tabulist.cend();
 }
 
@@ -107,10 +112,9 @@ bool TabuList::Find(Move m) const {
  * @param[in] m The move to search for
  * @return      Times the move is added to a solution
  */
-float TabuList::Check(Move m) const {
-    auto findIter = std::find_if(this->nonBestMoves.cbegin(), this->nonBestMoves.cend(),
-            [m](const TabuElement &e) {
-                return (m.first.first == e.first.first.first && m.first.second == e.first.first.second);
-            });
-    return (findIter != this->nonBestMoves.cend())? findIter->second : 0;
+float TabuList::Check(const Move& m) const {
+    auto findIter = std::find_if(this->nonBestMoves.cbegin(), this->nonBestMoves.cend(), [m](const TabuElement& e) {
+        return (m.first.first == e.first.first.first && m.first.second == e.first.first.second);
+    });
+    return (findIter != this->nonBestMoves.cend()) ? findIter->second : 0;
 }

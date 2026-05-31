@@ -19,12 +19,10 @@
 
 Edge::ConstructionToken::ConstructionToken() = default;
 
-Edge::Edge(const Edge &) = default;
+Edge::Edge(const Edge&) = default;
 
 /** @brief ###Constructor of Edge.
  *
  * @param[in] w Weight of the arch
  */
-Edge::Edge(const ConstructionToken &, int w) {
-    this->weight = w;
-}
+Edge::Edge(const ConstructionToken&, int w) { this->weight = w; }

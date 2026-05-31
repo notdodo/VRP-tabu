@@ -4,18 +4,19 @@
 #include "Customer.h"
 
 class Edge {
-public:
+  public:
     // Only class Vertex can create an object Edge
     class ConstructionToken {
-    private:
+      private:
         ConstructionToken();
         friend class Vertex;
     };
 
-    Edge(const Edge &);
-    Edge(const ConstructionToken &, int); 	//!< constructor
-    int weight;         					/**< Weight of the Edge */
-private:
+    Edge(const Edge&);
+    Edge& operator=(const Edge&) = default;
+    Edge(const ConstructionToken&, int); //!< constructor
+    int weight;                          /**< Weight of the Edge */
+  private:
 };
 
 #endif /* Edge_H */

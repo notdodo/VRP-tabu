@@ -18,7 +18,7 @@
 #include "Vertex.h"
 
 /** @brief ###Constructor of Vertex */
-Vertex::Vertex(ConstructionToken &) { }
+Vertex::Vertex(ConstructionToken&) {}
 
 /** @brief ###Insert an Edge.
  *
@@ -26,9 +26,9 @@ Vertex::Vertex(ConstructionToken &) { }
  * @param[in] end_point The destination customer
  * @param[in] weight The weight of the edge
  */
-void Vertex::InsertEdge(Customer &end_point, int weight) {
-    Edge new_edge { Edge::ConstructionToken{}, weight };
-	std::pair<Customer, Edge> temp(end_point, new_edge);
+void Vertex::InsertEdge(Customer& end_point, int weight) {
+    Edge new_edge{Edge::ConstructionToken{}, weight};
+    std::pair<Customer, Edge> temp(end_point, new_edge);
     edges.insert(temp);
 }
 
@@ -36,20 +36,14 @@ void Vertex::InsertEdge(Customer &end_point, int weight) {
  *
  * @param[in] edge The customer which the edge end
  */
-void Vertex::RemoveEdge(Customer &edge) {
-    edges.erase(edge);
-}
+void Vertex::RemoveEdge(Customer& edge) { edges.erase(edge); }
 
 /** @brief ###Get the weight of and edge.
  *
  * @param[in] c Customer at the end of the edge
  * @return The weight of the customer
  */
-int Vertex::GetWeight(Customer &c) {
-    return edges.find(c)->second.weight;
-}
+int Vertex::GetWeight(Customer& c) { return edges.find(c)->second.weight; }
 
 /** @brief ###Get the map of the edges */
-std::map<Customer, Edge> Vertex::GetEdges() const {
-    return this->edges;
-}
+std::map<Customer, Edge> Vertex::GetEdges() const { return this->edges; }

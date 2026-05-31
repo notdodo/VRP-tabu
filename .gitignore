@@ -4,6 +4,11 @@
 *.o
 *.obj
 /obj
+/build
+/build-debug
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
 
 # Precompiled Headers
 *.gch

@@ -11,25 +11,27 @@
 typedef std::multimap<int, Customer> Map;
 
 class VRP {
-private:
-    Graph graph;                /**< Graph of customers */
-    std::list<Route> routes;    /**< List of all routes */
-    int numVertices;            /**< Number of customers */
-    int vehicles;               /**< Number of vehicles */
-    int capacity;               /**< Capacity of each vehicle */
-    float workTime;             /**< Work time for each driver */
-    float costTravel;           /**< Cost parameter for each travel */
-    float alphaParam;           /**< Alpha parameter for route evaluation */
-    float averageDistance;      /**< Average distance of all routes */
-	std::list<Route> bestRoutes;/**< The best configuration of routes founded */
-    int totalCost;              /**< Total cost of routes */
+  private:
+    Graph graph;                 /**< Graph of customers */
+    std::list<Route> routes;     /**< List of all routes */
+    int numVertices;             /**< Number of customers */
+    int vehicles;                /**< Number of vehicles */
+    int capacity;                /**< Capacity of each vehicle */
+    float workTime;              /**< Work time for each driver */
+    float costTravel;            /**< Cost parameter for each travel */
+    float alphaParam;            /**< Alpha parameter for route evaluation */
+    float averageDistance;       /**< Average distance of all routes */
+    std::list<Route> bestRoutes; /**< The best configuration of routes founded */
+    int totalCost;               /**< Total cost of routes */
     bool CheckIntegrity();
     void OrderByCosts();
-public:
-    VRP() {};			                                                                                  //!< constructor
-    VRP(const Graph &, const int, const int, const int, const float, const bool, const float, const float); //!< constructor
+
+  public:
+    VRP() {}; //!< constructor
+    VRP(const Graph&, const int, const int, const int, const float, const bool, const float,
+        const float); //!< constructor
     int InitSolutions();
-    void CreateBest(std::set<Customer>, std::list<int>, Customer);
+    void CreateBest(const std::set<Customer>&, std::list<int>, const Customer&);
     int init(int);
     int InitSolutionsNeigh();
     void RunTabuSearch(int);
@@ -37,9 +39,9 @@ public:
     int GetTotalCost();
     int GetNumberOfCustomers() const;
     std::list<Route>* GetRoutes();
-	std::list<Route>* GetBestRoutes();
-	bool UpdateBest();
-	~VRP();						//!< destructor
+    std::list<Route>* GetBestRoutes();
+    bool UpdateBest();
+    ~VRP() = default; //!< destructor
 };
 
 #endif /* VRP_H */

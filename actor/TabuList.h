@@ -11,21 +11,22 @@ typedef std::pair<std::pair<Customer, int>, int> Move;
 typedef std::pair<Move, float> TabuElement;
 
 class TabuList {
-private:
-	std::forward_list<TabuElement> tabulist;			/**< List of all tabu moves */
-	std::vector<TabuElement> nonBestMoves;
-	unsigned size = 7;
-	void FlushTabu();
-public:
-	TabuList() {};
-	TabuList(int n) : size(n) {};
-	void IncrementSize();
-	void DecrementSize();
-	void AddTabu(Move, int);
-	void RemoveTabu(Move);
-	void Clean();
-	bool Find(Move) const;
-	float Check(Move) const;
+  private:
+    std::forward_list<TabuElement> tabulist; /**< List of all tabu moves */
+    std::vector<TabuElement> nonBestMoves;
+    unsigned size = 7;
+    void FlushTabu();
+
+  public:
+    TabuList() {};
+    TabuList(int n) : size(n) {};
+    void IncrementSize();
+    void DecrementSize();
+    void AddTabu(const Move&, int);
+    void RemoveTabu(const Move&);
+    void Clean();
+    bool Find(const Move&) const;
+    float Check(const Move&) const;
 };
 
 #endif /* TabuList_H */

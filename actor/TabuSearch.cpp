@@ -24,16 +24,18 @@
  * If the move is tabu but improve then update the route.
  * If no improvement are made choose the best of the worst.
  */
-void TabuSearch::Tabu(Routes &routes, int times) {
+void TabuSearch::Tabu(Routes& routes, int times) {
     unsigned MAX = 20;
     float TABUTIME = this->numCustomers * 0.70;
     // number of neighbors to consider
-    int N = (int)(this->numCustomers / routes.size());
+    int N = static_cast<int>(this->numCustomers / routes.size());
     // copy all routes in a local list
     std::list<Route> s(routes.begin(), routes.end());
     // best solution
     std::list<Route> sbest(routes.begin(), routes.end());
-    auto nonBestComp = [](const std::pair<float, Routes> &l, const std::pair<float, Routes> &r)->bool { return l.first < r.first; };
+    auto nonBestComp = [](const std::pair<float, Routes>& l, const std::pair<float, Routes>& r) -> bool {
+        return l.first < r.first;
+    };
     std::set<std::pair<float, Routes>, decltype(nonBestComp)> nonBest(nonBestComp);
     float bestFitness = 0;
     int iterations = 0;
@@ -48,7 +50,7 @@ void TabuSearch::Tabu(Routes &routes, int times) {
         int r = 0;
         // for each route find the local best solution
         float diverParam = 0;
-        for (auto &its : s) {
+        for (auto& its : s) {
             RouteList::iterator itc = its.GetRoute()->begin();
             Customer depot = its.GetRoute()->front().first;
             // for each customer in the route
@@ -70,20 +72,20 @@ void TabuSearch::Tabu(Routes &routes, int times) {
                         candidateMoves.push_back(m);
                         float itDestFitness = itDest->Evaluate();
                         Route fallbackFrom = *itFrom;
-                        Route fallbackDest = *itDest;
+                        const Route& fallbackDest = *itDest;
                         // move in->second to r from routeIndex
                         if (itFrom->RemoveCustomer(in->second) && itDest->AddElem(in->second)) {
                             // if is tabu or not improve
                             if (this->tabulist.Find(m) && itDest->Evaluate() > itDestFitness) {
-                                //restore
+                                // restore
                                 *itFrom = fallbackFrom;
                                 *itDest = fallbackDest;
-                            }else {
+                            } else {
                                 penalization += this->tabulist.Check(m);
                             }
                             // remove empty routes
-                            temp.remove_if([](Route r){ return r.size() <= 2; });
-                        }else {
+                            temp.remove_if([](const Route& r) { return r.size() <= 2; });
+                        } else {
                             *itFrom = fallbackFrom;
                             *itDest = fallbackDest;
                         }
@@ -95,7 +97,7 @@ void TabuSearch::Tabu(Routes &routes, int times) {
                     fitnessBestCandidate = asses;
                     bestCandidate = temp;
                     bestMoves = candidateMoves;
-                }else if (temp != routes) {
+                } else if (temp != routes) {
                     nonBest.insert({asses, temp});
                     diverParam += p;
                 }
@@ -109,14 +111,15 @@ void TabuSearch::Tabu(Routes &routes, int times) {
         if (fitnessBestCandidate < bestFitness || bestFitness == 0) {
             sbest = bestCandidate;
             bestFitness = fitnessBestCandidate;
-        }else if (fitnessBestCandidate == bestFitness && !nonBest.empty()) {
+        } else if (fitnessBestCandidate == bestFitness && !nonBest.empty()) {
             auto nb = nonBest.begin();
             std::advance(nb, nonBest.size() - 1);
             s = nb->second;
             nonBest.erase(nb);
         }
         // add moves to tabulist
-        std::for_each(bestMoves.begin(), bestMoves.end(), [this, TABUTIME, diverParam](Move &m){ this->tabulist.AddTabu(m, TABUTIME+diverParam/2); });
+        std::for_each(bestMoves.begin(), bestMoves.end(),
+                      [this, TABUTIME, diverParam](Move& m) { this->tabulist.AddTabu(m, TABUTIME + diverParam / 2); });
         this->tabulist.Clean();
         if (nonBest.size() > MAX) {
             auto nb = nonBest.begin();
@@ -130,7 +133,7 @@ void TabuSearch::Tabu(Routes &routes, int times) {
         routes = nb->second;
         nonBest.erase(nb);
         this->tabulist.IncrementSize();
-    }else {
+    } else {
         routes = sbest;
         this->tabulist.DecrementSize();
     }
@@ -144,13 +147,13 @@ void TabuSearch::Tabu(Routes &routes, int times) {
  * @param[in] l The list where find the customer
  * @return The index of the route
  */
-int TabuSearch::FindRouteFromCustomer(Customer c, Routes l) {
-    std::list<Route>::iterator it = l.begin();
+int TabuSearch::FindRouteFromCustomer(const Customer& c, const Routes& l) {
+    std::list<Route>::const_iterator it = l.cbegin();
     int ret = -1;
     bool flag = false;
-    for(; it != l.end() && !flag; ++it, ++ret) {
+    for (; it != l.cend() && !flag; ++it, ++ret) {
         RouteList::const_iterator l = it->GetRoute()->cbegin();
-        for(; l != it->GetRoute()->cend() && !flag; ++l) {
+        for (; l != it->GetRoute()->cend() && !flag; ++l) {
             if (l->first == c)
                 flag = true;
         }
@@ -162,11 +165,11 @@ int TabuSearch::FindRouteFromCustomer(Customer c, Routes l) {
  *
  * This function assess the quality of the solution
  */
-float TabuSearch::Evaluate(Routes l) {
-    std::list<Route>::iterator i = l.begin();
+float TabuSearch::Evaluate(const Routes& l) {
+    std::list<Route>::const_iterator i = l.cbegin();
     float tot = 0;
-    for (; i != l.end(); ++i) {
+    for (; i != l.cend(); ++i) {
         tot += i->Evaluate();
     }
-    return (float)(tot);
+    return tot;
 }

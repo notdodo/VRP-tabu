@@ -27,23 +27,25 @@
  * @param[in] alphaParam Alpha parameter for route evaluation.
  * @param[in] max_time Maximum execution time in minutes.
  */
-void Controller::Init(int argc, char **argv, float costTravel, float alphaParam, int max_time) {
+void Controller::Init(int argc, char** argv, float costTravel, float alphaParam, int max_time) {
     this->startTime = std::chrono::high_resolution_clock::now();
     this->MAX_TIME_MIN = max_time;
-    Utils &u = this->GetUtils();
+    Utils& u = this->GetUtils();
     u.logger("Initializing...", u.INFO);
     this->vrp = Utils::Instance().InitParameters(argc, argv, costTravel, alphaParam);
     int res = this->vrp->InitSolutionsNeigh();
     switch (res) {
-        case -1:
-            u.logger("You need less vehicles.", u.WARNING);
+    case -1:
+        u.logger("You need less vehicles.", u.WARNING);
         break;
-        case 0:
-            u.logger("Done!", u.SUCCESS);
+    case 0:
+        u.logger("Done!", u.SUCCESS);
         break;
-        case 1:
-            throw std::runtime_error("You need more vehicles");
+    case 1:
+        throw std::runtime_error("You need more vehicles");
         break;
+    default:
+        throw std::runtime_error("Unexpected init status");
     }
     this->initCost = this->vrp->GetTotalCost();
 }
@@ -55,43 +57,44 @@ void Controller::Init(int argc, char **argv, float costTravel, float alphaParam,
  */
 void Controller::RunVRP() {
     int customers = this->vrp->GetNumberOfCustomers();
-	int timeOpts = customers, iteration = customers;
+    int timeOpts = customers, iteration = customers;
     // number of opt functions executions
-	if (customers > 60){
-		timeOpts = customers / 4;
-    }else
-		timeOpts *= 0.50;
+    if (customers > 60) {
+        timeOpts = customers / 4;
+    } else
+        timeOpts *= 0.50;
     int stopCondition = 0, duration = 0, last = 0, prelast = 0;
     // start time
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
     // run the routines for 'customers' times or stop if no improvement or duration is more than MAX_TIME
     for (int i = 0; i < iteration && stopCondition < 11 && duration <= this->MAX_TIME_MIN; i++) {
         bool optflag = false;
-        int ts = this->RunTabuSearch(10 + stopCondition/2);
+        int ts = this->RunTabuSearch(10 + stopCondition / 2);
         if (ts == -last || (ts == prelast && ts < 0) || ts <= 0) {
             optflag = true;
-        }else {
+        } else {
             prelast = last;
             last = ts;
         }
         Utils::Instance().logger("Starting opt", Utils::VERBOSE);
         this->vrp->RunOpts(timeOpts, optflag);
-        optflag = false;
         // partial time
         std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
         duration = std::chrono::duration_cast<std::chrono::minutes>(t2 - t1).count();
-		Utils::Instance().logger("[!]\tPARTIAL: " + std::to_string(this->vrp->GetTotalCost()) +
-				" " +std::to_string(i+1) + "/" + std::to_string(iteration), Utils::INFO);
+        Utils::Instance().logger("[!]\tPARTIAL: " + std::to_string(this->vrp->GetTotalCost()) + " " +
+                                     std::to_string(i + 1) + "/" + std::to_string(iteration),
+                                 Utils::INFO);
         if (this->vrp->UpdateBest()) {
             this->SaveResult();
             stopCondition = 0;
-        }else
+        } else
             stopCondition++;
     }
     this->finalCost = this->vrp->GetTotalCost();
-    int percCost = (float)(this->finalCost - this->initCost) / this->initCost * 100;
-    Utils::Instance().logger("Total improvement: " + std::to_string(this->initCost - this->finalCost) + " "
-        + std::to_string(percCost) + "%", Utils::INFO);
+    int percCost = static_cast<float>(this->finalCost - this->initCost) / this->initCost * 100;
+    Utils::Instance().logger("Total improvement: " + std::to_string(this->initCost - this->finalCost) + " " +
+                                 std::to_string(percCost) + "%",
+                             Utils::INFO);
 }
 /** @brief ###Runs the tabu search function.
  *
@@ -106,33 +109,32 @@ int Controller::RunTabuSearch(int times) {
     if (diffCost != 0) {
         Utils::Instance().logger("Tabu Search improved: " + std::to_string(diffCost), Utils::VERBOSE);
         return diffCost;
-    }else {
+    } else {
         Utils::Instance().logger("Tabu Search no improvement", Utils::VERBOSE);
         return 0;
     }
 }
 
-Utils& Controller::GetUtils() const {
-    return Utils::Instance();
-}
+Utils& Controller::GetUtils() const { return Utils::Instance(); }
 
 /** @brief ###Print all routes.
  *
  * Prints all routes with costs and in a more readable way.
  */
 void Controller::PrintRoutes() {
-    Utils &u = this->GetUtils();
-    std::list<Route> *e = this->vrp->GetRoutes();
-	std::cout << std::endl;
+    Utils& u = this->GetUtils();
+    std::list<Route>* e = this->vrp->GetRoutes();
+    std::cout << '\n';
     for (auto i = e->cbegin(); i != e->cend(); i++) {
         u.logger(*i);
         std::advance(i, 1);
-        if (i == e->cend()) break;
+        if (i == e->cend())
+            break;
         u.logger(*i, u.SUCCESS);
     }
     u.logger("Total cost: " + std::to_string(this->vrp->GetTotalCost()), u.INFO);
     u.logger("Total routes: " + std::to_string(e->size()), u.INFO);
-	std::cout << std::endl;
+    std::cout << '\n';
 }
 
 /** @brief ###Print the best solution.
@@ -140,21 +142,22 @@ void Controller::PrintRoutes() {
  * Prints all routes with costs and in a more readable way.
  */
 void Controller::PrintBestRoutes() {
-    Utils &u = this->GetUtils();
-    std::list<Route> *e = this->vrp->GetBestRoutes();
-	int totCost = 0;
-	std::cout << std::endl;
+    Utils& u = this->GetUtils();
+    std::list<Route>* e = this->vrp->GetBestRoutes();
+    int totCost = 0;
+    std::cout << '\n';
     for (auto i = e->cbegin(); i != e->cend(); i++) {
         u.logger(*i);
-		totCost += i->GetTotalCost();
+        totCost += i->GetTotalCost();
         std::advance(i, 1);
-        if (i == e->cend()) break;
+        if (i == e->cend())
+            break;
         u.logger(*i, u.SUCCESS);
-		totCost += i->GetTotalCost();
+        totCost += i->GetTotalCost();
     }
     u.logger("Total cost: " + std::to_string(totCost), u.INFO);
     u.logger("Total routes: " + std::to_string(e->size()), u.INFO);
-	std::cout << std::endl;
+    std::cout << '\n';
 }
 
 /** @brief ###Save results.
@@ -163,8 +166,8 @@ void Controller::PrintBestRoutes() {
  * in the same folder of the executable file.
  */
 void Controller::SaveResult() {
-    Utils &u = this->GetUtils();
-    std::list<Route> *e = this->vrp->GetBestRoutes();
+    Utils& u = this->GetUtils();
+    std::list<Route>* e = this->vrp->GetBestRoutes();
     std::chrono::high_resolution_clock::time_point partialTime = std::chrono::high_resolution_clock::now();
     auto timeExec = std::chrono::duration_cast<std::chrono::minutes>(partialTime - this->startTime).count();
     u.SaveResult(*e, timeExec);

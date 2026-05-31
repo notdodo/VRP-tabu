@@ -12,27 +12,28 @@ typedef std::list<Route> Routes;
 typedef std::pair<std::pair<int, int>, std::pair<Route, Route>> BestResult;
 
 class OptimalMove {
-private:
-	std::mutex mtx;
+  private:
+    std::mutex mtx;
     const unsigned cores;
-    Route Opt2Swap(Route, Customer, Customer);
-    Route Opt3Swap(Route, Customer, Customer, Customer, Customer);
+    Route Opt2Swap(Route, const Customer&, const Customer&);
+    Route Opt3Swap(Route, const Customer&, const Customer&, const Customer&, const Customer&);
     float UpdateDistanceAverage(Routes);
-	bool Move1FromTo(Route &, Route &, bool);
-    bool SwapFromTo(Route &, Route &, bool);
-    bool AddRemoveFromTo(Route &, Route &, int, int, bool);
-public:
-	OptimalMove(): cores(std::thread::hardware_concurrency() + 1) {};
-	void CleanVoid(Routes &);
-	int Opt10(Routes &, bool);
-    int Opt01(Routes &, bool);
-    int Opt11(Routes &, bool);
-    int Opt21(Routes &, bool);
-    int Opt12(Routes &, bool);
-    int Opt22(Routes &, bool);
-	void RouteBalancer(Routes &);
-	bool Opt2(Routes &);
-	bool Opt3(Routes &);
+    bool Move1FromTo(Route&, Route&, bool);
+    bool SwapFromTo(Route&, Route&, bool);
+    bool AddRemoveFromTo(Route&, Route&, int, int, bool);
+
+  public:
+    OptimalMove() : cores(std::thread::hardware_concurrency() + 1) {};
+    void CleanVoid(Routes&);
+    int Opt10(Routes&, bool);
+    int Opt01(Routes&, bool);
+    int Opt11(Routes&, bool);
+    int Opt21(Routes&, bool);
+    int Opt12(Routes&, bool);
+    int Opt22(Routes&, bool);
+    void RouteBalancer(Routes&);
+    bool Opt2(Routes&);
+    bool Opt3(Routes&);
 };
 
 #endif /* OptimalMove_H */

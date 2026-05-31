@@ -10,12 +10,12 @@
 
 class ThreadPool {
 
-private:
+  private:
     // number of thread
     unsigned threadCount;
     std::list<std::thread> threads;
     // where tasks are storage
-    std::list<std::function<void(void)> > queue;
+    std::list<std::function<void(void)>> queue;
 
     std::atomic_bool stop;
     std::condition_variable wait_var;
@@ -40,22 +40,16 @@ private:
         }
     }
 
-public:
+  public:
     // Constructor
-    ThreadPool(int c)
-        : threadCount(c)
-        , threads(threadCount)
-        , stop(false)
-    {
+    ThreadPool(int c) : threadCount(c), threads(threadCount), stop(false) {
         // create the threads
         for (std::thread& t : threads)
-            t = std::move(std::thread([this] { this->Run(); }));
+            t = std::thread([this] { this->Run(); });
     }
 
     // Deconstructor
-    ~ThreadPool() {
-        JoinAll();
-    }
+    ~ThreadPool() { JoinAll(); }
 
     // Add a task to queue
     // The function will add, at the end of the queue, a `void`

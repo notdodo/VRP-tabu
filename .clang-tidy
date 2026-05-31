@@ -1,0 +1,15 @@
+Checks: >
+  -*,
+  clang-analyzer-*,
+  cert-*,
+  performance-*,
+  bugprone-*,
+  -bugprone-narrowing-conversions,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-exception-escape,
+  modernize-avoid-c-arrays,
+  modernize-avoid-c-style-cast,
+  modernize-macro-to-enum,
+WarningsAsErrors: "*"
+HeaderFilterRegex: "*"
+FormatStyle: none

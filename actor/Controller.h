@@ -5,27 +5,28 @@
 #include <chrono>
 
 class Controller {
-private:
-    VRP *vrp;
+  private:
+    VRP* vrp = nullptr;
     Controller() {};
     Controller(Controller const&) = delete;
     void operator=(Controller const&) = delete;
     int RunTabuSearch(int);
-    int MAX_TIME_MIN;
-    int initCost;
-    int finalCost;
+    int MAX_TIME_MIN = 0;
+    int initCost = 0;
+    int finalCost = 0;
     std::chrono::high_resolution_clock::time_point startTime;
-protected:
-public:
+
+  protected:
+  public:
     static Controller& Instance() {
         static Controller instance;
         return instance;
     }
-    void Init(int, char **argv, float, float, int);
+    void Init(int, char** argv, float, float, int);
     void RunVRP();
     void SaveResult();
     void PrintRoutes();
-	void PrintBestRoutes();
+    void PrintBestRoutes();
     Utils& GetUtils() const;
 };
 

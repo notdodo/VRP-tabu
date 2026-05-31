@@ -1,4 +1,4 @@
-# VRP [![Build Status](https://travis-ci.org/notdodo/VRP-tabu.svg?branch=master)](https://travis-ci.org/notdodo/VRP-tabu)
+# VRP
 This repo contains the project of "Metodi ed Algoritmi di Ottimizzazione per il Problem Solving": a parallel algorithm for [VRP](https://en.wikipedia.org/wiki/Vehicle_routing_problem) with [tabu search](https://en.wikipedia.org/wiki/Tabu_search) heuristic.
 This program reads data from a JSON file which holds all informations about customers, vehicles, depot and requests.
 
@@ -186,11 +186,59 @@ After creating and executing the JSON file through the VRP program the Web-UI ca
 
 ![Example of routes](https://raw.githubusercontent.com/edoz90/VRP-tabu/master/screenshot/routes.png "Routes and costs")
 
-## Run
+## Build
 
-Compile with: `make`
+This project now uses CMake and C++20.
 
-Usage: `./VRP [-v] data.json`
+Build with CMake:
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel
+```
+
+Warnings are treated as errors by default (`VRP_WARNINGS_AS_ERRORS=ON`).
+To disable this behavior explicitly:
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DVRP_WARNINGS_AS_ERRORS=OFF
+```
+
+Or use the wrapper Makefile:
+```bash
+make
+```
+
+Developer quality tools (C++ equivalents of `ruff`/`mypy` workflows):
+```bash
+make format        # apply clang-format
+make format-check  # fail if formatting differs
+make lint          # clang-tidy analysis
+make type-check    # cppcheck analysis
+make check         # format-check + lint + type-check + build
+```
+
+Run:
+```bash
+./build/VRP [-v] data.json
+make run
+# override default input
+make run RUN_INPUT=path/to/input.json
+```
+
+Dependency management:
+- `RapidJSON` is resolved via CMake (`find_path` + `FetchContent` fallback), pinned to the latest upstream commit.
+- You can disable automatic fetch with `-DVRP_FETCH_RAPIDJSON=OFF`.
+
+## Docker
+
+Build:
+```bash
+docker build -t vrp-tabu .
+```
+
+Run:
+```bash
+docker run --rm -v "$PWD:/work" vrp-tabu /work/path/to/data.json
+```
 
 ## Documentation
 Run `doxygen` in root folder and the documentation will be generated in `doc/` folder
