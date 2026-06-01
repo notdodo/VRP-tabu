@@ -7,9 +7,9 @@ Checks: >
   -bugprone-narrowing-conversions,
   -bugprone-easily-swappable-parameters,
   -bugprone-exception-escape,
-  modernize-avoid-c-arrays,
-  modernize-avoid-c-style-cast,
-  modernize-macro-to-enum,
+  modernize-*,
+  -modernize-use-trailing-return-type,
+  -modernize-use-auto,
 WarningsAsErrors: "*"
 HeaderFilterRegex: "*"
 FormatStyle: none

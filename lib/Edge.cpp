@@ -17,11 +17,9 @@
 
 #include "Edge.h"
 
-Edge::ConstructionToken::ConstructionToken() = default;
-
 Edge::Edge(const Edge&) = default;
 
-/** @brief ###Constructor of Edge.
+/** @brief Construct an edge with its weight.
  *
  * @param[in] w Weight of the arch
  */

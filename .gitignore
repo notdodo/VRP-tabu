@@ -5,7 +5,9 @@
 *.obj
 /obj
 /build
+/benchmarks
 /build-debug
+/build-bench
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
@@ -45,3 +47,4 @@ peda*
 *.py
 *.pyc
 *.log
+.DS_STORE

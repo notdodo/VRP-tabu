@@ -1,22 +1,29 @@
 #ifndef Utils_H
 #define Utils_H
 
-#include "rapidjson/filereadstream.h"
-#include "rapidjson/filewritestream.h"
-#include "rapidjson/document.h"     // rapidjson's DOM-style API
-#include "rapidjson/prettywriter.h" // for stringify JSON PrettyWriter
-#include "rapidjson/error/en.h"
 #include "VRP.h"
 #include "Route.h"
 #include <list>
+#include <nlohmann/json.hpp>
+#include <string>
 
 class VRP;
+
+/** @brief Utility singleton for input parsing, output writing, and logging.
+ *
+ * Utils owns the JSON document used during initialization and provides process-wide
+ * helpers for reading instances, saving route results, and emitting colored
+ * console messages.
+ */
 class Utils {
-  private:
-    Utils() {}
+  public:
     Utils(Utils const&) = delete;
-    void operator=(Utils const&) = delete;
-    rapidjson::Document d; /**< JSON Document */
+    Utils& operator=(Utils const&) = delete;
+
+  private:
+    /** @brief Hide construction behind the singleton accessor. */
+    Utils() = default;
+    nlohmann::json d; /**< Parsed input and output JSON document */
     const char* ANSI_RESET = "\u001B[0m";
     const char* ANSI_RED = "\u001B[1;31m";
     const char* ANSI_YELLOW = "\u001B[33m";
@@ -25,6 +32,7 @@ class Utils {
     const char* ANSI_IBLUE = "\x1b[0;94m";
 
   public:
+    /** @brief Return the shared utility instance. */
     static Utils& Instance() {
         static Utils instance;
         return instance;
@@ -36,15 +44,19 @@ class Utils {
     static const int VERBOSE = 4; /**< Verbose code */
     bool verbose = false;
     std::string filename = "";
+
+    /** @brief Parse CLI arguments and JSON input into a VRP instance. */
     VRP* InitParameters(int, char**, const float, const float);
-    void SaveResult(const std::list<Route>&, int);
+
+    /** @brief Save the supplied routes as the result for a run timestamp/index. */
+    void SaveResult(const Routes&, long long);
 
     /** @brief Print a log string
      *
      * @param[in] s The string to print
      * @param[in] c The code for log level
      */
-    template <typename T> void logger(T s, int c = 5) const {
+    template <typename T> void logger(const T& s, int c = 5) const {
         switch (c) {
         case SUCCESS:
             std::cout << ANSI_LIGHTGREEN << s << ANSI_RESET << std::endl;

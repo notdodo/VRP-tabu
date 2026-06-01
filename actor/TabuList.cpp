@@ -17,42 +17,47 @@
 
 #include "TabuList.h"
 
-/** @brief ###Add a tabu move to the list.
+namespace {
+/** @brief Check whether two moves relocate the same customer between the same routes. */
+bool SameMove(const Move& left, const Move& right) {
+    return left.first.first == right.first.first && left.first.second == right.first.second &&
+           left.second == right.second;
+}
+} // namespace
+
+/** @brief Add a tabu move to the list.
  *
  * This function insert a pair of Customer and Route and increment the counter
  * of 'how many times was used' the move.
  * @param[in] m    The move
  * @param[in] time Times the move is tabu
  */
-void TabuList::AddTabu(const Move& m, int time) {
+void TabuList::AddTabu(const Move& m, float time) {
     float adj = 0.0f;
     // add the move to the solution moves for history searching and penalization
-    auto findIterBest = std::find_if(this->nonBestMoves.begin(), this->nonBestMoves.end(), [m](TabuElement& e) {
-        return m.first.first == e.first.first.first && m.first.second == e.first.second && m.second == e.second;
-    });
+    auto findIterBest = std::ranges::find_if(this->nonBestMoves, [m](TabuElement& e) { return SameMove(m, e.first); });
     if (findIterBest != this->nonBestMoves.end()) {
         findIterBest->second += 1.0f;
         adj = findIterBest->second;
     } else
-        this->nonBestMoves.emplace_back(std::make_pair(m, 1.0f));
+        this->nonBestMoves.emplace_back(m, 1.0f);
     // add the move the tabulist
-    auto findIter = std::find_if(this->tabulist.begin(), this->tabulist.end(), [m](TabuElement& e) {
-        return m.first.first == e.first.first.first && m.first.second == e.first.second && m.second == e.second;
-    });
+    auto findIter = std::ranges::find_if(this->tabulist, [m](TabuElement& e) { return SameMove(m, e.first); });
     if (findIter != this->tabulist.end())
-        findIter->second += 1;
+        findIter->second += 1.0f;
     else
-        this->tabulist.emplace_front(std::make_pair(m, static_cast<int>(time + (adj * time))));
+        this->tabulist.emplace_front(m, time + (adj * time));
 }
 
-/** @brief ###Remove a tabu move from the list
+/** @brief Remove a tabu move from the list.
  *
  * Invalidate all moves which contain the route.
  * @param[in] p The move to remove
  */
 void TabuList::RemoveTabu(const Move& p) {
     this->tabulist.remove_if([p](const TabuElement& e) -> bool {
-        return (p.first.first == e.first.first.first && p.first.second == e.first.second);
+        return (p.first.first == e.first.first.first &&
+                (p.first.second == e.first.first.second || p.second == e.first.second));
     });
 }
 
@@ -65,7 +70,7 @@ void TabuList::DecrementSize() {
         this->size--;
 }
 
-/** @brief ###Aspiration criteria
+/** @brief Age tabu entries and keep candidate diversification moves.
  *
  * The aspiration criteria decrease the score of tabu moves until their are not
  * tabu anymore.
@@ -78,17 +83,15 @@ void TabuList::Clean() {
     this->tabulist.sort([](const auto& a, const auto& b) { return a.second > b.second; });
     this->tabulist.remove_if([](const auto& l) { return l.second < 1; });
     this->tabulist.resize(this->size);
-    std::sort(this->nonBestMoves.begin(), this->nonBestMoves.end(),
-              [](const auto& lhs, const auto& rhs) { return lhs.second > rhs.second; });
-    this->nonBestMoves.erase(std::remove_if(this->nonBestMoves.begin(), this->nonBestMoves.end(),
-                                            [](const auto& l) { return l.second <= 0.0f; }),
-                             this->nonBestMoves.end());
+    std::ranges::sort(this->nonBestMoves, [](const auto& lhs, const auto& rhs) { return lhs.second > rhs.second; });
+    const auto removed = std::ranges::remove_if(this->nonBestMoves, [](const auto& l) { return l.second <= 0.0f; });
+    this->nonBestMoves.erase(removed.begin(), removed.end());
 }
 
-/** @brief ###Clear the list */
+/** @brief Clear the list. */
 void TabuList::FlushTabu() { this->tabulist.clear(); }
 
-/** @brief ###Find a move in the list
+/** @brief Find a move in the list.
  *
  * This function find is a move in the tabulist can be processed; plus, when customer
  * i was previously removed from route k, its reinsertion in that route is forbidden.
@@ -96,24 +99,25 @@ void TabuList::FlushTabu() { this->tabulist.clear(); }
  * @return If the move is in list
  */
 bool TabuList::Find(const Move& m) const {
-    auto findIter = std::find_if(this->tabulist.cbegin(), this->tabulist.cend(), [m](const TabuElement& e) {
+    auto findIter = std::ranges::find_if(this->tabulist, [m](const TabuElement& e) {
+        const Move& tabuMove = e.first;
         // if in the list there is a move which the customer is the same as 's', the second
         // element of TabuElement is the same as s.second or the move is the same
-        return ((m.first.first == e.first.first.first && m.first.second == e.first.second) ||
-                (m.first.first == e.first.first.first && m.first.second == e.first.first.second &&
-                 m.second == e.first.second));
+        return ((m.first.first == tabuMove.first.first && m.first.second == tabuMove.first.second) ||
+                (m.first.first == tabuMove.first.first && m.first.second == tabuMove.second &&
+                 m.second == tabuMove.first.second));
     });
     return findIter != this->tabulist.cend();
 }
 
-/** @brief ###Number of times the move is added to a solution
+/** @brief Return the move penalization from tabu memory.
  *
  * Finds and returns the number of times a move is added to a solution
  * @param[in] m The move to search for
  * @return      Times the move is added to a solution
  */
 float TabuList::Check(const Move& m) const {
-    auto findIter = std::find_if(this->nonBestMoves.cbegin(), this->nonBestMoves.cend(), [m](const TabuElement& e) {
+    auto findIter = std::ranges::find_if(this->nonBestMoves, [m](const TabuElement& e) {
         return (m.first.first == e.first.first.first && m.first.second == e.first.first.second);
     });
     return (findIter != this->nonBestMoves.cend()) ? findIter->second : 0;

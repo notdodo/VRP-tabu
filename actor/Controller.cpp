@@ -17,7 +17,12 @@
 
 #include "Controller.h"
 
-/** @brief ###Configure variable and routes
+namespace {
+constexpr int kMaxStagnantIterations = 5;
+constexpr int kMaxForcedDiversificationRounds = 3;
+} // namespace
+
+/** @brief Configure solver variables and load routes.
  *
  * The controller start the program settings all the variable and calling
  * the functions to configure the routes.
@@ -33,7 +38,7 @@ void Controller::Init(int argc, char** argv, float costTravel, float alphaParam,
     Utils& u = this->GetUtils();
     u.logger("Initializing...", u.INFO);
     this->vrp = Utils::Instance().InitParameters(argc, argv, costTravel, alphaParam);
-    int res = this->vrp->InitSolutionsNeigh();
+    int res = this->vrp->InitSolutionsSavings();
     switch (res) {
     case -1:
         u.logger("You need less vehicles.", u.WARNING);
@@ -50,7 +55,7 @@ void Controller::Init(int argc, char** argv, float costTravel, float alphaParam,
     this->initCost = this->vrp->GetTotalCost();
 }
 
-/** @brief ###Runs all the main functions
+/** @brief Run the full VRP solution flow.
  *
  * This function sets and call the tabu search and optimal functions.
  * If the routines do not improves the solutions set stop.
@@ -61,16 +66,18 @@ void Controller::RunVRP() {
     // number of opt functions executions
     if (customers > 60) {
         timeOpts = customers / 4;
-    } else
-        timeOpts *= 0.50;
-    int stopCondition = 0, duration = 0, last = 0, prelast = 0;
+    } else {
+        timeOpts /= 2;
+    }
+    int stopCondition = 0, last = 0, prelast = 0;
+    std::chrono::minutes::rep duration = 0;
     // start time
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
     // run the routines for 'customers' times or stop if no improvement or duration is more than MAX_TIME
-    for (int i = 0; i < iteration && stopCondition < 11 && duration <= this->MAX_TIME_MIN; i++) {
+    for (int i = 0; i < iteration && stopCondition < kMaxStagnantIterations && duration <= this->MAX_TIME_MIN; i++) {
         bool optflag = false;
         int ts = this->RunTabuSearch(10 + stopCondition / 2);
-        if (ts == -last || (ts == prelast && ts < 0) || ts <= 0) {
+        if (stopCondition < kMaxForcedDiversificationRounds && (ts == -last || (ts == prelast && ts < 0) || ts <= 0)) {
             optflag = true;
         } else {
             prelast = last;
@@ -91,12 +98,12 @@ void Controller::RunVRP() {
             stopCondition++;
     }
     this->finalCost = this->vrp->GetTotalCost();
-    int percCost = static_cast<float>(this->finalCost - this->initCost) / this->initCost * 100;
+    const int percCost = this->initCost == 0 ? 0 : ((this->finalCost - this->initCost) * 100) / this->initCost;
     Utils::Instance().logger("Total improvement: " + std::to_string(this->initCost - this->finalCost) + " " +
                                  std::to_string(percCost) + "%",
                              Utils::INFO);
 }
-/** @brief ###Runs the tabu search function.
+/** @brief Run tabu search until the time budget expires.
  *
  * @param[in] times Number of iteration.
  * @return          If the routine made some improvements.
@@ -117,13 +124,13 @@ int Controller::RunTabuSearch(int times) {
 
 Utils& Controller::GetUtils() const { return Utils::Instance(); }
 
-/** @brief ###Print all routes.
+/** @brief Print all current routes.
  *
  * Prints all routes with costs and in a more readable way.
  */
 void Controller::PrintRoutes() {
     Utils& u = this->GetUtils();
-    std::list<Route>* e = this->vrp->GetRoutes();
+    Routes* e = this->vrp->GetRoutes();
     std::cout << '\n';
     for (auto i = e->cbegin(); i != e->cend(); i++) {
         u.logger(*i);
@@ -137,13 +144,13 @@ void Controller::PrintRoutes() {
     std::cout << '\n';
 }
 
-/** @brief ###Print the best solution.
+/** @brief Print the best solution.
  *
  * Prints all routes with costs and in a more readable way.
  */
 void Controller::PrintBestRoutes() {
     Utils& u = this->GetUtils();
-    std::list<Route>* e = this->vrp->GetBestRoutes();
+    Routes* e = this->vrp->GetBestRoutes();
     int totCost = 0;
     std::cout << '\n';
     for (auto i = e->cbegin(); i != e->cend(); i++) {
@@ -160,15 +167,15 @@ void Controller::PrintBestRoutes() {
     std::cout << '\n';
 }
 
-/** @brief ###Save results.
+/** @brief Save results.
  *
  * The results from the program are saved into a JSON file called 'output.json'
  * in the same folder of the executable file.
  */
 void Controller::SaveResult() {
     Utils& u = this->GetUtils();
-    std::list<Route>* e = this->vrp->GetBestRoutes();
+    Routes* e = this->vrp->GetBestRoutes();
     std::chrono::high_resolution_clock::time_point partialTime = std::chrono::high_resolution_clock::now();
-    auto timeExec = std::chrono::duration_cast<std::chrono::minutes>(partialTime - this->startTime).count();
+    const auto timeExec = std::chrono::duration_cast<std::chrono::minutes>(partialTime - this->startTime).count();
     u.SaveResult(*e, timeExec);
 }

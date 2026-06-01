@@ -3,19 +3,24 @@
 
 #include "Customer.h"
 
+/** @brief Weighted graph edge used by Vertex adjacency maps. */
 class Edge {
   public:
-    // Only class Vertex can create an object Edge
+    /** @brief Token type that restricts Edge construction to Vertex. */
     class ConstructionToken {
       private:
-        ConstructionToken();
+        ConstructionToken() = default;
         friend class Vertex;
     };
 
+    /** @brief Copy an edge. */
     Edge(const Edge&);
     Edge& operator=(const Edge&) = default;
-    Edge(const ConstructionToken&, int); //!< constructor
-    int weight;                          /**< Weight of the Edge */
+
+    /** @brief Create an edge with a fixed weight; callable only by Vertex. */
+    Edge(const ConstructionToken&, int);
+
+    int weight; /**< Weight of the Edge */
   private:
 };
 

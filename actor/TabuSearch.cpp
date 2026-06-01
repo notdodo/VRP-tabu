@@ -16,23 +16,81 @@
  ****************************************************************************/
 
 #include "TabuSearch.h"
+#include "../lib/ThreadPool.h"
 
-/** @brief ###Primary function, search for better solution and updates the tabu list
+#include <algorithm>
+#include <cmath>
+#include <map>
+#include <mutex>
+#include <ranges>
+#include <thread>
+#include <utility>
+#include <vector>
+
+namespace {
+/** @brief Candidate-generation work unit for one destination customer.
  *
- * This function run an iterated local search for a customer and try to insert neighbors
- * customers in the route. If the move isn't legal, updates the tabu list.
- * If the move is tabu but improve then update the route.
- * If no improvement are made choose the best of the worst.
+ * A job keeps the route that may receive a customer, the customer whose
+ * neighborhood is scanned, and the sequence offset used to restore the original
+ * sequential scan order after parallel evaluation.
+ */
+struct TabuCandidateJob {
+    int destRouteIndex;
+    Customer anchorCustomer;
+    std::size_t sequenceStart;
+    int neighborhoodLimit;
+};
+
+/** @brief Fully evaluated tabu candidate move.
+ *
+ * Worker threads only create these immutable results. The main tabu loop later
+ * reduces them sequentially, preserving deterministic best-candidate selection
+ * and keeping all tabu-list mutations on the owner thread.
+ */
+struct TabuCandidateResult {
+    std::size_t sequence;
+    float assessment;
+    float penalizationScore;
+    float score;
+    Route sourceRoute;
+    Route destRoute;
+    int sourceRouteIndex;
+    int destRouteIndex;
+    Move move;
+};
+
+/** @brief Apply a two-route candidate to a full route set only when needed. */
+Routes ApplyTabuCandidate(const Routes& base, const TabuCandidateResult& candidate) {
+    Routes routes = base;
+    routes[static_cast<std::size_t>(candidate.sourceRouteIndex)] = candidate.sourceRoute;
+    routes[static_cast<std::size_t>(candidate.destRouteIndex)] = candidate.destRoute;
+    std::erase_if(routes, [](const Route& route) { return route.size() <= 2; });
+    return routes;
+}
+} // namespace
+
+/** @brief Search for a better solution and update the tabu list.
+ *
+ * Runs an iterated tabu search over the current routes. Each iteration builds
+ * independent customer-relocation candidates, evaluates those candidates in
+ * parallel, then reduces the results in the original scan order so equal-score
+ * decisions remain deterministic. The tabu list is intentionally read during
+ * candidate evaluation but updated only after the parallel workers finish.
+ *
+ * If no improving candidate is found, the search diversifies by selecting one
+ * of the tracked non-best candidates and adjusting the tabu tenure.
  */
 void TabuSearch::Tabu(Routes& routes, int times) {
-    unsigned MAX = 20;
-    float TABUTIME = this->numCustomers * 0.70;
-    // number of neighbors to consider
-    int N = static_cast<int>(this->numCustomers / routes.size());
-    // copy all routes in a local list
-    std::list<Route> s(routes.begin(), routes.end());
-    // best solution
-    std::list<Route> sbest(routes.begin(), routes.end());
+    if (routes.empty()) {
+        return;
+    }
+    constexpr std::size_t maxNonBest = 20;
+    const float tabuTime = static_cast<float>(this->numCustomers) * 0.70F;
+    // Scan a nearest-neighbor subset; candidate evaluation is parallel.
+    const int neighborsToEvaluate = std::max(1, this->numCustomers / static_cast<int>(routes.size()));
+    // Work on a local route set so failed or exploratory moves never mutate the caller.
+    Routes s = routes;
+    Routes sbest = routes;
     auto nonBestComp = [](const std::pair<float, Routes>& l, const std::pair<float, Routes>& r) -> bool {
         return l.first < r.first;
     };
@@ -42,93 +100,144 @@ void TabuSearch::Tabu(Routes& routes, int times) {
     while (iterations < times) {
         iterations++;
         // create a local working copy of solutions
-        float fitnessBestCandidate = 0;
-        std::list<Route> bestCandidate;
+        const float currentFitness = this->Evaluate(s);
+        const float diversificationScale =
+            std::sqrt(static_cast<float>(this->numCustomers) * static_cast<float>(s.size()));
+        float fitnessBestCandidate = currentFitness;
+        Routes bestCandidate = s;
         std::vector<Move> bestMoves;
-        std::list<Route> temp(s.begin(), s.end());
-        // route index
-        int r = 0;
-        // for each route find the local best solution
+        bool hasImprovement = false;
         float diverParam = 0;
-        for (auto& its : s) {
-            RouteList::iterator itc = its.GetRoute()->begin();
-            Customer depot = its.GetRoute()->front().first;
-            // for each customer in the route
+
+        std::vector<TabuCandidateJob> candidateJobs;
+        std::map<Customer, int> customerRouteIndex;
+        std::size_t sequenceStart = 0;
+        int routeIndex = 0;
+        for (const Route& route : s) {
+            if (route.size() <= 2) {
+                ++routeIndex;
+                continue;
+            }
+            RouteList::const_iterator itc = route.GetRoute()->cbegin();
+            const Customer depot = route.GetRoute()->front().first;
             for (++itc; itc->first != depot; ++itc) {
-                float penalization = 0;
-                std::vector<Move> candidateMoves;
-                // get the neighborhood of the customer
-                std::multimap<int, Customer> neigh = this->graph.GetNeighborhood(itc->first);
-                // for N customer try to add them to the route
-                auto in = neigh.begin();
-                for (int i = 0; in != neigh.end() && i < N; ++in, i++) {
-                    std::list<Route>::iterator itDest = temp.begin();
-                    std::advance(itDest, r);
-                    if (itDest != temp.end() && !itDest->FindCustomer(in->second)) {
-                        int routeIndex = this->FindRouteFromCustomer(in->second, temp);
-                        std::list<Route>::iterator itFrom = temp.begin();
-                        std::advance(itFrom, routeIndex);
-                        Move m = {{in->second, r}, routeIndex};
-                        candidateMoves.push_back(m);
-                        float itDestFitness = itDest->Evaluate();
-                        Route fallbackFrom = *itFrom;
-                        const Route& fallbackDest = *itDest;
-                        // move in->second to r from routeIndex
-                        if (itFrom->RemoveCustomer(in->second) && itDest->AddElem(in->second)) {
-                            // if is tabu or not improve
-                            if (this->tabulist.Find(m) && itDest->Evaluate() > itDestFitness) {
-                                // restore
-                                *itFrom = fallbackFrom;
-                                *itDest = fallbackDest;
-                            } else {
-                                penalization += this->tabulist.Check(m);
-                            }
-                            // remove empty routes
-                            temp.remove_if([](const Route& r) { return r.size() <= 2; });
-                        } else {
-                            *itFrom = fallbackFrom;
-                            *itDest = fallbackDest;
-                        }
+                customerRouteIndex.emplace(itc->first, routeIndex);
+                candidateJobs.emplace_back(TabuCandidateJob{
+                    .destRouteIndex = routeIndex,
+                    .anchorCustomer = itc->first,
+                    .sequenceStart = sequenceStart,
+                    .neighborhoodLimit = neighborsToEvaluate,
+                });
+                // Reserve a stable sequence range for this job before it runs on a worker.
+                sequenceStart += static_cast<std::size_t>(neighborsToEvaluate);
+            }
+            ++routeIndex;
+        }
+
+        std::mutex candidateMutex;
+        std::vector<TabuCandidateResult> candidateResults;
+        candidateResults.reserve(sequenceStart);
+        this->graph->PrepareNeighborhoods();
+        ThreadPool pool(std::thread::hardware_concurrency());
+        for (const TabuCandidateJob& job : candidateJobs) {
+            pool.AddTask([this, &s, &customerRouteIndex, currentFitness, diversificationScale, &candidateMutex,
+                          &candidateResults, job]() {
+                std::vector<TabuCandidateResult> localResults;
+                const CostNeighborhood& neigh = this->graph->GetNeighborhoodVector(job.anchorCustomer);
+                auto in = neigh.cbegin();
+                for (int i = 0; in != neigh.cend() && i < job.neighborhoodLimit; ++in, ++i) {
+                    float penalization = 0.0F;
+                    const Route& baseDestRoute = s[static_cast<std::size_t>(job.destRouteIndex)];
+                    if (baseDestRoute.FindCustomer(in->second)) {
+                        continue;
+                    }
+                    const auto sourceRoute = customerRouteIndex.find(in->second);
+                    if (sourceRoute == customerRouteIndex.end()) {
+                        continue;
+                    }
+                    const int sourceRouteIndex = sourceRoute->second;
+                    if (sourceRouteIndex < 0 || sourceRouteIndex == job.destRouteIndex) {
+                        continue;
+                    }
+                    const Route& baseSourceRoute = s[static_cast<std::size_t>(sourceRouteIndex)];
+                    Route candidateSourceRoute = baseSourceRoute;
+                    Route candidateDestRoute = baseDestRoute;
+                    const Move move = {{in->second, job.destRouteIndex}, sourceRouteIndex};
+                    const float previousDestFitness = baseDestRoute.Evaluate();
+                    // Aspiration rule: reject a tabu move only when it also worsens the destination route.
+                    if (candidateSourceRoute.RemoveCustomer(in->second) && candidateDestRoute.AddElem(in->second) &&
+                        !(this->tabulist.Find(move) && candidateDestRoute.Evaluate() > previousDestFitness)) {
+                        penalization += this->tabulist.Check(move);
+                        const float assessment = currentFitness - baseSourceRoute.Evaluate() -
+                                                 baseDestRoute.Evaluate() + candidateSourceRoute.Evaluate() +
+                                                 candidateDestRoute.Evaluate();
+                        const float weightedPenalization =
+                            this->lambda * currentFitness * diversificationScale * penalization;
+                        localResults.emplace_back(TabuCandidateResult{
+                            .sequence = job.sequenceStart + static_cast<std::size_t>(i),
+                            .assessment = assessment,
+                            .penalizationScore = weightedPenalization,
+                            .score = assessment + weightedPenalization,
+                            .sourceRoute = std::move(candidateSourceRoute),
+                            .destRoute = std::move(candidateDestRoute),
+                            .sourceRouteIndex = sourceRouteIndex,
+                            .destRouteIndex = job.destRouteIndex,
+                            .move = move,
+                        });
                     }
                 }
-                float asses = this->Evaluate(temp);
-                float p = this->lambda * this->Evaluate(s) * std::sqrt(this->numCustomers * s.size()) * penalization;
-                if ((asses + p) < fitnessBestCandidate || fitnessBestCandidate == 0) {
-                    fitnessBestCandidate = asses;
-                    bestCandidate = temp;
-                    bestMoves = candidateMoves;
-                } else if (temp != routes) {
-                    nonBest.insert({asses, temp});
-                    diverParam += p;
+                if (!localResults.empty()) {
+                    std::scoped_lock lock(candidateMutex);
+                    for (TabuCandidateResult& result : localResults) {
+                        candidateResults.push_back(std::move(result));
+                    }
                 }
-                temp = s;
-            }
-            r++;
+            });
         }
-        // update the solution (local best)
+        pool.JoinAll();
+
+        // Worker completion order is nondeterministic; sequence restores the old serial scan order.
+        std::ranges::sort(candidateResults, [](const TabuCandidateResult& left, const TabuCandidateResult& right) {
+            return left.sequence < right.sequence;
+        });
+        for (const TabuCandidateResult& candidate : candidateResults) {
+            if (!hasImprovement || candidate.score < fitnessBestCandidate) {
+                fitnessBestCandidate = candidate.score;
+                bestCandidate = ApplyTabuCandidate(s, candidate);
+                bestMoves = {candidate.move};
+                hasImprovement = true;
+            } else {
+                Routes candidateRoutes = ApplyTabuCandidate(s, candidate);
+                nonBest.insert({candidate.assessment, std::move(candidateRoutes)});
+                while (nonBest.size() > maxNonBest) {
+                    nonBest.erase(nonBest.begin());
+                }
+                diverParam += candidate.penalizationScore;
+            }
+        }
         s = bestCandidate;
-        bestMoves.erase(std::unique(bestMoves.begin(), bestMoves.end()), bestMoves.end());
-        if (fitnessBestCandidate < bestFitness || bestFitness == 0) {
+        std::ranges::sort(bestMoves);
+        const auto uniqueSubrange = std::ranges::unique(bestMoves);
+        // Parallel evaluation can discover the same move more than once through different anchors.
+        bestMoves.erase(uniqueSubrange.begin(), uniqueSubrange.end());
+        const float bestFitnessCandidate = this->Evaluate(bestCandidate);
+        if (bestFitnessCandidate < bestFitness || bestFitness == 0) {
             sbest = bestCandidate;
-            bestFitness = fitnessBestCandidate;
-        } else if (fitnessBestCandidate == bestFitness && !nonBest.empty()) {
+            bestFitness = bestFitnessCandidate;
+        } else if (bestFitnessCandidate == bestFitness && !nonBest.empty()) {
             auto nb = nonBest.begin();
+            // The set is sorted by assessment; the last entry is deliberately more divergent.
             std::advance(nb, nonBest.size() - 1);
             s = nb->second;
             nonBest.erase(nb);
         }
-        // add moves to tabulist
-        std::for_each(bestMoves.begin(), bestMoves.end(),
-                      [this, TABUTIME, diverParam](Move& m) { this->tabulist.AddTabu(m, TABUTIME + diverParam / 2); });
+        std::ranges::for_each(
+            bestMoves, [this, tabuTime, diverParam](Move& m) { this->tabulist.AddTabu(m, tabuTime + diverParam / 2); });
         this->tabulist.Clean();
-        if (nonBest.size() > MAX) {
-            auto nb = nonBest.begin();
-            std::advance(nb, MAX);
-            nonBest.erase(nonBest.begin(), nb);
-        }
     }
     if (this->Evaluate(sbest) == this->Evaluate(routes) && !nonBest.empty()) {
         auto nb = nonBest.begin();
+        // No strict improvement was found, so restart from a worse stored candidate to diversify.
         std::advance(nb, nonBest.size() - 1);
         routes = nb->second;
         nonBest.erase(nb);
@@ -139,37 +248,14 @@ void TabuSearch::Tabu(Routes& routes, int times) {
     }
 }
 
-/** @brief ###Find the route to which a customer belongs
- *
- * This function finds the route to which a customer belongs and return the
- * index of the route.
- * @param[in] c The customer to find
- * @param[in] l The list where find the customer
- * @return The index of the route
- */
-int TabuSearch::FindRouteFromCustomer(const Customer& c, const Routes& l) {
-    std::list<Route>::const_iterator it = l.cbegin();
-    int ret = -1;
-    bool flag = false;
-    for (; it != l.cend() && !flag; ++it, ++ret) {
-        RouteList::const_iterator l = it->GetRoute()->cbegin();
-        for (; l != it->GetRoute()->cend() && !flag; ++l) {
-            if (l->first == c)
-                flag = true;
-        }
-    }
-    return ret;
-}
-
-/** @brief ###Evaluate the assessment of the solution
+/** @brief Evaluate the assessment of the solution.
  *
  * This function assess the quality of the solution
  */
 float TabuSearch::Evaluate(const Routes& l) {
-    std::list<Route>::const_iterator i = l.cbegin();
     float tot = 0;
-    for (; i != l.cend(); ++i) {
-        tot += i->Evaluate();
+    for (const Route& route : l) {
+        tot += route.Evaluate();
     }
     return tot;
 }
