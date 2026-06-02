@@ -32,11 +32,9 @@ cmake_install.cmake
 *.app
 VRP
 
-# Documentation directory
-doc/
-
 # file input/output
 *.json
+!/vrp-init/*.json
 
 # gdb
 .gdb_history

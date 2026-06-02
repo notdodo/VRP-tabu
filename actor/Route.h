@@ -2,10 +2,11 @@
 #define Route_H
 
 #include "Graph.h"
-#include <list>
 #include <iomanip>
-#include <algorithm>
-#include <cmath>
+#include <list>
+#include <ostream>
+#include <string>
+#include <utility>
 #include <vector>
 
 using StepType = std::pair<Customer, int>;
@@ -36,7 +37,6 @@ class Route {
     int capacity;          /**< Capacity remaining */
     float workTime;        /**< Work time remaining */
     int totalCost;         /**< Total cost of the route: sum of the weight */
-    float averageCost;     /**< Average of all path costs */
     float TRAVEL_COST;     /**< Cost parameter for each travel */
     float ALPHA;           /**< Alpha parameter for route evaluation */
     const Graph* graph;    /**< Shared immutable graph used for cost lookups */
@@ -98,9 +98,6 @@ class Route {
      */
     bool CloseTravel(const Customer&, const Customer&);
 
-    /** @brief Print the route using the configured logger format. */
-    void PrintRoute() const;
-
     /** @brief Try to append an arc between two customers.
      *
      * @return true when the travel keeps the route feasible.
@@ -139,15 +136,6 @@ class Route {
 
     /** @brief Return the graph travel cost between two customers. */
     [[nodiscard]] int GetTravelCost(const Customer&, const Customer&) const;
-
-    /** @brief Recompute average arc cost for the current route. */
-    void SetAverageCost();
-
-    /** @brief Return the last computed average arc cost. */
-    [[nodiscard]] float GetAverageCost() const;
-
-    /** @brief Collect customers reached through below-average-cost arcs. */
-    void GetUnderAverageCustomers(std::list<Customer>&);
 
     /** @brief Compute a route-to-route distance used for route balancing heuristics. */
     [[nodiscard]] float GetDistanceFrom(const Route&) const;

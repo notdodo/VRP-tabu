@@ -16,6 +16,9 @@
  ****************************************************************************/
 
 #include "Route.h"
+#include <algorithm>
+#include <cmath>
+#include <limits>
 
 namespace {
 float TravelTime(int cost, float travelCost) { return static_cast<float>(cost) * travelCost; }
@@ -40,7 +43,6 @@ Route::Route(int c, float wt, const Graph& g, const float costTravel, const floa
     else
         this->TRAVEL_COST = costTravel;
     this->ALPHA = alphaParam;
-    this->SetAverageCost();
 }
 
 /** @brief Close a route from a specific customer to the depot.
@@ -127,26 +129,8 @@ void Route::EmptyRoute(const Customer& depot) {
     this->capacity = this->initialCapacity;
     this->workTime = this->initialWorkTime;
     this->totalCost = 0;
-    this->averageCost = 0.0F;
     this->route.emplace_back(depot, 0);
     this->route.emplace_back(depot, 0);
-}
-
-/** @brief Print this route. */
-void Route::PrintRoute() const {
-    std::flush(std::cout);
-    if (this->route.size() > 1) {
-        for (const StepType& i : this->route) {
-            if (i.second > 0)
-                std::cout << i.first << " -(" << i.second << ")-> ";
-            else
-                std::cout << i.first;
-        }
-        std::cout << '\n';
-    } else {
-        std::cout << "Void Route!\n";
-    }
-    std::flush(std::cout);
 }
 
 /** @brief Return the number of stored route steps. */
@@ -353,40 +337,6 @@ int Route::GetInitialCapacity() const { return this->initialCapacity; }
 
 /** @brief Return the travel cost between two customers. */
 int Route::GetTravelCost(const Customer& from, const Customer& to) const { return this->graph->GetCost(from, to); }
-
-/** @brief Compute the average cost of all route arcs. */
-void Route::SetAverageCost() {
-    this->averageCost = this->route.size() <= 1
-                            ? 0.0F
-                            : static_cast<float>(this->totalCost) / static_cast<float>(this->route.size() - 1);
-}
-
-/** @brief Get the average cost of all route arcs. */
-float Route::GetAverageCost() const { return this->averageCost; }
-
-/** @brief List all customers reached by a below-average-cost path.
- *
- * Create a list of customers which have a cost path lower than the average cost
- * of the route.
- * @param[in] customers Initial list of customers
- */
-void Route::GetUnderAverageCustomers(std::list<Customer>& customers) {
-    this->SetAverageCost();
-    customers.clear();
-    RouteList::const_iterator i = this->route.cbegin();
-    for (; i != this->route.cend(); ++i) {
-        if (i->second > 0 && static_cast<float>(i->second) <= this->averageCost) {
-            std::advance(i, 1);
-            if (i->first != this->route.back().first) {
-                customers.push_back(i->first);
-                --i;
-            } else {
-                --i;
-                customers.push_back(i->first);
-            }
-        }
-    }
-}
 
 /** @brief Compute the distance between two routes.
  *

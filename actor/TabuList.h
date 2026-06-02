@@ -4,6 +4,7 @@
 #include "Route.h"
 #include "Customer.h"
 #include <forward_list>
+#include <vector>
 
 /** @brief Move descriptor: customer, destination route index, and source route index. */
 using Move = std::pair<std::pair<Customer, int>, int>;

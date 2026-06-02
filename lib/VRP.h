@@ -2,58 +2,45 @@
 #define VRP_H
 
 #include "Graph.h"
-#include "Utils.h"
-#include "TabuList.h"
 #include "OptimalMove.h"
 #include "TabuSearch.h"
-#include "../lib/ThreadPool.h"
-
-using Map = std::multimap<int, Customer>;
+#include <optional>
 
 /** @brief Vehicle Routing Problem model and solver orchestration.
  *
  * VRP owns the graph, current solution, best solution, and search parameters.
- * It builds initial solutions, applies local-search neighborhoods, runs tabu
- * search, and validates that route sets keep every customer exactly once.
+ * It builds the initial solution, applies local-search neighborhoods, and runs
+ * tabu search while preserving the incumbent best route set.
  */
 class VRP {
   private:
-    Graph graph;                  /**< Graph of customers */
-    Routes routes;                /**< Vector of all active routes */
-    int numVertices = 0;          /**< Number of customers */
-    int vehicles = 0;             /**< Number of vehicles */
-    int capacity = 0;             /**< Capacity of each vehicle */
-    float workTime = 0.0F;        /**< Work time for each driver */
-    float costTravel = 0.0F;      /**< Cost parameter for each travel */
-    float alphaParam = 0.0F;      /**< Alpha parameter for route evaluation */
-    float averageDistance = 0.0F; /**< Average distance of all routes */
-    Routes bestRoutes;            /**< Best route configuration found so far */
-    int totalCost = 0;            /**< Total cost of routes */
+    Graph graph;                          /**< Graph of customers */
+    Routes routes;                        /**< Vector of all active routes */
+    int numVertices = 0;                  /**< Number of customers */
+    int vehicles = 0;                     /**< Number of vehicles */
+    int capacity = 0;                     /**< Capacity of each vehicle */
+    int minimumRoutes = 0;                /**< Capacity lower bound for the number of required routes */
+    float workTime = 0.0F;                /**< Work time for each driver */
+    float costTravel = 0.0F;              /**< Cost parameter for each travel */
+    float alphaParam = 0.0F;              /**< Alpha parameter for route evaluation */
+    Routes bestRoutes;                    /**< Best route configuration found so far */
+    Routes routeArchive;                  /**< Routes seen during search for recombination */
+    std::optional<TabuSearch> tabuSearch; /**< Persistent tabu memory across outer search iterations */
+    int freshTabuRestartsUsed = 0;        /**< Number of bounded incumbent restarts already consumed */
+    int totalCost = 0;                    /**< Total cost of routes */
 
-    /** @brief Verify route feasibility and customer coverage invariants. */
-    bool CheckIntegrity();
+    /** @brief Store route candidates from a complete solution for later recombination. */
+    void ArchiveRoutes(const Routes&);
 
-    /** @brief Sort routes by cost to make later heuristics deterministic. */
-    void OrderByCosts();
+    /** @brief Recombine archived route candidates into a better complete solution. */
+    bool RecombineArchivedRoutes();
 
   public:
     /** @brief Create an empty VRP object. */
     VRP() = default;
 
     /** @brief Create a VRP model from graph data and solver parameters. */
-    VRP(Graph&&, const int, const int, const int, const float, const bool, const float, const float);
-
-    /** @brief Build the initial solution using the default constructor heuristic. */
-    int InitSolutions();
-
-    /** @brief Convert a shortest-path customer order into a route set candidate. */
-    void CreateBest(const std::set<Customer>&, std::list<int>, const Customer&);
-
-    /** @brief Build one nearest-neighbor route starting from a sorted-customer index. */
-    int init(int);
-
-    /** @brief Build an initial solution through repeated nearest-neighbor starts. */
-    int InitSolutionsNeigh();
+    VRP(Graph&&, const int, const int, const int, const int, const float, const bool, const float, const float);
 
     /** @brief Build an initial solution with savings and sweep heuristics. */
     int InitSolutionsSavings();
@@ -65,7 +52,7 @@ class VRP {
      *
      * @return true when at least one move improved the solution.
      */
-    bool RunOpts(int, bool);
+    bool RunOpts(int, bool, int);
 
     /** @brief Return the total cost of the current route set. */
     [[nodiscard]] int GetTotalCost();
@@ -81,6 +68,15 @@ class VRP {
 
     /** @brief Replace the best solution when the current one is feasible and cheaper. */
     bool UpdateBest();
+
+    /** @brief Restore the current route set from the best solution found so far. */
+    void RestoreBest();
+
+    /** @brief Restart once from the incumbent with fresh tabu memory. */
+    bool RestartFromBestWithFreshTabu();
+
+    /** @brief Try bounded incumbent-only diversification branches and keep only strict improvements. */
+    bool IntensifyBestWithDiversifiedBranches(int, int);
 
     ~VRP() = default;
 };

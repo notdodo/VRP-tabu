@@ -35,27 +35,15 @@ bool CustomerCostLess(const std::pair<int, Customer>& left, const std::pair<int,
  * @param[in] cust The customer who form the vertex
  */
 void Graph::InsertVertex(Customer& cust) {
-    Vertex::ConstructionToken c;
-    Vertex v{c};
-    InsertVertex(cust, v);
-}
-
-/** @brief Insert a prebuilt vertex.
- *
- * Insert a vertex in the graph.
- * @param[in] c The customer who form the vertex
- * @param[in] v The vertex created
- */
-void Graph::InsertVertex(Customer& c, Vertex& v) {
-    if (this->vertexes.contains(c)) {
+    if (this->vertexIndex.contains(cust)) {
         return;
     }
     const std::size_t oldSize = this->customers.size();
-    this->customers.push_back(c);
-    this->vertexIndex.emplace(c, oldSize);
+    cust.graphIndex = oldSize;
+    this->customers.push_back(cust);
+    this->vertexIndex.emplace(cust, oldSize);
     this->ResizeCostMatrix(oldSize, oldSize + 1);
     this->costMatrix[oldSize * (oldSize + 1) + oldSize] = 0;
-    this->vertexes.emplace(c, v);
     this->InvalidateNeighborhoods();
 }
 
@@ -67,28 +55,10 @@ void Graph::InsertVertex(Customer& c, Vertex& v) {
  * @param[in] weight The weight of the edge
  */
 void Graph::InsertEdge(Customer& node, Customer& new_edge, int weight) {
-    auto it = vertexes.find(node);
-    if (node.name != new_edge.name && it != vertexes.end()) {
-        it->second.InsertEdge(new_edge, weight);
+    if (node.name != new_edge.name && this->vertexIndex.contains(node) && this->vertexIndex.contains(new_edge)) {
         const std::size_t fromIndex = this->IndexOf(node);
         const std::size_t toIndex = this->IndexOf(new_edge);
         this->costMatrix[fromIndex * this->customers.size() + toIndex] = weight;
-        this->InvalidateNeighborhoods();
-    }
-}
-
-/** @brief Remove an edge.
- *
- * @param[in] node The customer which the edge start
- * @param[in] edge The customer which the edge finish
- */
-void Graph::RemoveEdge(Customer& node, Customer& edge) {
-    auto it = vertexes.find(node);
-    if (it != vertexes.end()) {
-        it->second.RemoveEdge(edge);
-        const std::size_t fromIndex = this->IndexOf(node);
-        const std::size_t toIndex = this->IndexOf(edge);
-        this->costMatrix[fromIndex * this->customers.size() + toIndex] = MissingCost;
         this->InvalidateNeighborhoods();
     }
 }
@@ -119,20 +89,6 @@ std::multimap<int, Customer> Graph::sortV0() {
         }
     }
     return v;
-}
-
-/** @brief Find the neighborhood of a customer.
- *
- * This function sorts the neighborhood of a customer by distance;
- * the order is crescent.
- * @return The map of customer sorted
- */
-std::multimap<int, Customer> Graph::GetNeighborhood(const Customer& c) const {
-    std::multimap<int, Customer> mm;
-    for (const auto& [cost, customer] : this->GetNeighborhoodVector(c)) {
-        mm.emplace(std::pair<int, Customer>(cost, customer));
-    }
-    return mm;
 }
 
 /** @brief Return neighbors of a customer as a sorted cached vector. */
@@ -177,7 +133,12 @@ void Graph::ResizeCostMatrix(std::size_t oldSize, std::size_t newSize) {
 }
 
 /** @brief Return a customer's compact matrix index. */
-std::size_t Graph::IndexOf(const Customer& customer) const { return this->vertexIndex.at(customer); }
+std::size_t Graph::IndexOf(const Customer& customer) const {
+    if (customer.graphIndex < this->customers.size() && this->customers[customer.graphIndex].name == customer.name) {
+        return customer.graphIndex;
+    }
+    return this->vertexIndex.at(customer);
+}
 
 /** @brief Mark cached neighborhoods stale after graph mutation. */
 void Graph::InvalidateNeighborhoods() {

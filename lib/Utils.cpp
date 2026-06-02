@@ -179,8 +179,13 @@ VRP* Utils::InitParameters(int argc, char** argv, const float costTravel, const 
         RequirePositive(vehicles);
         RequirePositive(capacity);
         RequireNonNegative(workTime);
-        v = new VRP(std::move(g), numVertices, vehicles, capacity, static_cast<float>(workTime), flagTime, costTravel,
-                    alphaParam);
+        int totalDemand = 0;
+        for (int i = 1; i < numVertices; ++i) {
+            totalDemand += customers[static_cast<std::size_t>(i)].request;
+        }
+        const int minimumRoutes = (totalDemand + capacity - 1) / capacity;
+        v = new VRP(std::move(g), numVertices, vehicles, capacity, minimumRoutes, static_cast<float>(workTime),
+                    flagTime, costTravel, alphaParam);
     } catch (const Json::exception& e) {
         throw std::runtime_error(s + " " + std::string(e.what()));
     }

@@ -16,6 +16,7 @@
  ****************************************************************************/
 
 #include "TabuList.h"
+#include <algorithm>
 
 namespace {
 /** @brief Check whether two moves relocate the same customer between the same routes. */

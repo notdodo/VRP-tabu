@@ -1,0 +1,19 @@
+version: 2
+
+updates:
+  - package-ecosystem: "vcpkg"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Europe/Rome"
+    cooldown:
+      default-days: 7
+      include:
+        - "*"
+    groups:
+      cpp-dependencies:
+        applies-to: "version-updates"
+        patterns:
+          - "*"

@@ -59,9 +59,6 @@ class OptimalMove {
     /** @brief Apply best one-customer source-to-destination relocation. */
     int Opt10(Routes&, bool);
 
-    /** @brief Apply best one-customer destination-to-source relocation. */
-    int Opt01(Routes&, bool);
-
     /** @brief Apply best one-for-one customer swap between routes. */
     int Opt11(Routes&, bool);
 
@@ -74,17 +71,44 @@ class OptimalMove {
     /** @brief Apply best two-for-two exchange between routes. */
     int Opt22(Routes&, bool);
 
+    /** @brief Apply best n-for-m customer exchange between route pairs. */
+    int OptExchange(Routes&, int, int, bool);
+
     /** @brief Swap contiguous customer segments between routes. */
-    int OptSwapSegments(Routes&, int);
+    int OptSwapSegments(Routes&, int, bool force = false);
 
     /** @brief Remove costly customers and reinsert them with best insertion. */
     int OptRuinRecreate(Routes&, int, int);
 
+    /** @brief Remove related customer clusters and reinsert them by regret. */
+    int OptRelatedRuinRecreate(Routes&, int, int);
+
+    /** @brief Remove related customer clusters and reinsert them with a small beam search. */
+    int OptRelatedBeamRuinRecreate(Routes&, int, int, int);
+
+    /** @brief Diversify by rebuilding a related customer cluster in different routes. */
+    int PerturbRelatedRuinRecreate(Routes&, int, int, int);
+
+    /** @brief Diversify by rebuilding an angular sector in different routes. */
+    int PerturbAngularRuinRecreate(Routes&, int, int);
+
     /** @brief Apply 2-opt* by exchanging route tails between two routes. */
     int Opt2Star(Routes&);
 
+    /** @brief Reassign a bounded boundary-customer pool between large route pairs. */
+    int OptBoundaryPairSplit(Routes&, int, int);
+
     /** @brief Repartition bounded route pairs with exact per-route ordering. */
     int OptPairSplit(Routes&, int);
+
+    /** @brief Repartition large route pairs with sweep splits and 2-opt ordering. */
+    int OptPairSweepSplit(Routes&);
+
+    /** @brief Repartition geographically close route triples with sweep splits. */
+    int OptRouteClusterSplit(Routes&, int);
+
+    /** @brief Apply best fixed-size cyclic exchange across route triples. */
+    int OptCyclicExchange(Routes&, int);
 
     /** @brief Relocate a contiguous customer segment to another route. */
     int OptRelocateSegment(Routes&, int);
@@ -92,11 +116,8 @@ class OptimalMove {
     /** @brief Optimize small individual routes as TSP subproblems. */
     int OptRouteTsp(Routes&, int);
 
-    /** @brief Redistribute customers from expensive/sparse routes into nearby routes. */
-    void RouteBalancer(Routes&);
-
     /** @brief Remove routes by reinserting all customers into the remaining routes. */
-    int ReduceRoutes(Routes&);
+    int ReduceRoutes(Routes&, std::size_t minimumRouteCount = 0);
 
     /** @brief Apply intra-route 2-opt improvements. */
     bool Opt2(Routes&);

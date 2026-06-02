@@ -1,7 +1,9 @@
 #ifndef Customer_H
 #define Customer_H
 
+#include <cstddef>
 #include <iostream>
+#include <limits>
 #include <string>
 #include <utility>
 
@@ -25,6 +27,8 @@ class Customer {
     }
 
   public:
+    static constexpr std::size_t invalidGraphIndex = std::numeric_limits<std::size_t>::max();
+
     /** @brief Assign all customer attributes from another customer. */
     Customer& operator=(const Customer&) = default;
 
@@ -34,11 +38,12 @@ class Customer {
     /** @brief Check whether two customer identities differ. */
     bool operator!=(const Customer& c) const { return !(*this == c); }
 
-    std::string name;    /**< Name of the customer */
-    int x = 0;           /**< Coordinate X of the customer */
-    int y = 0;           /**< Coordinate Y of the customer */
-    int request = 0;     /**< Demand requested by the customer */
-    int serviceTime = 0; /**< Time for serving the customer */
+    std::string name;                           /**< Name of the customer */
+    int x = 0;                                  /**< Coordinate X of the customer */
+    int y = 0;                                  /**< Coordinate Y of the customer */
+    int request = 0;                            /**< Demand requested by the customer */
+    int serviceTime = 0;                        /**< Time for serving the customer */
+    std::size_t graphIndex = invalidGraphIndex; /**< Dense graph matrix index, assigned by Graph */
 
     /** @brief Create an empty customer. */
     Customer() = default;

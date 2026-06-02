@@ -26,12 +26,10 @@ set(VRP_SOURCES
     actor/Route.cpp
     actor/TabuList.cpp
     actor/TabuSearch.cpp
-    lib/Edge.cpp
     lib/Graph.cpp
     lib/OptimalMove.cpp
     lib/Utils.cpp
     lib/VRP.cpp
-    lib/Vertex.cpp
 )
 
 add_executable(VRP ${VRP_SOURCES})

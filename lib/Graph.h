@@ -1,18 +1,20 @@
 #ifndef Graph_H
 #define Graph_H
 
-#include "Vertex.h"
+#include "../actor/Customer.h"
 #include <limits>
+#include <map>
 #include <memory>
 #include <mutex>
+#include <utility>
+#include <vector>
 
 using CostNeighborhood = std::vector<std::pair<int, Customer>>;
 
 /** @brief Complete directed cost graph over customers.
  *
- * The graph stores customer vertices and weighted edges used by route
- * feasibility checks and all local-search cost evaluations. A compact cost
- * matrix mirrors the edge maps so hot-path route moves can read costs in O(1).
+ * The graph stores customers and a compact directed cost matrix used by route
+ * feasibility checks and all local-search cost evaluations.
  */
 class Graph {
   public:
@@ -24,14 +26,8 @@ class Graph {
     /** @brief Insert or update a weighted edge between two customers. */
     void InsertEdge(Customer&, Customer&, int);
 
-    /** @brief Remove an edge between two customers. */
-    void RemoveEdge(Customer&, Customer&);
-
     /** @brief Return depot-sorted customers by edge cost; duplicate costs are preserved. */
     std::multimap<int, Customer> sortV0();
-
-    /** @brief Return neighbors of a customer sorted by travel cost. */
-    std::multimap<int, Customer> GetNeighborhood(const Customer&) const;
 
     /** @brief Return neighbors as a cached sorted vector for hot-path scans. */
     const CostNeighborhood& GetNeighborhoodVector(const Customer&) const;
@@ -44,10 +40,6 @@ class Graph {
 
     /** @brief Return the matrix travel cost for an edge lookup. */
     int GetCost(const Customer&, const Customer&) const;
-
-  protected:
-    /** @brief Insert a prebuilt vertex for a customer. */
-    void InsertVertex(Customer&, Vertex&);
 
   private:
     static constexpr int MissingCost = std::numeric_limits<int>::max() / 4;
@@ -64,7 +56,6 @@ class Graph {
     /** @brief Rebuild sorted neighborhoods from the compact cost matrix. */
     void RebuildNeighborhoods() const;
 
-    std::map<Customer, Vertex> vertexes; /**< Map of vertexes: for each customer the vertex in input or output */
     std::map<Customer, std::size_t> vertexIndex;         /**< Stable compact index for each customer */
     std::vector<Customer> customers;                     /**< Customers in insertion order, depot first */
     std::vector<int> costMatrix;                         /**< Dense row-major travel-cost matrix */

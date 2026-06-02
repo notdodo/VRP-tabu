@@ -17,11 +17,11 @@ SDKROOT ?= $(shell xcrun --sdk macosx --show-sdk-path 2>/dev/null)
 MACOS_LIBCXX_INCLUDE ?= $(shell sh -c 'for p in "$$(xcrun --sdk macosx --show-sdk-path 2>/dev/null)/usr/include/c++/v1" "/Library/Developer/CommandLineTools/usr/include/c++/v1"; do [ -d "$$p" ] && { echo "$$p"; exit 0; }; done')
 CLANG_TIDY_CANDIDATES := clang-tidy clang-tidy-22 clang-tidy-21 clang-tidy-20 clang-tidy-19 /opt/homebrew/opt/llvm/bin/clang-tidy /usr/local/opt/llvm/bin/clang-tidy
 TIDY_DEFAULT_EXTRA_ARGS := $(if $(SDKROOT),--extra-arg=-isysroot --extra-arg=$(SDKROOT),) $(if $(MACOS_LIBCXX_INCLUDE),--extra-arg=-I$(MACOS_LIBCXX_INCLUDE),)
-TIDY_JOBS ?= $(shell sysctl -n hw.logicalcpu 2>/dev/null || echo 4)
+TIDY_JOBS ?= $(shell sysctl -n hw.logicalcpu 2>/dev/null || echo 8)
 else
 CLANG_TIDY_CANDIDATES := clang-tidy clang-tidy-22 clang-tidy-21 clang-tidy-20 clang-tidy-19 clang-tidy-18 clang-tidy-17
 TIDY_DEFAULT_EXTRA_ARGS :=
-TIDY_JOBS ?= $(shell nproc 2>/dev/null || getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)
+TIDY_JOBS ?= $(shell nproc 2>/dev/null || getconf _NPROCESSORS_ONLN 2>/dev/null || echo 8)
 endif
 
 CLANG_TIDY ?= $(shell sh -c 'for t in $(CLANG_TIDY_CANDIDATES); do [ -x "$$t" ] && { echo "$$t"; exit 0; }; command -v "$$t" >/dev/null 2>&1 && { command -v "$$t"; exit 0; }; done')

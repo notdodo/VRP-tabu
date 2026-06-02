@@ -16,10 +16,11 @@
  ****************************************************************************/
 
 #include "Controller.h"
+#include <cmath>
 
 namespace {
 constexpr int kMaxStagnantIterations = 5;
-constexpr int kMaxForcedDiversificationRounds = 3;
+constexpr int kDenseRouteSearchSlack = 2;
 } // namespace
 
 /** @brief Configure solver variables and load routes.
@@ -69,33 +70,48 @@ void Controller::RunVRP() {
     } else {
         timeOpts /= 2;
     }
-    int stopCondition = 0, last = 0, prelast = 0;
     std::chrono::minutes::rep duration = 0;
     // start time
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
-    // run the routines for 'customers' times or stop if no improvement or duration is more than MAX_TIME
-    for (int i = 0; i < iteration && stopCondition < kMaxStagnantIterations && duration <= this->MAX_TIME_MIN; i++) {
-        bool optflag = false;
-        int ts = this->RunTabuSearch(10 + stopCondition / 2);
-        if (stopCondition < kMaxForcedDiversificationRounds && (ts == -last || (ts == prelast && ts < 0) || ts <= 0)) {
-            optflag = true;
-        } else {
-            prelast = last;
-            last = ts;
+    auto runSearchPass = [this, customers, timeOpts, iteration, t1, &duration]() {
+        int stopCondition = 0, last = 0, prelast = 0;
+        for (int i = 0; i < iteration && stopCondition < kMaxStagnantIterations && duration <= this->MAX_TIME_MIN;
+             i++) {
+            bool optflag = false;
+            const int activeRoutes = static_cast<int>(this->vrp->GetRoutes()->size());
+            const int denseRouteThreshold =
+                static_cast<int>(std::sqrt(static_cast<float>(customers))) + kDenseRouteSearchSlack;
+            const bool routeDenseSearch = activeRoutes > denseRouteThreshold;
+            const int tabuIterations =
+                (routeDenseSearch ? customers : customers / 2) + (stopCondition * (routeDenseSearch ? 4 : 2));
+            int ts = this->RunTabuSearch(tabuIterations);
+            const bool tabuStagnated = ts == -last || (ts == prelast && ts < 0) || ts <= 0;
+            if (tabuStagnated) {
+                optflag = true;
+            } else {
+                prelast = last;
+                last = ts;
+            }
+            Utils::Instance().logger("Starting opt", Utils::VERBOSE);
+            this->vrp->RunOpts(timeOpts, optflag, stopCondition);
+            // partial time
+            std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
+            duration = std::chrono::duration_cast<std::chrono::minutes>(t2 - t1).count();
+            Utils::Instance().logger("[!]\tPARTIAL: " + std::to_string(this->vrp->GetTotalCost()) + " " +
+                                         std::to_string(i + 1) + "/" + std::to_string(iteration),
+                                     Utils::INFO);
+            if (this->vrp->UpdateBest()) {
+                this->SaveResult();
+                stopCondition = 0;
+            } else {
+                this->vrp->RestoreBest();
+                stopCondition++;
+            }
         }
-        Utils::Instance().logger("Starting opt", Utils::VERBOSE);
-        this->vrp->RunOpts(timeOpts, optflag);
-        // partial time
-        std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
-        duration = std::chrono::duration_cast<std::chrono::minutes>(t2 - t1).count();
-        Utils::Instance().logger("[!]\tPARTIAL: " + std::to_string(this->vrp->GetTotalCost()) + " " +
-                                     std::to_string(i + 1) + "/" + std::to_string(iteration),
-                                 Utils::INFO);
-        if (this->vrp->UpdateBest()) {
-            this->SaveResult();
-            stopCondition = 0;
-        } else
-            stopCondition++;
+    };
+    runSearchPass();
+    while (duration <= this->MAX_TIME_MIN && this->vrp->RestartFromBestWithFreshTabu()) {
+        runSearchPass();
     }
     this->finalCost = this->vrp->GetTotalCost();
     const int percCost = this->initCost == 0 ? 0 : ((this->finalCost - this->initCost) * 100) / this->initCost;
