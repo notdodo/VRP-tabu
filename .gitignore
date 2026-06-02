@@ -4,6 +4,13 @@
 *.o
 *.obj
 /obj
+/build
+/benchmarks
+/build-debug
+/build-bench
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
 
 # Precompiled Headers
 *.gch
@@ -25,11 +32,9 @@
 *.app
 VRP
 
-# Documentation directory
-doc/
-
 # file input/output
 *.json
+!/vrp-init/*.json
 
 # gdb
 .gdb_history
@@ -40,3 +45,4 @@ peda*
 *.py
 *.pyc
 *.log
+.DS_STORE

@@ -4,53 +4,96 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>coord</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>VRP Init</title>
     <link rel="stylesheet" href="coords.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.js" integrity="sha256-WpOohJOqMqqyKL9FccASB9O0KwACQJpFTUBLTYOVvVU=" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/3.4.0/fabric.min.js" integrity="sha256-42MK8ODIRAEkCECsfaZOXb2psvEjAD0vK3AL3eNe86w=" crossorigin="anonymous"></script>
-    <script src="coords.js" type="text/javascript" charset="utf-8" async defer></script>
+    <script src="https://code.jquery.com/jquery-4.0.0.min.js" integrity="sha384-fgGyf7Mo7DURSOMnOy7ed+dkq5Job205Gnzu6QIg0BOHKaqt4D76Dt8VlDCzcMHV" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fabric@7.3.1/dist/index.min.js" integrity="sha384-3+GJz5nsqjTaC0V5fXRWe9y4I+/CGgwe+ITOOvndb5S4q12G6hv5udTiz7IN6znu" crossorigin="anonymous"></script>
+    <script src="coords.js" type="text/javascript" charset="utf-8" defer></script>
 </head>
 
-<body>
-    <div id="left">
-        <canvas id="coords" width="800" height="600"></canvas>
-        <div id="controls">
-            <div id="log">Position: <span id="coord_msg">-----, -----</span></div>
-            <a download="input.json" id="download">Download</a>
-            <div id="routes"></div>
-        </div>
-    </div>
-    <div id="right">
-        <div id="clicks"></div>
-        <div id="parameters">
-            <label>m
-                <input type="number" name="vehicles" value="10">
-            </label>
-            <label>Q
-                <input type="number" name="capacity" size="4" value="600">
-            </label>
-            <label>L
-                <input type="number" name="time" size="4" value="480">
-            </label>
-            <label>max c<sub>ij</sub>
-                <input type="number" name="maxcost" size="4" value="12">
-            </label>
-            <label>max q<sub>i</sub>
-                <input type="number" name="maxrequest" size="4" value="50">
-            </label>
-            <label>max &delta;<sub>i</sub>
-                <input type="number" name="maxtime" size="4" value="40">
-            </label>
-            <button onclick="saveToFile()">Generate JSON</button>
-            <a download="input.json" id="download">Download</a>
-			<label><a href="#" onclick='fileupload.click();'>Select a file...</a>
-                <input id="fileupload" type="file" accept=".json, .vrp">
-            </label>
-            <label>Play/Pause
-                <input type=checkbox id="play" value="1" onclick="playStop(this)">
-            </label>
-        </div>
-    </div>
+<body class="theme-dark">
+    <main id="app">
+        <section id="left" class="panel">
+            <div class="panel-heading">
+                <div>
+                    <h1>VRP Init</h1>
+                    <div id="instance_status" class="status-line">0 customers</div>
+                </div>
+                <div class="header-actions">
+                    <div id="log" class="coord-chip">
+                        <span>Position</span>
+                        <span id="coord_msg">-----, -----</span>
+                    </div>
+                    <div class="reload-control">
+                        <label class="icon-toggle auto-reload-toggle" title="Toggle auto reload">
+                            <input type="checkbox" id="play" value="1" onclick="playStop(this)">
+                            <span class="reload-icon" aria-hidden="true">↻</span>
+                        </label>
+                        <label class="reload-interval" title="Auto reload interval in seconds">
+                            <select id="reload_interval" onchange="updateReloadInterval()">
+                                <option value="1">1s</option>
+                                <option value="2">2s</option>
+                                <option value="4" selected>4s</option>
+                                <option value="10">10s</option>
+                                <option value="30">30s</option>
+                            </select>
+                        </label>
+                    </div>
+                    <label class="theme-switch" title="Toggle light and dark mode">
+                        <input type="checkbox" id="theme_toggle" checked onclick="setTheme(this.checked)">
+                        <span class="theme-icon sun" aria-hidden="true">☀</span>
+                        <span class="theme-icon moon" aria-hidden="true">☾</span>
+                    </label>
+                </div>
+            </div>
+            <canvas id="coords" width="800" height="600"></canvas>
+            <div id="controls">
+                <a download="input.json" id="download">Download</a>
+                <div class="section-title">
+                    <h2>Routes</h2>
+                    <span id="route_summary">0 routes</span>
+                </div>
+                <div id="routes"></div>
+            </div>
+        </section>
+        <aside id="right">
+            <div id="parameters" class="panel">
+                <div class="section-title">
+                    <h2>Parameters</h2>
+                    <span id="load_status">Ready</span>
+                </div>
+                <div class="parameter-grid">
+                    <label><span>Vehicles <em>m</em></span>
+                        <input type="number" name="vehicles" value="10">
+                    </label>
+                    <label><span>Capacity <em>Q</em></span>
+                        <input type="number" name="capacity" size="4" value="600">
+                    </label>
+                    <label><span>Work time <em>L</em></span>
+                        <input type="number" name="time" size="4" value="480">
+                    </label>
+                    <label><span>Max cost <em>c<sub>ij</sub></em></span>
+                        <input type="number" name="maxcost" size="4" value="12">
+                    </label>
+                    <label><span>Max demand <em>q<sub>i</sub></em></span>
+                        <input type="number" name="maxrequest" size="4" value="50">
+                    </label>
+                    <label><span>Max service <em>&delta;<sub>i</sub></em></span>
+                        <input type="number" name="maxtime" size="4" value="40">
+                    </label>
+                </div>
+                <div class="action-row">
+                    <button type="button" onclick="saveToFile()">Generate JSON</button>
+                    <label class="file-button" for="fileupload"><span>Select File</span>
+                        <input id="fileupload" type="file" accept=".json, .vrp">
+                    </label>
+                </div>
+                <div class="hint">Auto reload reads <code>E-n51-k5.json</code> when served over localhost.</div>
+            </div>
+            <div id="clicks" class="panel customer-panel"></div>
+        </aside>
+    </main>
 </body>
 
 </html>

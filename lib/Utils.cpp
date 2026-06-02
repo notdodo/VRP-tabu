@@ -16,150 +16,214 @@
  ****************************************************************************/
 
 #include "Utils.h"
+#include <cstring>
+#include <fstream>
+#include <limits>
+#include <set>
+#include <utility>
 
-/** @brief ###Instantiate all parameters.
+namespace {
+using Json = nlohmann::json;
+
+constexpr const char* kInvalidFileFormat = "Invalid file format!";
+constexpr const char* kUsage = "Usage: ./VRP [-v] data.json";
+
+int JsonSizeToInt(std::size_t size) {
+    if (size > static_cast<std::size_t>(std::numeric_limits<int>::max())) {
+        throw std::runtime_error(kInvalidFileFormat);
+    }
+    return static_cast<int>(size);
+}
+
+void RequireNonNegative(int value) {
+    if (value < 0) {
+        throw std::runtime_error(kInvalidFileFormat);
+    }
+}
+
+void RequirePositive(int value) {
+    if (value <= 0) {
+        throw std::runtime_error(kInvalidFileFormat);
+    }
+}
+} // namespace
+
+/** @brief Instantiate all parameters from command-line input and JSON.
  *
  * Parse the input file in JSON format and instantiates all variables
  * for the algorithm.
  * @param[in] argc Number of arguments passed through command line.
  * @param[in] argv Input file (json).
  * @param[in] costTravel Cost parameter for each travel.
- * @param[in] alphaParam Alpha parameter for router evaluation.
+ * @param[in] alphaParam Alpha parameter for route evaluation.
  * @return The pointer to VRP class
  */
-VRP* Utils::InitParameters(int argc, char **argv, const float costTravel, const float alphaParam) {
+VRP* Utils::InitParameters(int argc, char** argv, const float costTravel, const float alphaParam) {
     /* error string */
     std::string s;
-    VRP *v;
+    VRP* v = nullptr;
     Graph g;
-    int fileIndex = 1;
-    if (argc != 2 && argc != 3) {
-        throw std::runtime_error("Usage: ./VRP [-v] data.json");
-    }
-
-    if (strcmp(argv[1], "-v") == 0) {
+    int fileIndex = 0;
+    if (argc == 2) {
+        fileIndex = 1;
+    } else if (argc == 3 && strcmp(argv[1], "-v") == 0) {
         this->verbose = true;
         fileIndex = 2;
+    } else {
+        throw std::runtime_error(kUsage);
     }
-    /* open the file */
     std::string file(argv[fileIndex]);
     std::size_t found = file.find_last_of("/\\");
-    this->filename = file.substr(found+1);
-    FILE *fp = fopen(argv[fileIndex], "r");
-    if (fp == NULL) {
+    this->filename = file.substr(found + 1);
+    std::ifstream input(argv[fileIndex]);
+    if (!input) {
         if (argc == 3)
-            throw std::runtime_error("The file " + std::string(argv[fileIndex]) +  " doesn't exist.");
+            throw std::runtime_error("The file " + std::string(argv[fileIndex]) + " doesn't exist.");
         else
             throw std::runtime_error("No input file.");
-    }else {
-        /* little buffer more fread, big buffer less fread() big access time */
-        char readBuffer[65536];
-        rapidjson::FileReadStream is(fp, readBuffer, sizeof(readBuffer));
-        this->d.ParseStream(is);
-        fclose(fp);
-        /* check error */
-        if (this->d.HasParseError()) {
-            throw std::runtime_error("Error(offset" + std::string((char*)this->d.GetErrorOffset()) +
-                "): " + GetParseError_En(this->d.GetParseError()));
-        }else {
-            s = "Invalid file format!";
-            int numVertices = this->d["vertices"].Size();
-			std::vector<Customer> customers(numVertices);
-            /* inserting the depot = v0 */
-            customers[0] = Customer(this->d["vertices"][0]["name"].GetString(),
-                                    this->d["vertices"][0]["x"].GetInt(),
-                                    this->d["vertices"][0]["y"].GetInt());
-            g.InsertVertex(customers[0]);
-            int x, y, request, serviceTime;
-            bool flagTime = false;
-            /* parsing all customers */
-            for (int i = 1; i < numVertices; i++) {
-                auto& item = d["vertices"][i];
-                if (item["name"].IsString() && item["x"].IsInt() &&
-                    item["y"].IsInt() && item["request"].IsInt() &&
-                    item["time"].IsInt()) {
-                        /* name, x, y, request, service time */
-                        std::string n = this->d["vertices"][i]["name"].GetString();
-                        x = this->d["vertices"][i]["x"].GetInt();
-                        y = this->d["vertices"][i]["y"].GetInt();
-                        request = this->d["vertices"][i]["request"].GetInt();
-                        serviceTime = this->d["vertices"][i]["time"].GetInt();
-                        customers[i] = Customer(n, x, y, request, serviceTime);
-                        // if no service time
-                        if (!flagTime && serviceTime > 0)
-                            flagTime = true;
-                        g.InsertVertex(customers[i]);
-                }else {
+    }
+
+    try {
+        input >> this->d;
+    } catch (const Json::parse_error& e) {
+        throw std::runtime_error("Error(byte " + std::to_string(e.byte) + "): " + std::string(e.what()));
+    }
+
+    try {
+        s = kInvalidFileFormat;
+        const Json& vertices = this->d.at("vertices");
+        if (!vertices.is_array() || vertices.empty()) {
+            throw std::runtime_error(s);
+        }
+        int numVertices = JsonSizeToInt(vertices.size());
+        if (numVertices < 2) {
+            throw std::runtime_error(s);
+        }
+        std::vector<Customer> customers(static_cast<std::size_t>(numVertices));
+        std::set<std::string> names;
+        /* inserting the depot = v0 */
+        const Json& depot = vertices.at(0);
+        std::string depotName = depot.at("name").get<std::string>();
+        if (depotName.empty() || !names.insert(depotName).second) {
+            throw std::runtime_error(s);
+        }
+        customers[0] = Customer(std::move(depotName), depot.at("x").get<int>(), depot.at("y").get<int>());
+        g.InsertVertex(customers[0]);
+        bool flagTime = false;
+        /* parsing all customers */
+        for (int i = 1; i < numVertices; i++) {
+            const Json& item = vertices.at(static_cast<std::size_t>(i));
+            std::string n = item.at("name").get<std::string>();
+            if (n.empty() || !names.insert(n).second) {
+                throw std::runtime_error(s);
+            }
+            int x = item.at("x").get<int>();
+            int y = item.at("y").get<int>();
+            int request = item.at("request").get<int>();
+            int serviceTime = item.at("time").get<int>();
+            RequireNonNegative(request);
+            RequireNonNegative(serviceTime);
+            customers[static_cast<std::size_t>(i)] = Customer(std::move(n), x, y, request, serviceTime);
+            // if no service time
+            if (!flagTime && serviceTime > 0)
+                flagTime = true;
+            g.InsertVertex(customers[static_cast<std::size_t>(i)]);
+        }
+
+        /* parsing all costs, graph edge */
+        const Json& costs = this->d.at("costs");
+        if (!costs.is_array()) {
+            throw std::runtime_error(s);
+        }
+        int numCosts = JsonSizeToInt(costs.size());
+        if (numCosts != numVertices) {
+            throw std::runtime_error(s);
+        }
+        std::vector<std::vector<bool>> seenCosts(static_cast<std::size_t>(numVertices),
+                                                 std::vector<bool>(static_cast<std::size_t>(numVertices), false));
+        for (int i = 0; i < numCosts; i++) {
+            const Json& row = costs.at(static_cast<std::size_t>(i));
+            if (!row.is_array() || JsonSizeToInt(row.size()) != numVertices - 1) {
+                throw std::runtime_error(s);
+            }
+            for (int j = 0; j < numCosts - 1; j++) {
+                const Json& edge = row.at(static_cast<std::size_t>(j));
+                /* start, end, cost */
+                int from = edge.at("from").get<int>();
+                int to = edge.at("to").get<int>();
+                int value = edge.at("value").get<int>();
+                if (from < 0 || to < 0 || from >= numVertices || to >= numVertices || from == to) {
+                    throw std::runtime_error(s);
+                }
+                RequireNonNegative(value);
+                if (seenCosts[static_cast<std::size_t>(from)][static_cast<std::size_t>(to)]) {
+                    throw std::runtime_error(s);
+                }
+                seenCosts[static_cast<std::size_t>(from)][static_cast<std::size_t>(to)] = true;
+                /* add edge with weight */
+                g.InsertEdge(customers[static_cast<std::size_t>(from)], customers[static_cast<std::size_t>(to)], value);
+            }
+        }
+        for (int from = 0; from < numVertices; ++from) {
+            for (int to = 0; to < numVertices; ++to) {
+                if (from != to && !seenCosts[static_cast<std::size_t>(from)][static_cast<std::size_t>(to)]) {
                     throw std::runtime_error(s);
                 }
             }
-            /* parsing all costs, graph edge */
-            int numCosts = this->d["costs"].Size();
-            int from, to, value;
-            for (int i = 0; i < numCosts; i++) {
-                for (int j = 0; j < numCosts-1; j++) {
-                    /* start, end, cost */
-                    from = this->d["costs"][i][j]["from"].GetInt();
-                    to = this->d["costs"][i][j]["to"].GetInt();
-                    value = this->d["costs"][i][j]["value"].GetInt();
-                    /* add egde with weight */
-                    g.InsertEdge(customers[from], customers[to], value);
-                }
-            }
-            if (this->d["vehicles"].IsInt() &&
-                this->d["capacity"].IsInt() && this->d["worktime"].IsInt()) {
-                /* creating the VRP */
-                v = new VRP(g,
-                      numVertices,
-                      this->d["vehicles"].GetInt(),
-                      this->d["capacity"].GetInt(),
-                      this->d["worktime"].GetInt(),
-                      flagTime,
-                      costTravel, alphaParam);
-            }else {
-                throw std::runtime_error(s);
-            }
         }
+
+        /* creating the VRP */
+        const int vehicles = this->d.at("vehicles").get<int>();
+        const int capacity = this->d.at("capacity").get<int>();
+        const int workTime = this->d.at("worktime").get<int>();
+        RequirePositive(vehicles);
+        RequirePositive(capacity);
+        RequireNonNegative(workTime);
+        int totalDemand = 0;
+        for (int i = 1; i < numVertices; ++i) {
+            totalDemand += customers[static_cast<std::size_t>(i)].request;
+        }
+        const int minimumRoutes = (totalDemand + capacity - 1) / capacity;
+        v = new VRP(std::move(g), numVertices, vehicles, capacity, minimumRoutes, static_cast<float>(workTime),
+                    flagTime, costTravel, alphaParam);
+    } catch (const Json::exception& e) {
+        throw std::runtime_error(s + " " + std::string(e.what()));
     }
     return v;
 }
 
-/** @brief ###Save the result.
+/** @brief Save the result.
  *
  * Saves the routes into the input JSON file.
  * @param[in] routes The routes list to save to the file
  * @param[in] t      Execution partial time
  */
-void Utils::SaveResult(const std::list<Route> routes, int t) {
+void Utils::SaveResult(const Routes& routes, long long t) {
     std::string path = "vrp-init/" + this->filename;
-    FILE *fp = fopen(path.c_str(), "w");
-    if (fp != NULL) {
-        char writeBuffer[65536];
-        rapidjson::FileWriteStream os(fp, writeBuffer, sizeof(writeBuffer));
-        rapidjson::PrettyWriter<rapidjson::FileWriteStream> writer(os);
-        rapidjson::Document::AllocatorType &allocator = this->d.GetAllocator();
-        rapidjson::Value route(rapidjson::kArrayType);
-        rapidjson::Value totalCosts(rapidjson::kArrayType);
-        rapidjson::Value timeExec(t);
-        // for each route
-        for (Route routeElem : routes) {
-            rapidjson::Value r(rapidjson::kArrayType);
-            totalCosts.PushBack(routeElem.GetTotalCost(), allocator);
-            // for each customer
-            for (auto &e : *routeElem.GetRoute()) {
-                rapidjson::Value customer;
-                customer.SetString(e.first.name.c_str(), e.first.name.length(), allocator);
-                r.PushBack(customer, allocator);
+    std::ofstream output(path);
+    if (output) {
+        this->d.erase("routes");
+        this->d.erase("costs");
+        this->d.erase("time");
+        Json route = Json::array();
+        Json totalCosts = Json::array();
+        for (const Route& routeElem : routes) {
+            Json r = Json::array();
+            totalCosts.push_back(routeElem.GetTotalCost());
+            for (const auto& e : *routeElem.GetRoute()) {
+                r.push_back(e.first.name);
             }
-            route.PushBack(r, allocator);
+            route.push_back(std::move(r));
         }
-        d.AddMember("routes", route, allocator);
-        d.AddMember("costs", totalCosts, allocator);
-        d.AddMember("time", timeExec, allocator);
-        d.Accept(writer);
-        fclose(fp);
+        this->d["routes"] = std::move(route);
+        this->d["costs"] = std::move(totalCosts);
+        this->d["time"] = t;
+        output << this->d.dump(4) << '\n';
+        if (!output) {
+            throw std::runtime_error("Error writing file! (Bad permissions)");
+        }
         this->logger("Saving the routes inside vrp-init/" + this->filename, this->VERBOSE);
-    }else {
+    } else {
         throw std::runtime_error("Error writing file! (Bad permissions)");
     }
 }

@@ -16,73 +16,64 @@
  ****************************************************************************/
 
 #include "Route.h"
+#include <algorithm>
+#include <cmath>
+#include <limits>
 
-/** @brief ###Constructor of Route.
+namespace {
+float TravelTime(int cost, float travelCost) { return static_cast<float>(cost) * travelCost; }
+} // namespace
+
+/** @brief Construct a route with vehicle constraints and scoring parameters.
  *
  * @param[in] c Initial capacity of the vehicle.
  * @param[in] wt Initial work time of the driver.
  * @param[in] g Graph of the customers.
  * @param[in] costTravel Cost parameter for each travel.
- * @param[in] alphaParam Alpha parameter for router evalutation.
+ * @param[in] alphaParam Alpha parameter for route evaluation.
  */
-Route::Route(int c, float wt, const Graph g, const float costTravel, const float alphaParam) {
+Route::Route(int c, float wt, const Graph& g, const float costTravel, const float alphaParam) {
     this->initialCapacity = this->capacity = c;
     this->initialWorkTime = this->workTime = wt;
-    this->graph = g;
+    this->graph = &g;
     this->totalCost = 0;
     // if the service time is not a constraint reset the cost of travelling
-    if (wt == std::numeric_limits<int>::max())
-        this->TRAVEL_COST = (float)0;
+    if (wt == std::numeric_limits<float>::max())
+        this->TRAVEL_COST = 0.0f;
     else
         this->TRAVEL_COST = costTravel;
     this->ALPHA = alphaParam;
-    this->SetAverageCost();
 }
 
-/** @brief ###Close a route.
- *
- * Whenever the capacity or the work time are inadequate
- * close the route: return to depot.
- * @param[in] c Last customer to visit
- */
-void Route::CloseTravel(const Customer c) {
-    Customer depot = this->route.cbegin()->first;
-    int costToDepot = this->graph.GetCosts(c, depot).second;
-    this->totalCost += costToDepot;
-    this->workTime = costToDepot * this->TRAVEL_COST;
-    this->route.push_back({c, costToDepot});
-    this->route.push_back({depot, 0});
-}
-
-/** @brief ###Close a route with the last customer.
+/** @brief Close a route from a specific customer to the depot.
  *
  * When remaining only one customer to visit, visit it then return to depot.
  * @param[in] from The last customer to visit
  * @param[in] depot The depot
  * @return True if the customer is visitable
  */
-bool Route::CloseTravel(const Customer from, const Customer depot) {
+bool Route::CloseTravel(const Customer& from, const Customer& depot) {
     bool ret = true;
     // save the route state
     int tCost = this->totalCost;
     float workT = this->workTime;
-    int travelCost = this->graph.GetCosts(from, depot).second;
+    int travelCost = this->graph->GetCost(from, depot);
     tCost += travelCost;
     // must consider the time to return to depot
-    workT -= (travelCost * this->TRAVEL_COST);
+    workT -= TravelTime(travelCost, this->TRAVEL_COST);
     if (workT < 0) {
         ret = false;
     } else {
         // the travel can be added to the route
         this->totalCost = tCost;
         this->workTime = workT;
-        this->route.push_back({from, travelCost});
-        this->route.push_back({depot, 0});
+        this->route.emplace_back(from, travelCost);
+        this->route.emplace_back(depot, 0);
     }
     return ret;
 }
 
-/** @brief ###Travel from one customer to another
+/** @brief Travel from one customer to another when constraints allow it.
  *
  *  Check if is possibile to travel from a customer to another
  *  observing the constraint of capacity and time, if possibile add the
@@ -91,29 +82,28 @@ bool Route::CloseTravel(const Customer from, const Customer depot) {
  *  @param[in] to The destination customer
  *  @return True if the travel is added to the route
  */
-bool Route::Travel(const Customer from, const Customer to) {
+bool Route::Travel(const Customer& from, const Customer& to) {
     Customer depot;
     bool ret = true;
-    int returnTime;
     // save the route state
     int tCost = this->totalCost;
     int capac = this->capacity;
     float workT = this->workTime;
-    int travelCost = this->graph.GetCosts(from, to).second;
+    int travelCost = this->graph->GetCost(from, to);
     // get the depot
     if (this->route.empty()) {
         depot = from;
-    }else {
+    } else {
         depot = this->route.cbegin()->first;
     }
     tCost += travelCost;
     capac -= to.request;
     // service + travel time
-    workT -= to.serviceTime + (travelCost * this->TRAVEL_COST);
+    workT -= static_cast<float>(to.serviceTime) + TravelTime(travelCost, this->TRAVEL_COST);
     // must consider the time to return to depot
-    returnTime = (this->graph.GetCosts(to, depot).second) * this->TRAVEL_COST;
+    const float returnTime = TravelTime(this->graph->GetCost(to, depot), this->TRAVEL_COST);
     // after the travel if constraints fails
-	if (capac < 0 || workT < returnTime) {
+    if (capac < 0 || workT < returnTime) {
         // no time or capacity to serve the customer: return to depot
         ret = false;
     } else {
@@ -121,235 +111,210 @@ bool Route::Travel(const Customer from, const Customer to) {
         this->totalCost = tCost;
         this->capacity = capac;
         this->workTime = workT;
-        this->route.push_back({from, travelCost});
+        this->route.emplace_back(from, travelCost);
     }
     return ret;
 }
 
-/** @brief ###Clear a route. */
-void Route::EmptyRoute(const Customer depot) {
+/** @brief Clear this route and reset it to the depot.
+ *
+ * Resets both the route sequence and accumulated resource state. This is used
+ * when the last customer is removed from a route; leaving the old cost or
+ * capacity behind would make later route comparisons use stale values. The
+ * route remains closed as depot -> depot so insertion helpers can reuse the
+ * same logic they use for non-empty routes.
+ */
+void Route::EmptyRoute(const Customer& depot) {
     this->route.clear();
-    this->route.push_back({depot, 0});
+    this->capacity = this->initialCapacity;
+    this->workTime = this->initialWorkTime;
+    this->totalCost = 0;
+    this->route.emplace_back(depot, 0);
+    this->route.emplace_back(depot, 0);
 }
 
-/** @brief ###Print this route. */
-void Route::PrintRoute() const {
-    std::flush(std::cout);
-    if (this->route.size() > 1) {
-        for (StepType i : this->route) {
-            if (i.second > 0)
-                std::cout << i.first << " -(" << i.second << ")-> ";
-            else
-                std::cout << i.first;
-        }
-        std::cout << std::endl;
-    }else {
-        std::cout << "Void Route!" << std::endl;
-    }
-    std::flush(std::cout);
-}
+/** @brief Return the number of stored route steps. */
+int Route::size() const { return static_cast<int>(this->route.size()); }
 
-/** @brief ###Return the size (number of customers) of a route. */
-int Route::size() const {
-    return this->route.size();
-}
+/** @brief Return a pointer to the route step list. */
+RouteList* Route::GetRoute() { return &this->route; }
+const RouteList* Route::GetRoute() const { return &this->route; }
 
-/** @brief ###Get the pointer to the route list. */
-std::list<StepType>* Route::GetRoute() {
-    return &this->route;
-}
-
-/** @brief ###Add a customer to this route.
+/** @brief Add one customer to this route.
  *
  * This function add a customer in the best position of a route respecting
  * the constraints: add the customer in each possible position, then execute
  * the best insertion.
  * @param[in] c The customer to insert
  */
-bool Route::AddElem(const Customer c) {
-    bool ret = false;
-    // the map is sorted by costs
-    std::map<int, Route> best;
-    Customer depot = this->GetRoute()->front().first;
-    std::list<StepType>::iterator it = this->route.begin();
-    unsigned iter = 0;
-    do {
-        int travelCost, costNext, tCost, capac, fallbackCost;
-        float workT;
-        // work copy
-        Route r = *this;
-        it = r.route.begin();
-        capac = r.capacity - c.request;
-        workT = r.workTime - c.serviceTime;
-        if (capac <= 0 || workT <= 0) break;
-        tCost = r.totalCost;
-        std::advance(it, iter);
-        Customer before = it->first;
-        travelCost = r.graph.GetCosts(before, c).second;
-        workT -= travelCost * r.TRAVEL_COST;
-        tCost += travelCost;
-        // update travel cost
-        it->second = travelCost;
-        std::advance(it, 1);
-        iter++;
-        if (it == r.route.end() || (int)iter == r.size()) break;
-        // compute next cost and time
-        costNext = r.graph.GetCosts(c, it->first).second;
-        tCost += costNext;
-        workT -= costNext * r.TRAVEL_COST;
-        fallbackCost = r.graph.GetCosts(before, it->first).second;
-        tCost -= fallbackCost;
-        workT += fallbackCost * r.TRAVEL_COST;
-        // if the customer is visitable add to route in position 'it'
-        if (workT >= 0) {
-            r.totalCost = tCost;
-            r.capacity = capac;
-            r.workTime = workT;
-            r.route.insert(it, {c, costNext});
-            best.insert({r.GetTotalCost(), r});
+bool Route::AddElem(const Customer& c) {
+    if (this->capacity < c.request || this->workTime < static_cast<float>(c.serviceTime) || this->route.size() < 2) {
+        return false;
+    }
+
+    auto bestBefore = this->route.end();
+    int bestTravelToCustomer = 0;
+    int bestCustomerToNext = 0;
+    int bestCost = 0;
+    float bestWorkTime = 0.0F;
+    bool found = false;
+
+    for (auto before = this->route.begin(); std::next(before) != this->route.end(); ++before) {
+        auto next = std::next(before);
+        const int travelToCustomer = this->graph->GetCost(before->first, c);
+        const int customerToNext = this->graph->GetCost(c, next->first);
+        const int deltaCost = travelToCustomer + customerToNext - before->second;
+        const int candidateCost = this->totalCost + deltaCost;
+        const float candidateWorkTime =
+            this->workTime - static_cast<float>(c.serviceTime) - TravelTime(deltaCost, this->TRAVEL_COST);
+        if (candidateWorkTime < 0.0F) {
+            continue;
         }
-    } while (it != this->route.cend() && iter < (this->route.size() - 1));
-    // if the route is changed return the best match
-    if (best.size() > 0) {
-        *this = (*best.begin()).second;
-        ret = true;
-    }else
-        ret = false;
-    return ret;
+        if (!found || candidateCost < bestCost) {
+            bestBefore = before;
+            bestTravelToCustomer = travelToCustomer;
+            bestCustomerToNext = customerToNext;
+            bestCost = candidateCost;
+            bestWorkTime = candidateWorkTime;
+            found = true;
+        }
+    }
+
+    if (!found) {
+        return false;
+    }
+
+    this->capacity -= c.request;
+    this->workTime = bestWorkTime;
+    this->totalCost = bestCost;
+    bestBefore->second = bestTravelToCustomer;
+    this->route.insert(std::next(bestBefore), {c, bestCustomerToNext});
+    return true;
 }
 
-/** @brief ###Add a customer to this route.
+/** @brief Add a customer sequence to this route.
  *
  * This function add a list of consecutive customers in the best position of a route respecting
  * the constraints: add the customer in each possible position, then execute
  * the best insertion.
  * @param[in] custs List of customers to insert
  */
-bool Route::AddElem(const std::list<Customer> &custs) {
-    // in this case 'this' need to be updated
-    bool ret = false;
-    // the map is sorted by costs
-    std::map<int, Route> best;
-    std::list<std::pair<Customer, int>>::iterator it = this->route.begin();
-    unsigned iter = 0;
-    do {
-        int travelCost, costNext, tCost, capac, fallbackCost;
-        int custsRequest, custsServiceTime;
-        float workT;
-        Route r = *this;
-        it = r.route.begin();
-        custsRequest = 0;
-        custsServiceTime = 0;
-        for (auto i = custs.cbegin(); i != custs.cend(); ++i) {
-            custsRequest += (*i).request;
-            custsServiceTime += (*i).serviceTime;
+bool Route::AddElem(const std::list<Customer>& custs) {
+    if (custs.empty() || this->route.size() < 2) {
+        return false;
+    }
+
+    int request = 0;
+    int serviceTime = 0;
+    int innerCost = 0;
+    for (auto customer = custs.cbegin(); customer != custs.cend(); ++customer) {
+        request += customer->request;
+        serviceTime += customer->serviceTime;
+        auto nextCustomer = std::next(customer);
+        if (nextCustomer != custs.cend()) {
+            innerCost += this->graph->GetCost(*customer, *nextCustomer);
         }
-        capac = r.capacity - custsRequest;
-        workT = r.workTime - custsServiceTime;
-        if (capac <= 0 || workT <= 0) break;
-        tCost = r.totalCost;
-        std::advance(it, iter);
-        Customer before = it->first;
-        Customer firstList = custs.front();
-        // compute all the customers costs
-        travelCost = r.graph.GetCosts(before, firstList).second;
-        workT -= travelCost * r.TRAVEL_COST;
-        tCost += travelCost;
-        // update the new cost
-        it->second = travelCost;
-        Customer nextList = firstList;
-        // compute work time and cost from all customers in list
-        for (auto i = custs.cbegin(); i != custs.cend(); ++i) {
-            if (nextList == *i) ++i;
-            if (i == custs.cend()) break;
-            travelCost = r.graph.GetCosts(nextList, *i).second;
-            workT -= travelCost * r.TRAVEL_COST;
-            tCost += travelCost;
-            nextList = *i;
+    }
+    if (this->capacity < request || this->workTime < static_cast<float>(serviceTime)) {
+        return false;
+    }
+
+    auto bestBefore = this->route.end();
+    int bestCost = 0;
+    int bestFirstArc = 0;
+    int bestLastArc = 0;
+    float bestWorkTime = 0.0F;
+    bool found = false;
+    const Customer& firstCustomer = custs.front();
+    const Customer& lastCustomer = custs.back();
+
+    for (auto before = this->route.begin(); std::next(before) != this->route.end(); ++before) {
+        auto next = std::next(before);
+        const int firstArc = this->graph->GetCost(before->first, firstCustomer);
+        const int lastArc = this->graph->GetCost(lastCustomer, next->first);
+        const int deltaCost = firstArc + innerCost + lastArc - before->second;
+        const int candidateCost = this->totalCost + deltaCost;
+        const float candidateWorkTime =
+            this->workTime - static_cast<float>(serviceTime) - TravelTime(deltaCost, this->TRAVEL_COST);
+        if (candidateWorkTime < 0.0F) {
+            continue;
         }
-        Customer lastList = nextList;
-        // compute the next customer after the list (from the original route)
-        std::advance(it, 1);
-        iter++;
-        // compute next cost and time
-        Customer nextCustomer = it->first;
-        costNext = r.graph.GetCosts(lastList, nextCustomer).second;
-        tCost += costNext;
-        fallbackCost = r.graph.GetCosts(before, nextCustomer).second;
-        tCost -= fallbackCost;
-        workT -= costNext * r.TRAVEL_COST;
-        workT += fallbackCost * r.TRAVEL_COST;
-        // if the customer is visitable add to route in position 'it'
-        if (workT >= 0) {
-            r.totalCost = tCost;
-            r.capacity = capac;
-            r.workTime = workT;
-            // insert all the customers in the list
-            auto i = custs.cbegin();
-            std::advance(i, 1);
-            nextList = custs.front();
-            r.route.insert(it, {nextList, r.graph.GetCosts(custs.back(), nextCustomer).second});
-            for (; i != custs.cend(); ++i) {
-                if (nextList == *i) ++i;
-                if (i == custs.cend()) break;
-                r.route.insert(it, {*i, r.graph.GetCosts(nextList, *i).second});
-                nextList = *i;
-            }
-            best.insert({r.GetTotalCost(), r});
+        if (!found || candidateCost < bestCost) {
+            bestBefore = before;
+            bestCost = candidateCost;
+            bestFirstArc = firstArc;
+            bestLastArc = lastArc;
+            bestWorkTime = candidateWorkTime;
+            found = true;
         }
-    } while (it != this->route.cend() && (unsigned)iter < (this->route.size() - 1));
-    // if the route is changed return the best match
-    if (best.size() > 0) {
-        *this = (*best.begin()).second;
-        ret = true;
-    }else
-        ret = false;
-    return ret;
+    }
+
+    if (!found) {
+        return false;
+    }
+
+    auto insertPosition = std::next(bestBefore);
+    this->capacity -= request;
+    this->workTime = bestWorkTime;
+    this->totalCost = bestCost;
+    bestBefore->second = bestFirstArc;
+    auto customer = custs.cbegin();
+    for (; customer != custs.cend(); ++customer) {
+        auto nextCustomer = std::next(customer);
+        const int outgoingCost =
+            nextCustomer == custs.cend() ? bestLastArc : this->graph->GetCost(*customer, *nextCustomer);
+        insertPosition = this->route.insert(insertPosition, {*customer, outgoingCost});
+        ++insertPosition;
+    }
+    return true;
 }
 
-/** @brief ###Remove a customer from a route.
+/** @brief Remove a customer at an iterator position.
  *
  * Remove a customer in a position in the route.
  * @param[in] it The position of the customer to remove
  * @return The state of the operation
  */
-void Route::RemoveCustomer(std::list<StepType>::iterator &it) {
+void Route::RemoveCustomer(RouteList::iterator& it) {
     // if the route is depot -> customer -> depot delete the route
     if (this->route.size() > 3) {
         Customer del = it->first;
         // delete also request and service time
         this->capacity += del.request;
-        this->workTime += del.serviceTime;
+        this->workTime += static_cast<float>(del.serviceTime);
         // go to the next customer
         std::advance(it, 1);
         Customer to = it->first;
-        int after = this->graph.GetCosts(del, to).second;
-        this->workTime += after * this->TRAVEL_COST;
+        int after = this->graph->GetCost(del, to);
+        this->workTime += TravelTime(after, this->TRAVEL_COST);
         this->totalCost -= after;
         // return to the previous customer
         std::advance(it, -2);
         // restore cost and work time
-        int before = this->graph.GetCosts(it->first, del).second;
-        this->workTime += before * this->TRAVEL_COST;
+        int before = this->graph->GetCost(it->first, del);
+        this->workTime += TravelTime(before, this->TRAVEL_COST);
         this->totalCost -= before;
-        // update cost and time skipping the 'del' customer
-        int cost = this->graph.GetCosts(it->first, to).second;
-        this->workTime -= cost * this->TRAVEL_COST;
+        // StepType::second stores the outgoing arc cost, so the previous step
+        // must be rewired directly to the customer after the deleted one.
+        int cost = this->graph->GetCost(it->first, to);
+        this->workTime -= TravelTime(cost, this->TRAVEL_COST);
         this->totalCost += cost;
         it->second = cost;
         // delete the customer from the route
-        std::advance(it , 1);
+        std::advance(it, 1);
         this->route.erase(it);
-    } else
-        this->EmptyRoute(this->route.front().first);
+    } else {
+        const Customer depot = this->route.front().first;
+        this->EmptyRoute(depot);
+    }
 }
 
-/** @brief ###Remove a customer.
+/** @brief Remove a customer.
  *
  * Find and remove a customer from the route.
  * @param[in] c The customer to remove
  */
-bool Route::RemoveCustomer(const Customer c) {
+bool Route::RemoveCustomer(const Customer& c) {
     if (c != this->route.front().first && c != this->route.back().first) {
         for (auto it = this->route.begin(); it != this->route.cend(); ++it) {
             if (it->first == c) {
@@ -361,112 +326,84 @@ bool Route::RemoveCustomer(const Customer c) {
     return false;
 }
 
-/** @brief ###Return the cost of the route
+/** @brief Return the cost of the route.
  *
  *  @return Cost of the route
  */
-int Route::GetTotalCost() const {
-    return this->totalCost;
-}
+int Route::GetTotalCost() const { return this->totalCost; }
 
-/** @brief ###Compute the average cost of all paths */
-void Route::SetAverageCost() {
-    this->averageCost = (float)this->totalCost / (this->route.size() - 1);
-}
+/** @brief Return the vehicle capacity this route was created with. */
+int Route::GetInitialCapacity() const { return this->initialCapacity; }
 
-/** @brief ###Get the average cost of all paths */
-float Route::GetAverageCost() const {
-    return this->averageCost;
-}
+/** @brief Return the travel cost between two customers. */
+int Route::GetTravelCost(const Customer& from, const Customer& to) const { return this->graph->GetCost(from, to); }
 
-/** @brief ###List all customers with cost path lower the average.
- *
- * Create a list of customers which have a cost path lower than the average cost
- * of the route.
- * @param[in] customers Initial list of customers
- */
-void Route::GetUnderAverageCustomers(std::list<Customer> &customers) {
-    this->SetAverageCost();
-    customers.clear();
-    std::list<std::pair<Customer, int>>::const_iterator i = this->route.cbegin();
-    for (; i != this->route.cend(); ++i) {
-        if (i->second > 0 && i->second <= this->averageCost) {
-            std::advance(i, 1);
-            if (i->first != this->route.back().first) {
-                customers.push_back(i->first);
-                --i;
-            }else {
-                --i;
-                customers.push_back(i->first);
-            }
-        }
-    }
-}
-
-/** @brief ###Get the distance from two routes
+/** @brief Compute the distance between two routes.
  *
  * The distance from two routes is defined as the minimum distance from
  * each customers of the routes.
  * @param[in] r The route to compare with
  * @return      The distance from the two routes.
  */
-float Route::GetDistanceFrom(Route r) {
+float Route::GetDistanceFrom(const Route& r) const {
     if (r == *this)
         return 0;
-    std::list<StepType>::const_iterator it = this->route.cbegin();
+    RouteList::const_iterator it = this->route.cbegin();
     std::vector<float> min;
     // for each customers of each route (except the depot)
     for (++it; it->first != this->route.front().first; ++it) {
-        std::list<StepType>::iterator ir = r.GetRoute()->begin();
+        RouteList::const_iterator ir = r.GetRoute()->cbegin();
         for (++ir; ir->first != r.GetRoute()->front().first; ++ir) {
             // compute the distance and update the min
-            float v = std::sqrt(std::pow(it->first.x - ir->first.x,2) + std::pow(it->first.y - ir->first.y,2));
+            const auto xDelta = static_cast<double>(it->first.x - ir->first.x);
+            const auto yDelta = static_cast<double>(it->first.y - ir->first.y);
+            float v = static_cast<float>(std::sqrt((xDelta * xDelta) + (yDelta * yDelta)));
             min.push_back(v);
         }
     }
-    return *min_element(min.begin(), min.end());
+    return *std::ranges::min_element(min);
 }
 
-/** @brief ###Find a customer in the route
+/** @brief Find a customer in the route.
  *
  * Search for a customer in the route, if it is present return True,
  * otherwise False.
  * @param[in] c The customer to search for
  * @return The result
  */
-bool Route::FindCustomer(const Customer c) {
-	auto findIter = std::find_if(this->route.begin(), this->route.end(), [c](const auto e) { return e.first == c; });
-    return findIter != this->route.end();
+bool Route::FindCustomer(const Customer& c) const {
+    auto findIter = std::ranges::find_if(this->route, [c](const auto& e) { return e.first == c; });
+    return findIter != this->route.cend();
 }
 
-/** @brief ###Rebuild the route starting from a list of customers
+/** @brief Rebuild the route from a list of customers.
  *
  * From a list of customers this function rebuild the route (checking all constraint).
  * @return True if the new route is valid
  */
-bool Route::RebuildRoute(std::list<Customer> cust) {
+bool Route::RebuildRoute(const std::list<Customer>& cust) {
     this->route.clear();
     this->totalCost = 0;
     this->capacity = this->initialCapacity;
     this->workTime = this->initialWorkTime;
-    std::list<Customer>::iterator i = cust.begin();
-    std::list<Customer>::iterator k = i;
+    std::list<Customer>::const_iterator i = cust.begin();
+    std::list<Customer>::const_iterator k = i;
     std::advance(k, 1);
     Customer depot = cust.front();
     for (; k != cust.end(); ++i, ++k) {
-        int returnTime, tCost, capac, travelCost;
+        int tCost, capac, travelCost;
         float workT;
         // save the route state
         tCost = this->totalCost;
         capac = this->capacity;
         workT = this->workTime;
-        travelCost = this->graph.GetCosts(*i, *k).second;
+        travelCost = this->graph->GetCost(*i, *k);
         tCost += travelCost;
         capac -= (*k).request;
         // service + travel time
-        workT -= (*k).serviceTime + (travelCost * this->TRAVEL_COST);
+        workT -= static_cast<float>((*k).serviceTime) + TravelTime(travelCost, this->TRAVEL_COST);
         // must consider the time to return to depot
-        returnTime = (this->graph.GetCosts(*k, depot).second) * this->TRAVEL_COST;
+        const float returnTime = TravelTime(this->graph->GetCost(*k, depot), this->TRAVEL_COST);
         // after the travel if constraints fails
         if (capac < 0 || workT < returnTime) {
             // no time or capacity to serve the customer: return to depot
@@ -476,24 +413,25 @@ bool Route::RebuildRoute(std::list<Customer> cust) {
             this->totalCost = tCost;
             this->capacity = capac;
             this->workTime = workT;
-            this->route.push_back({*i, travelCost});
+            // Store the source customer with the cost of the arc to the next customer.
+            this->route.emplace_back(*i, travelCost);
         }
     }
-    this->route.push_back({depot, 0});
+    this->route.emplace_back(depot, 0);
     return true;
 }
 
-/** @brief ###Quality assessment of the route.
+/** @brief Return the route quality assessment.
  *
  * This function evaluate the 'quality' of the route checking the occupancy
  * in capacity and time terms.
  * Less is better.
  * @return The value of the assessment.
  */
-float Route::Evaluate() {
+float Route::Evaluate() const {
     if (this->size() <= 2)
         return 0;
-    return this->totalCost;
+    return static_cast<float>(this->totalCost);
     /*float percLoad = (float(this->capacity) / this->initialCapacity) * 100;
     if (this->TRAVEL_COST == 0) {
         return (std::sqrt(percLoad) / this->totalCost) * 100;
